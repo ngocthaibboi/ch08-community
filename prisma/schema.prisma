@@ -1,0 +1,30 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider  = "postgresql"
+  url       = env("DATABASE_URL")
+  directUrl = env("DIRECT_URL")
+}
+
+// Bảng tài khoản (Thành viên 1)
+model User {
+  id        Int      @id @default(autoincrement())
+  username  String   @unique
+  password  String
+  role      String   @default("MEMBER")
+  balance   Float    @default(0)
+  createdAt DateTime @default(now())
+}
+
+// Bảng máy tính quán net (Thành viên 2)
+model Computer {
+  id          Int      @id @default(autoincrement())
+  name        String
+  zone        String
+  cpu         String
+  vga         String
+  hourlyPrice Float
+  status      String   @default("AVAILABLE")
+}
