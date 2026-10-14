@@ -20,7 +20,7 @@ export const INITIAL_ORDERS: Order[] = [
     note: 'LÀM CAY VỪA, TRỨNG LÒNG ĐÀO MỀM!',
     station: 'HOT_KITCHEN',
     items: ['2x Mì Trộn Indomie Double Trứng', '2x Sting Dâu Đá'],
-    createdAt: new Date(Date.now() - 1000 * 60 * 9).toISOString(),
+    createdAt: new Date(Date.now() - (9 * 60 + 15) * 1000).toISOString(),
   },
   {
     id: 'ord-1042',
@@ -34,7 +34,8 @@ export const INITIAL_ORDERS: Order[] = [
     note: 'THÊM 01 TRỨNG ỐP LA CHÍN KỸ 100%, KHÔNG ỚT CHUÔNG',
     station: 'HOT_KITCHEN',
     items: ['1x Cơm Bò Lúc Lắc', '1x Monster Energy Lạnh (Đã rót sẵn)'],
-    createdAt: new Date(Date.now() - 1000 * 60 * 4).toISOString(),
+    createdAt: new Date(Date.now() - (6 * 60 + 30) * 1000).toISOString(),
+    cookingStartedAt: new Date(Date.now() - (4 * 60 + 18) * 1000).toISOString(),
   },
   {
     id: 'ord-1040',
@@ -48,8 +49,10 @@ export const INITIAL_ORDERS: Order[] = [
     note: 'Đã đặt khay số 04 tại bàn giao đồ ăn tầng 1',
     station: 'BAR',
     items: ['1x Combo Cày Đêm Esports', '1x Trà Đào Cam Sả 1L'],
-    createdAt: new Date(Date.now() - 1000 * 60 * 15).toISOString(),
-    updatedAt: new Date(Date.now() - 1000 * 60 * 2).toISOString(),
+    createdAt: new Date(Date.now() - 15 * 60 * 1000).toISOString(),
+    cookingStartedAt: new Date(Date.now() - 10 * 60 * 1000).toISOString(),
+    completedAt: new Date(Date.now() - 2 * 60 * 1000).toISOString(),
+    updatedAt: new Date(Date.now() - 2 * 60 * 1000).toISOString(),
   },
   {
     id: 'ord-1044',
@@ -63,7 +66,7 @@ export const INITIAL_ORDERS: Order[] = [
     note: 'GIAO GẤP: ĐANG TRONG TRẬN TOURNAMENT FINAL',
     station: 'HOT_KITCHEN',
     items: ['1x Bánh Mì Chảo Đặc Biệt Cyber', '1x Monster Energy Trắng Lạnh'],
-    createdAt: new Date(Date.now() - 1000 * 60 * 2).toISOString(),
+    createdAt: new Date(Date.now() - (2 * 60 + 5) * 1000).toISOString(),
   },
 ];
 
@@ -112,7 +115,11 @@ export function broadcastOrdersUpdate(orders: Order[]) {
  */
 export function addOrder(newOrder: Order): Order[] {
   const current = getStoredOrders();
-  const updated = [newOrder, ...current];
+  const orderWithTime: Order = {
+    ...newOrder,
+    createdAt: newOrder.createdAt || new Date().toISOString(),
+  };
+  const updated = [orderWithTime, ...current];
   broadcastOrdersUpdate(updated);
   return updated;
 }
@@ -122,13 +129,18 @@ export function addOrder(newOrder: Order): Order[] {
  */
 export function updateOrderStatus(orderId: string, nextStatus: OrderStatus): Order[] {
   const current = getStoredOrders();
+  const nowIso = new Date().toISOString();
   const updated = current.map((ord) => {
     if (ord.id === orderId) {
+      const isStartingCooking = nextStatus === 'COOKING' && !ord.cookingStartedAt;
+      const isDone = nextStatus === 'READY' || nextStatus === 'DELIVERED';
       return {
         ...ord,
         status: nextStatus,
-        timeElapsed: nextStatus === 'READY' || nextStatus === 'DELIVERED' ? 'READY' : ord.timeElapsed,
-        updatedAt: new Date().toISOString(),
+        cookingStartedAt: isStartingCooking ? nowIso : ord.cookingStartedAt,
+        completedAt: isDone ? (ord.completedAt || nowIso) : ord.completedAt,
+        timeElapsed: isDone ? 'READY' : ord.timeElapsed,
+        updatedAt: nowIso,
       };
     }
     return ord;

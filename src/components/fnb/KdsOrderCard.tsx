@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { Order, OrderStatus } from '@/types/fnb';
 
 interface KdsOrderCardProps {
@@ -19,8 +19,59 @@ export default function KdsOrderCard({
   const isReady = order.status === 'READY';
   const isDelivered = order.status === 'DELIVERED';
 
+  // Live Elapsed Time State (seconds)
+  const [elapsedSeconds, setElapsedSeconds] = useState(0);
+
   // State to track checked items during food preparation
   const [checkedItems, setCheckedItems] = useState<{ [key: number]: boolean }>({});
+
+  // Active Live Timer: counts up second-by-second
+  useEffect(() => {
+    // If order is finished, do not run interval
+    if (isReady || isDelivered) {
+      if (order.cookingStartedAt && order.completedAt) {
+        const start = new Date(order.cookingStartedAt).getTime();
+        const end = new Date(order.completedAt).getTime();
+        const diff = Math.max(0, Math.floor((end - start) / 1000));
+        setElapsedSeconds(diff);
+      }
+      return;
+    }
+
+    const calculateElapsed = () => {
+      const now = Date.now();
+      let startTime = 0;
+
+      if (isCooking) {
+        // Count from when cooking started
+        startTime = order.cookingStartedAt
+          ? new Date(order.cookingStartedAt).getTime()
+          : order.createdAt
+          ? new Date(order.createdAt).getTime()
+          : now;
+      } else {
+        // Pending order: count wait time since created
+        startTime = order.createdAt ? new Date(order.createdAt).getTime() : now;
+      }
+
+      const diffSecs = Math.max(0, Math.floor((now - startTime) / 1000));
+      setElapsedSeconds(diffSecs);
+    };
+
+    calculateElapsed();
+    const interval = setInterval(calculateElapsed, 1000);
+
+    return () => clearInterval(interval);
+  }, [order.status, order.cookingStartedAt, order.createdAt, order.completedAt, isCooking, isReady, isDelivered]);
+
+  // Format MM:SS
+  const formatTime = (totalSeconds: number) => {
+    const mins = Math.floor(totalSeconds / 60);
+    const secs = totalSeconds % 60;
+    return `${String(mins).padStart(2, '0')}:${String(secs).padStart(2, '0')}`;
+  };
+
+  const formattedTimer = formatTime(elapsedSeconds);
 
   const toggleItemCheck = (idx: number) => {
     setCheckedItems((prev) => ({
@@ -29,17 +80,39 @@ export default function KdsOrderCard({
     }));
   };
 
+  // Card Border Styles
   const getBorderColor = () => {
     if (isPending) return 'border-rose-500/60 shadow-[0_0_15px_rgba(255,42,85,0.2)]';
-    if (isCooking) return 'border-amber-500/60 shadow-[0_0_15px_rgba(255,183,3,0.2)]';
+    if (isCooking) {
+      // If cooking over 8 minutes (cyber guarantee standard), flash red
+      if (elapsedSeconds >= 480) {
+        return 'border-rose-500 shadow-[0_0_20px_rgba(255,42,85,0.4)] animate-pulse';
+      }
+      return 'border-amber-500/60 shadow-[0_0_15px_rgba(255,183,3,0.25)]';
+    }
     if (isReady) return 'border-emerald-500/60 shadow-[0_0_15px_rgba(0,255,136,0.2)]';
     return 'border-slate-800 opacity-60';
   };
 
+  // Timer Badge Color & Animations
   const getTimerColor = () => {
-    if (isPending) return 'text-rose-400 bg-rose-950/40 border border-rose-500/40';
-    if (isCooking) return 'text-amber-400 bg-amber-950/40 border border-amber-500/40';
-    if (isReady) return 'text-emerald-400 bg-emerald-950/40 border border-emerald-500/40';
+    if (isPending) {
+      return 'text-rose-400 bg-rose-950/40 border border-rose-500/40';
+    }
+    if (isCooking) {
+      if (elapsedSeconds >= 480) {
+        // >= 8 minutes: Warning alert
+        return 'text-rose-300 bg-rose-950/80 border border-rose-500 animate-pulse font-black';
+      }
+      if (elapsedSeconds >= 300) {
+        // >= 5 minutes
+        return 'text-amber-300 bg-amber-950/70 border border-amber-500/80 font-bold';
+      }
+      return 'text-amber-400 bg-amber-950/40 border border-amber-500/40 font-bold';
+    }
+    if (isReady) {
+      return 'text-emerald-400 bg-emerald-950/40 border border-emerald-500/40 font-bold';
+    }
     return 'text-slate-400 bg-slate-900 border border-slate-700';
   };
 
@@ -55,7 +128,7 @@ export default function KdsOrderCard({
               <span className="text-xs text-slate-400 font-mono font-bold tracking-wider">
                 ĐƠN #{order.orderNumber}
               </span>
-              <span className="text-[10px] px-1.5 py-0.5 rounded uppercase font-bold font-mono tracking-wider bg-[#141b2b] text-slate-300 border border-slate-700">
+              <span className="text-[10px] px-1.5 py-0.2 rounded uppercase font-bold font-mono tracking-wider bg-[#141b2b] text-slate-300 border border-slate-700">
                 {order.paymentMethod === 'ACCOUNT_BALANCE' ? 'VÍ TÀI KHOẢN' : 'TIỀN MẶT / QR'}
               </span>
             </div>
@@ -63,17 +136,46 @@ export default function KdsOrderCard({
           </div>
 
           <div className="text-right">
-            <span className="text-primary font-mono font-black text-xl tracking-wide">{order.pcName}</span>
+            <span className="text-cyan-400 font-mono font-black text-xl tracking-wide">{order.pcName}</span>
             <div
-              className={`text-xs font-mono font-bold px-2 py-0.5 rounded mt-1 inline-flex items-center gap-1 ${getTimerColor()}`}
+              className={`text-xs font-mono px-2 py-0.5 rounded mt-1 inline-flex items-center gap-1 shadow-sm ${getTimerColor()}`}
             >
-              <span className="material-symbols-outlined text-[14px]">
-                {isReady ? 'check_circle' : 'timer'}
+              <span className={`material-symbols-outlined text-[14px] ${isCooking ? 'animate-spin' : ''}`}>
+                {isReady ? 'check_circle' : isCooking ? 'progress_activity' : 'timer'}
               </span>
-              <span>{order.timeElapsed || '00:00'}</span>
+              <span>
+                {isReady
+                  ? `XONG (${formattedTimer})`
+                  : isDelivered
+                  ? 'ĐÃ GIAO'
+                  : formattedTimer}
+              </span>
             </div>
           </div>
         </div>
+
+        {/* Cooking status prompt */}
+        {isCooking && (
+          <div className="flex items-center justify-between bg-amber-500/10 border border-amber-500/30 px-3 py-1.5 rounded-lg mb-3 text-xs text-amber-300 font-mono">
+            <span className="flex items-center gap-1.5 font-bold">
+              <span className="w-2 h-2 rounded-full bg-amber-400 animate-ping"></span>
+              ĐANG NẤU...
+            </span>
+            <span className="text-[11px] text-amber-400 font-bold">
+              {elapsedSeconds >= 480 ? '⚠️ QUÁ 8 PHÚT' : 'Cam kết < 8p'}
+            </span>
+          </div>
+        )}
+
+        {isPending && (
+          <div className="flex items-center justify-between bg-rose-500/10 border border-rose-500/30 px-3 py-1.5 rounded-lg mb-3 text-xs text-rose-300 font-mono">
+            <span className="flex items-center gap-1.5 font-bold">
+              <span className="w-2 h-2 rounded-full bg-rose-500 animate-pulse"></span>
+              CHỜ NHẬN BẾP
+            </span>
+            <span className="text-[11px] text-rose-400">Chờ nhận đơn</span>
+          </div>
+        )}
 
         {/* Items Checklist */}
         <div className="space-y-2 mb-4">
@@ -126,7 +228,7 @@ export default function KdsOrderCard({
         {isPending && (
           <button
             onClick={() => onUpdateStatus(order.id, 'COOKING')}
-            className="w-full bg-rose-600 hover:bg-rose-500 text-white font-black py-3 rounded-lg font-mono tracking-wide shadow-lg shadow-rose-600/30 active:scale-98 transition flex items-center justify-center gap-2"
+            className="w-full bg-rose-600 hover:bg-rose-500 text-white font-black py-3 rounded-lg font-mono tracking-wide shadow-lg shadow-rose-600/30 active:scale-98 transition flex items-center justify-center gap-2 cursor-pointer"
           >
             <span className="material-symbols-outlined text-[20px]">skillet</span>
             <span>🍳 NHẬN ĐƠN &amp; BẮT ĐẦU NẤU</span>
@@ -137,7 +239,7 @@ export default function KdsOrderCard({
           <div className="grid grid-cols-2 gap-2">
             <button
               onClick={() => onUpdateStatus(order.id, 'READY')}
-              className="bg-primary hover:bg-[#38f8ff] text-black font-black py-3 rounded-lg font-mono text-xs uppercase tracking-wider active:scale-98 transition flex items-center justify-center gap-1 shadow-[0_0_12px_rgba(0,240,255,0.3)]"
+              className="bg-cyan-500 hover:bg-cyan-400 text-black font-black py-3 rounded-lg font-mono text-xs uppercase tracking-wider active:scale-98 transition flex items-center justify-center gap-1 shadow-[0_0_12px_rgba(0,240,255,0.4)] cursor-pointer"
             >
               <span className="material-symbols-outlined text-[16px]">done_all</span>
               <span>✓ HOÀN THÀNH</span>
@@ -147,7 +249,7 @@ export default function KdsOrderCard({
                 if (onNotifyRunner) onNotifyRunner(order.id);
                 onUpdateStatus(order.id, 'READY');
               }}
-              className="bg-secondary hover:bg-[#34d399] text-black font-black py-3 rounded-lg font-mono text-xs uppercase tracking-wider active:scale-98 transition flex items-center justify-center gap-1 shadow-[0_0_12px_rgba(0,255,136,0.3)]"
+              className="bg-emerald-500 hover:bg-emerald-400 text-black font-black py-3 rounded-lg font-mono text-xs uppercase tracking-wider active:scale-98 transition flex items-center justify-center gap-1 shadow-[0_0_12px_rgba(16,185,129,0.4)] cursor-pointer"
             >
               <span className="material-symbols-outlined text-[16px]">campaign</span>
               <span>🔔 BÁO GIAO</span>
@@ -158,7 +260,7 @@ export default function KdsOrderCard({
         {isReady && (
           <button
             onClick={() => onUpdateStatus(order.id, 'DELIVERED')}
-            className="w-full bg-secondary hover:bg-[#34d399] text-black font-black py-3 rounded-lg font-mono tracking-wide shadow-lg shadow-secondary/30 active:scale-98 transition flex items-center justify-center gap-2"
+            className="w-full bg-emerald-500 hover:bg-emerald-400 text-black font-black py-3 rounded-lg font-mono tracking-wide shadow-lg shadow-emerald-500/30 active:scale-98 transition flex items-center justify-center gap-2 cursor-pointer"
           >
             <span className="material-symbols-outlined text-[20px]">two_wheeler</span>
             <span>🛵 ĐÃ GIAO CHO KHÁCH TẠI MÁY</span>

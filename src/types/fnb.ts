@@ -62,6 +62,8 @@ export interface Order {
   timeElapsed?: string;
   station?: 'HOT_KITCHEN' | 'BAR' | 'SNACK';
   createdAt?: string | Date;
+  cookingStartedAt?: string | Date;
+  completedAt?: string | Date;
   updatedAt?: string | Date;
 }
 
