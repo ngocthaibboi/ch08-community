@@ -43,11 +43,11 @@ export default function Home() {
 
             <div className="flex flex-wrap items-center gap-3 pt-2">
               <Link
-                href="/auth"
-                className="px-6 py-3.5 bg-gradient-to-r from-cyan-500 to-blue-600 hover:brightness-110 text-white font-bold text-sm rounded-xl shadow-lg shadow-cyan-500/20 transition flex items-center gap-2"
+                href="/games"
+                className="px-6 py-3.5 bg-gradient-to-r from-cyan-500 to-purple-600 hover:brightness-110 text-white font-black text-sm rounded-xl shadow-lg shadow-cyan-500/30 transition flex items-center gap-2 ring-1 ring-cyan-300"
               >
-                <span className="material-symbols-outlined text-[18px]">login</span>
-                <span>Đăng nhập vào máy</span>
+                <span className="material-symbols-outlined text-[20px]">sports_esports</span>
+                <span>Kho Game Máy Trạm (16 Game)</span>
               </Link>
 
               <Link
@@ -55,15 +55,16 @@ export default function Home() {
                 className="px-6 py-3.5 bg-gradient-to-r from-emerald-500 to-teal-600 hover:brightness-110 text-white font-bold text-sm rounded-xl shadow-lg shadow-emerald-500/20 transition flex items-center gap-2"
               >
                 <span className="material-symbols-outlined text-[18px]">restaurant_menu</span>
-                <span>Menu Gọi Món Tận Bàn ()</span>
+                <span>Menu Gọi Món Tận Bàn (F&amp;B)</span>
               </Link>
 
-              <a
-                href="#bang-gia"
-                className="px-5 py-3.5 bg-slate-900 hover:bg-slate-800 border border-slate-700 text-slate-200 font-semibold text-sm rounded-xl transition"
+              <Link
+                href="/auth"
+                className="px-5 py-3.5 bg-slate-900 hover:bg-slate-800 border border-slate-700 text-slate-200 font-semibold text-sm rounded-xl transition flex items-center gap-2"
               >
-                Xem giá &amp; Cấu hình
-              </a>
+                <span className="material-symbols-outlined text-[18px]">account_balance_wallet</span>
+                <span>Nạp Tiền Vào Máy</span>
+              </Link>
             </div>
           </div>
 
@@ -122,8 +123,116 @@ export default function Home() {
           </div>
         </div>
 
+        {/* KHO GAME MÁY TRẠM (16 TỰA GAME BẢN QUYỀN) */}
+        <div id="kho-game" className="py-12 border-t border-slate-800/80">
+          <div className="flex flex-col sm:flex-row justify-between items-start sm:items-end mb-8 gap-4">
+            <div>
+              <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-cyan-500/10 border border-cyan-500/30 text-cyan-400 text-xs font-semibold mb-2">
+                <span className="w-2 h-2 rounded-full bg-cyan-400 animate-ping"></span>
+                Hệ Thống Diskless 10Gbps • Không Cần Chờ Tải
+              </div>
+              <h2 className="text-3xl font-black text-white uppercase tracking-wide font-gaming">
+                KHO GAME MÁY TRẠM (16 TỰA GAME)
+              </h2>
+              <p className="text-xs text-slate-400 mt-1">
+                Tất cả 16 game bản quyền Steam, Riot Games, Garena, Battle.net đã được tối ưu 240Hz và cập nhật tự động.
+              </p>
+            </div>
+
+            <Link
+              href="/games"
+              className="px-5 py-2.5 rounded-xl bg-gradient-to-r from-cyan-500 to-purple-600 hover:brightness-110 text-white font-black text-xs font-mono shadow-[0_0_15px_rgba(0,240,255,0.4)] transition flex items-center gap-2 ring-1 ring-cyan-300"
+            >
+              <span className="material-symbols-outlined text-[18px]">sports_esports</span>
+              <span>MỞ MENU GAME TOÀN MÀN HÌNH &rarr;</span>
+            </Link>
+          </div>
+
+          <div className="grid grid-cols-2 sm:grid-cols-4 lg:grid-cols-8 gap-3">
+            {[
+              {
+                name: 'Black Myth: Wukong',
+                tag: 'STEAM',
+                badge: 'HOT',
+                img: 'https://lh3.googleusercontent.com/aida-public/AB6AXuCzkSMq1TKCxW-P4Tyq_oGAJrujxwZLU2E8YGevaRG6L65heDlLNLQhFsRGB46uc2eMTrfrf9aV6XyDz6awgkG2-RE_YUhaX03Eq1sEZ7HJyUnPuaPT9aBvlIfTYxk36j8JYL0KkAY0JVgyMCBM-kT2uvIO2MMp71Di7eG_5KZC05SAOSeP_IlT9RAY8hH5IksZkfuT8x_3Q5b_D7ohykbZwQc9Wc41Osrb2eu37IS-6_8qY4wOmSZG',
+              },
+              {
+                name: 'LMHT (LoL)',
+                tag: 'RIOT/VNG',
+                badge: 'TOP 1',
+                img: 'https://lh3.googleusercontent.com/aida-public/AB6AXuBMh8ZjJKSY-hDfVBCfwABNCTxRgTZG10L5YMmrTns0xjctwrUXqWMRahhCjJ5e7zqzl8uF-jta_c1ynPWbgtcrsLPY999UdXGI7Nhajna98t3HfAHo0kXp1SWM-pET1QoNXV_l4OuSqnqTJ61Tkkb7xc8zbP-xMku78Oztk4eeNLi7TOT_qTQ9EcTraLUARcK0OCa_pvRZj6lCCXElLehCwZyr8K1-evJZH4pCwFRWy5vMAemuR4Ac',
+              },
+              {
+                name: 'Valorant',
+                tag: 'RIOT',
+                badge: '240Hz',
+                img: 'https://lh3.googleusercontent.com/aida-public/AB6AXuD5hR9PLfWtbhbOi-WDhXt9yZWZUgsI1tj10eV37UDf80GIS0WFuOXQgwUSfxrYlZnb6oxltIK-EsK_8AzScl_uTqHADWa_wjeq-nOE2pai4bSM-_D6OLMgYjo7uB4t1YBC8k1f9UpBVf9qQUwIdxJ311Hl4HeVAylACgBUkxgEB-aV_ZFIIZvL2PvwpI6kzfx_sHafii_t_khjz8WsnoywBTNQz7Mf-lY7zjhv-NVPXSPJ6ffk35Ls',
+              },
+              {
+                name: 'Counter-Strike 2',
+                tag: 'STEAM',
+                img: 'https://lh3.googleusercontent.com/aida-public/AB6AXuAEG5Z51qHJskujQD4bHi9dp-WjKam9MWRmxzTszoUYUGR-C2GN0JlhR2GV_UsKbGpbyN0Zs7yhxFKmRTzNaGk3uaIk8iOxz9kALQz1DGTV_zPq-8Zc9bDgQAqGF2XRo90Z5dybxwHjLjX1YAvHkjfV7MaNf8U-YK5DZQG-M8Pj0jowYpm2b3yrzK8ETDukPweNdt3WdRHy1Msevj6ab5dIbYX6L8SrtFvVCxFd09nDfSchC6t8--o9',
+              },
+              {
+                name: 'FC Online (FO4)',
+                tag: 'GARENA',
+                badge: 'HOT',
+                img: 'https://lh3.googleusercontent.com/aida-public/AB6AXuB5ZHY-IIPQ4SbBXYve5568SYd1fw48fS_E6voSVRLLIWDiQv74i_y18NQjmCsqtD_4JsC5W-QOzkQurEuziC9UVEFGGvgf3BroT2xPJyiuxc70YLTu44ESZeIoVWnw7gPb5QhpEXFwVJtXHcaBjwtTWyk8sMqEfIbgH39h-6z7iQSm9Nw7uPwYe5Etl6JvXdLHTlud1Ihisk43YYG_qYj6OuT3vdHUbwBr7j-6S6Br-3ncNg2ctsx_',
+              },
+              {
+                name: 'PUBG BATTLEGROUNDS',
+                tag: 'STEAM',
+                badge: 'ULTRA',
+                img: 'https://lh3.googleusercontent.com/aida-public/AB6AXuAQ8dqRxHk7EuPZN8_1BGltr5OYnAkj4TbT8c5JO4v6630hccGgShpEEgwby2yF5nD_as-5GXPeX4_-t1xJO4JZlr1g1J1qYPmr92Ak3I0pe8FOeJbWeAsi_cpfAy22OFj0E1oKAzGug7WNjl3O0CvUvk3JcLRpRQ0FGFzYWQUExn3r7SUeiRg-6xOKroEan7SSr8kD6vfKkS-LMDlOPZkele24Rg1DNqia1s8WFaO1FgGex1UGJ9tL',
+              },
+              {
+                name: 'GTA V (FiveM)',
+                tag: 'FIVEM',
+                badge: 'ROLEPLAY',
+                img: 'https://lh3.googleusercontent.com/aida-public/AB6AXuCBN8DTkrrdURUkVDToP0InwI6CNn7FDbJkMQIgC8wdXU5io491vTOIc4w4MwAtVsLaGIvJ2sr-ioLpftmD6wN_Bq_1Wq4ETjKvoomXrX35FV24zVuO-gKg3ikVLBIYlmssvpKdW793vSmB3zO2n27AxMXhcmiWsksmuDIOsrjpPF0DoyjKjNZ4csQoa5bkE86Dy7pM7RfgjKRQpodYDTWvuNepA5Uytll4hqroNnT4eBMg80_kLDoF',
+              },
+              {
+                name: 'Elden Ring',
+                tag: 'STEAM',
+                badge: 'DLC OUT',
+                img: 'https://lh3.googleusercontent.com/aida-public/AB6AXuBz9vx5H_6fggvwQ4dchScj7K_Zlr5CV3owN9FDub4sKfnXznBs4dj0TagegXlsGqmizq0gbCa4SCImTY2rtM23DXalfM88ZU1e6FnXoyjH_NL3cLIjyHKuQqlZpPrrp-AAqiXyos5DU9ayaWjI6B8tmW-LuEKILB6N2M69J-wqL00ezvklyLIfVOjiieOcT6uf8MQjOMuTO-qk_4AXR5UqcQDNpaNLK553eKzzCTsK__CZ60OgsQXv',
+              },
+            ].map((g, idx) => (
+              <Link
+                key={idx}
+                href="/games"
+                className="group relative flex flex-col bg-slate-900 rounded-xl overflow-hidden border border-slate-800 hover:border-cyan-400 transition-all shadow-md hover:-translate-y-1"
+              >
+                <div className="relative aspect-[3/4] w-full overflow-hidden bg-slate-800">
+                  <div
+                    className="w-full h-full bg-cover bg-center group-hover:scale-110 transition-transform duration-500"
+                    style={{ backgroundImage: `url('${g.img}')` }}
+                  ></div>
+                  <div className="absolute inset-0 bg-gradient-to-t from-slate-950 via-transparent to-transparent opacity-80 group-hover:opacity-40 transition-opacity"></div>
+                  <span className="absolute top-1.5 left-1.5 px-1.5 py-0.5 rounded bg-slate-950/80 font-mono text-[8px] text-cyan-300 font-bold border border-cyan-400/30">
+                    {g.tag}
+                  </span>
+                  {g.badge && (
+                    <span className="absolute top-1.5 right-1.5 px-1.5 py-0.5 rounded bg-rose-500/20 text-rose-400 font-mono text-[8px] font-bold border border-rose-500/40">
+                      {g.badge}
+                    </span>
+                  )}
+                </div>
+                <div className="p-2 text-center bg-slate-900 border-t border-slate-800">
+                  <h4 className="font-bold text-[11px] text-white truncate group-hover:text-cyan-400">
+                    {g.name}
+                  </h4>
+                  <span className="text-[10px] text-cyan-400 font-mono font-bold mt-0.5 block">
+                    Vào Chơi &rarr;
+                  </span>
+                </div>
+              </Link>
+            ))}
+          </div>
+        </div>
+
         {/* BẢNG GIÁ THEO KHU VỰC THẬT CỦA QUÁN NET (Từ bạn Thái) */}
-        <div id="bang-gia" class="py-12 border-t border-slate-800/80">
+        <div id="bang-gia" className="py-12 border-t border-slate-800/80">
           <div className="text-left mb-8">
             <h2 className="text-2xl font-black text-white uppercase tracking-wide font-gaming">
               BẢNG GIÁ DỊCH VỤ GIỜ CHƠI

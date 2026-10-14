@@ -1,0 +1,621 @@
+<!DOCTYPE html>
+<html class="dark" lang="vi">
+<head>
+  <meta charset="utf-8">
+  <meta content="width=device-width, initial-scale=1.0" name="viewport">
+  <title>Cyber Zone - Kho Game Máy Trạm VIP</title>
+  <link href="https://fonts.googleapis.com" rel="preconnect">
+  <link crossorigin="" href="https://fonts.gstatic.com" rel="preconnect">
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=Space+Grotesk:wght@600;700;900&family=Rajdhani:wght@600;700&display=swap" rel="stylesheet">
+  <link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&display=swap" rel="stylesheet">
+  <script src="https://cdn.tailwindcss.com"></script>
+  <script>
+    tailwind.config = {
+      darkMode: 'class',
+      theme: {
+        extend: {
+          colors: {
+            primary: '#00f0ff',
+            secondary: '#4edea3',
+          },
+          fontFamily: {
+            gaming: ['Space Grotesk', 'Rajdhani', 'sans-serif'],
+            sans: ['Inter', 'sans-serif'],
+          }
+        }
+      }
+    }
+  </script>
+  <style>
+    @layer base {
+      html, body { margin: 0; padding: 0; }
+      body { overscroll-behavior: none; }
+    }
+    ::-webkit-scrollbar { display: none; }
+
+    /* Cyber Grid Ambient */
+    .cyber-grid-bg {
+      background-image: 
+        linear-gradient(to right, rgba(0, 240, 255, 0.04) 1px, transparent 1px),
+        linear-gradient(to bottom, rgba(0, 240, 255, 0.04) 1px, transparent 1px);
+      background-size: 40px 40px;
+    }
+
+    .game-card {
+      transition: transform 0.3s cubic-bezier(0.34, 1.56, 0.64, 1), box-shadow 0.3s ease, border-color 0.3s ease;
+    }
+    .game-card:hover {
+      transform: translateY(-6px) scale(1.02);
+      box-shadow: 0 14px 28px -4px rgba(0, 0, 0, 0.8), 0 0 20px rgba(0, 240, 255, 0.35);
+    }
+    .pulse-neon-btn {
+      box-shadow: 0 0 15px rgba(0, 240, 255, 0.5);
+    }
+    .pulse-neon-btn:hover {
+      box-shadow: 0 0 25px rgba(0, 240, 255, 0.8);
+    }
+  </style>
+</head>
+<body class="bg-[#070e1d] text-slate-100 font-sans antialiased min-h-screen selection:bg-cyan-500 selection:text-black relative flex flex-col">
+
+  <!-- HUD Telemetry Sub-bar -->
+  <div class="bg-[#0c1322] border-b border-slate-800 px-4 py-2 flex flex-wrap items-center justify-between gap-3 text-xs font-mono">
+    <div class="flex items-center gap-3">
+      <div class="flex items-center gap-1.5 bg-slate-900 border border-cyan-500/40 px-3 py-1 rounded-lg">
+        <span class="w-2 h-2 rounded-full bg-cyan-400 animate-pulse"></span>
+        <span class="font-gaming font-black text-cyan-400">MÁY TRẠM: VIP-08</span>
+        <span class="text-slate-500">• TẦNG 2</span>
+      </div>
+
+      <div class="flex items-center gap-1 bg-slate-900 border border-slate-800 px-2.5 py-1 rounded-lg text-slate-300">
+        <span class="material-symbols-outlined text-emerald-400 text-[16px]">wifi</span>
+        <span>Ping:</span>
+        <span class="text-emerald-400 font-bold">1ms</span>
+      </div>
+
+      <div class="hidden sm:flex items-center gap-1 bg-slate-900 border border-slate-800 px-2.5 py-1 rounded-lg text-slate-300">
+        <span class="material-symbols-outlined text-cyan-400 text-[16px]">speed</span>
+        <span>Diskless:</span>
+        <span class="text-cyan-400 font-bold">10 Gbps</span>
+      </div>
+
+      <div class="hidden md:flex items-center gap-1 bg-slate-900 border border-slate-800 px-2.5 py-1 rounded-lg text-slate-300">
+        <span class="material-symbols-outlined text-purple-400 text-[16px]">memory</span>
+        <span>RTX 4080 Super:</span>
+        <span class="text-emerald-400 font-bold">52°C</span>
+      </div>
+    </div>
+
+    <!-- Quick Tools -->
+    <div class="flex items-center gap-2">
+      <div class="hidden lg:flex items-center gap-1 bg-slate-900 border border-slate-800 p-0.5 rounded-lg">
+        <button class="px-2.5 py-1 rounded hover:bg-slate-800 text-slate-300 hover:text-white transition flex items-center gap-1 text-[11px] font-bold">
+          <span class="material-symbols-outlined text-[15px] text-[#5865F2]">forum</span> Discord
+        </button>
+        <button class="px-2.5 py-1 rounded hover:bg-slate-800 text-slate-300 hover:text-white transition flex items-center gap-1 text-[11px] font-bold">
+          <span class="material-symbols-outlined text-[15px] text-cyan-400">record_voice_over</span> TS3
+        </button>
+        <button class="px-2.5 py-1 rounded hover:bg-slate-800 text-slate-300 hover:text-white transition flex items-center gap-1 text-[11px] font-bold">
+          <span class="material-symbols-outlined text-[15px] text-purple-400">mouse</span> G-Hub
+        </button>
+      </div>
+
+      <button id="btnOptimize" class="flex items-center gap-1 bg-gradient-to-r from-cyan-500 to-purple-600 hover:brightness-110 text-white px-3 py-1 rounded-lg font-bold text-xs shadow-[0_0_12px_rgba(0,240,255,0.3)] transition active:scale-95">
+        <span class="material-symbols-outlined text-[16px]">bolt</span>
+        <span>TỐI ƯU RAM</span>
+      </button>
+    </div>
+  </div>
+
+  <!-- Search & Filter HUD -->
+  <div class="bg-slate-900/90 border-b border-slate-800 px-4 py-3">
+    <div class="max-w-7xl mx-auto space-y-3">
+      <div class="flex flex-col md:flex-row items-center justify-between gap-3">
+        <!-- Search Input -->
+        <div class="relative w-full md:w-96">
+          <span class="material-symbols-outlined absolute left-3 top-1/2 -translate-y-1/2 text-cyan-400 text-[18px]">search</span>
+          <input id="gameSearchInput" type="text" placeholder="Tìm kiếm tựa game (nhấn F2)..." class="w-full bg-slate-800 border border-slate-700 text-white rounded-lg pl-9 pr-14 py-2 text-xs focus:border-cyan-400 focus:outline-none placeholder:text-slate-500 font-mono transition">
+          <kbd class="absolute right-2.5 top-1/2 -translate-y-1/2 px-1.5 py-0.5 text-[10px] font-mono bg-slate-900 text-cyan-400 rounded border border-slate-700">F2</kbd>
+        </div>
+
+        <!-- Platform Filter Chips -->
+        <div class="flex items-center gap-1.5 overflow-x-auto w-full md:w-auto scrollbar-none">
+          <button data-platform="all" class="platform-btn active px-3 py-1.5 rounded-lg text-xs font-bold font-mono transition bg-cyan-500 text-black shadow-[0_0_12px_rgba(0,240,255,0.4)]">
+            Tất cả
+          </button>
+          <button data-platform="riot" class="platform-btn px-3 py-1.5 rounded-lg text-xs font-bold font-mono transition bg-slate-800 hover:bg-slate-700 text-slate-300 border border-slate-700">
+            Riot Games
+          </button>
+          <button data-platform="steam" class="platform-btn px-3 py-1.5 rounded-lg text-xs font-bold font-mono transition bg-slate-800 hover:bg-slate-700 text-slate-300 border border-slate-700">
+            Steam
+          </button>
+          <button data-platform="garena" class="platform-btn px-3 py-1.5 rounded-lg text-xs font-bold font-mono transition bg-slate-800 hover:bg-slate-700 text-slate-300 border border-slate-700">
+            Garena
+          </button>
+          <button data-platform="other" class="platform-btn px-3 py-1.5 rounded-lg text-xs font-bold font-mono transition bg-slate-800 hover:bg-slate-700 text-slate-300 border border-slate-700">
+            Battle.net / Khác
+          </button>
+        </div>
+      </div>
+
+      <!-- Categories Pills - ĐÃ CẬP NHẬT CHUẨN XÁC TỔNG SỐ 16 GAME -->
+      <div class="flex items-center gap-2 overflow-x-auto scrollbar-none pt-2 border-t border-slate-800/80">
+        <button data-category="all" class="category-pill active px-3 py-1.5 rounded-lg text-xs font-bold font-mono whitespace-nowrap bg-gradient-to-r from-cyan-500 to-purple-600 text-white shadow-[0_0_12px_rgba(0,240,255,0.3)]">
+          TẤT CẢ (16)
+        </button>
+        <button data-category="esports" class="category-pill px-3 py-1.5 rounded-lg text-xs font-bold font-mono whitespace-nowrap bg-slate-800/80 hover:bg-slate-800 text-slate-300 border border-slate-700">
+          ESPORTS THI ĐẤU (6)
+        </button>
+        <button data-category="fps" class="category-pill px-3 py-1.5 rounded-lg text-xs font-bold font-mono whitespace-nowrap bg-slate-800/80 hover:bg-slate-800 text-slate-300 border border-slate-700">
+          BẮN SÚNG FPS (5)
+        </button>
+        <button data-category="moba" class="category-pill px-3 py-1.5 rounded-lg text-xs font-bold font-mono whitespace-nowrap bg-slate-800/80 hover:bg-slate-800 text-slate-300 border border-slate-700">
+          CHIẾN THUẬT MOBA (3)
+        </button>
+        <button data-category="battle-royale" class="category-pill px-3 py-1.5 rounded-lg text-xs font-bold font-mono whitespace-nowrap bg-slate-800/80 hover:bg-slate-800 text-slate-300 border border-slate-700">
+          SINH TỒN BATTLE ROYALE (4)
+        </button>
+        <button data-category="rpg" class="category-pill px-3 py-1.5 rounded-lg text-xs font-bold font-mono whitespace-nowrap bg-slate-800/80 hover:bg-slate-800 text-slate-300 border border-slate-700">
+          NHẬP VAI RPG / AAA (4)
+        </button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Main Game Matrix Grid (16 Games) -->
+  <main class="flex-1 max-w-7xl w-full mx-auto p-4 lg:p-6 cyber-grid-bg">
+    <div class="flex justify-between items-center mb-4">
+      <div class="flex items-center gap-2">
+        <span className="material-symbols-outlined text-cyan-400 text-2xl">sports_esports</span>
+        <h2 class="text-xl font-black text-white font-gaming tracking-wide uppercase">
+          KHO GAME CÀI SẴN TẠI MÁY
+        </h2>
+        <span class="bg-cyan-500/20 text-cyan-400 border border-cyan-500/40 text-[10px] font-mono px-2 py-0.5 rounded font-bold">
+          100% BẢN QUYỀN
+        </span>
+      </div>
+      <span id="gameCountBadge" class="text-xs text-slate-400 font-mono">Hiển thị: <strong class="text-cyan-400">16 / 16</strong> game</span>
+    </div>
+
+    <!-- 16 Game Cards Grid -->
+    <div id="gameMatrixGrid" class="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-6 xl:grid-cols-8 gap-3">
+
+      <!-- Game 1: Black Myth: Wukong -->
+      <div class="game-card group relative flex flex-col bg-slate-900 rounded-xl overflow-hidden border border-slate-800 hover:border-cyan-400 transition-all cursor-pointer shadow-lg" data-name="black myth wukong" data-platform="steam" data-categories="rpg,aaa">
+        <div class="relative aspect-[3/4] w-full overflow-hidden bg-slate-800">
+          <div class="w-full h-full bg-cover bg-center group-hover:scale-110 transition-transform duration-500 ease-out" style="background-image: url('https://lh3.googleusercontent.com/aida-public/AB6AXuCzkSMq1TKCxW-P4Tyq_oGAJrujxwZLU2E8YGevaRG6L65heDlLNLQhFsRGB46uc2eMTrfrf9aV6XyDz6awgkG2-RE_YUhaX03Eq1sEZ7HJyUnPuaPT9aBvlIfTYxk36j8JYL0KkAY0JVgyMCBM-kT2uvIO2MMp71Di7eG_5KZC05SAOSeP_IlT9RAY8hH5IksZkfuT8x_3Q5b_D7ohykbZwQc9Wc41Osrb2eu37IS-6_8qY4wOmSZG');"></div>
+          <div class="absolute inset-0 bg-gradient-to-t from-slate-950 via-transparent to-transparent opacity-80 group-hover:opacity-40 transition-opacity"></div>
+          <span class="absolute top-2 left-2 px-1.5 py-0.5 rounded bg-slate-950/80 font-mono text-[9px] text-amber-300 font-bold border border-amber-400/30">STEAM</span>
+          <span class="absolute top-2 right-2 px-1.5 py-0.5 rounded bg-rose-500/20 text-rose-400 font-mono text-[9px] font-bold border border-rose-500/40">HOT</span>
+          <div class="absolute inset-0 flex items-center justify-center opacity-0 group-hover:opacity-100 transition-all bg-slate-950/60 backdrop-blur-[2px]">
+            <button class="pulse-neon-btn flex items-center gap-1 bg-cyan-500 hover:bg-cyan-400 text-black px-3 py-1.5 rounded-lg font-bold text-xs shadow-lg font-mono">
+              <span class="material-symbols-outlined text-[16px]">play_arrow</span> CHƠI
+            </button>
+          </div>
+        </div>
+        <div class="p-2.5 text-center bg-slate-900 border-t border-slate-800">
+          <h3 class="font-bold text-xs text-white truncate group-hover:text-cyan-400 transition-colors">Black Myth: Wukong</h3>
+        </div>
+      </div>
+
+      <!-- Game 2: Liên Minh Huyền Thoại -->
+      <div class="game-card group relative flex flex-col bg-slate-900 rounded-xl overflow-hidden border border-slate-800 hover:border-cyan-400 transition-all cursor-pointer shadow-lg" data-name="lien minh huyen thoai lol league of legends" data-platform="riot" data-categories="esports,moba">
+        <div class="relative aspect-[3/4] w-full overflow-hidden bg-slate-800">
+          <div class="w-full h-full bg-cover bg-center group-hover:scale-110 transition-transform duration-500 ease-out" style="background-image: url('https://lh3.googleusercontent.com/aida-public/AB6AXuBMh8ZjJKSY-hDfVBCfwABNCTxRgTZG10L5YMmrTns0xjctwrUXqWMRahhCjJ5e7zqzl8uF-jta_c1ynPWbgtcrsLPY999UdXGI7Nhajna98t3HfAHo0kXp1SWM-pET1QoNXV_l4OuSqnqTJ61Tkkb7xc8zbP-xMku78Oztk4eeNLi7TOT_qTQ9EcTraLUARcK0OCa_pvRZj6lCCXElLehCwZyr8K1-evJZH4pCwFRWy5vMAemuR4Ac');"></div>
+          <div class="absolute inset-0 bg-gradient-to-t from-slate-950 via-transparent to-transparent opacity-80 group-hover:opacity-40 transition-opacity"></div>
+          <span class="absolute top-2 left-2 px-1.5 py-0.5 rounded bg-slate-950/80 font-mono text-[9px] text-cyan-300 font-bold border border-cyan-400/30">RIOT</span>
+          <span class="absolute top-2 right-2 px-1.5 py-0.5 rounded bg-emerald-500/20 text-emerald-400 font-mono text-[9px] font-bold border border-emerald-500/40">TOP 1</span>
+          <div class="absolute inset-0 flex items-center justify-center opacity-0 group-hover:opacity-100 transition-all bg-slate-950/60 backdrop-blur-[2px]">
+            <button class="pulse-neon-btn flex items-center gap-1 bg-cyan-500 hover:bg-cyan-400 text-black px-3 py-1.5 rounded-lg font-bold text-xs shadow-lg font-mono">
+              <span class="material-symbols-outlined text-[16px]">play_arrow</span> CHƠI
+            </button>
+          </div>
+        </div>
+        <div class="p-2.5 text-center bg-slate-900 border-t border-slate-800">
+          <h3 class="font-bold text-xs text-white truncate group-hover:text-cyan-400 transition-colors">LMHT (LoL)</h3>
+        </div>
+      </div>
+
+      <!-- Game 3: Valorant -->
+      <div class="game-card group relative flex flex-col bg-slate-900 rounded-xl overflow-hidden border border-slate-800 hover:border-cyan-400 transition-all cursor-pointer shadow-lg" data-name="valorant val" data-platform="riot" data-categories="esports,fps">
+        <div class="relative aspect-[3/4] w-full overflow-hidden bg-slate-800">
+          <div class="w-full h-full bg-cover bg-center group-hover:scale-110 transition-transform duration-500 ease-out" style="background-image: url('https://lh3.googleusercontent.com/aida-public/AB6AXuD5hR9PLfWtbhbOi-WDhXt9yZWZUgsI1tj10eV37UDf80GIS0WFuOXQgwUSfxrYlZnb6oxltIK-EsK_8AzScl_uTqHADWa_wjeq-nOE2pai4bSM-_D6OLMgYjo7uB4t1YBC8k1f9UpBVf9qQUwIdxJ311Hl4HeVAylACgBUkxgEB-aV_ZFIIZvL2PvwpI6kzfx_sHafii_t_khjz8WsnoywBTNQz7Mf-lY7zjhv-NVPXSPJ6ffk35Ls');"></div>
+          <div class="absolute inset-0 bg-gradient-to-t from-slate-950 via-transparent to-transparent opacity-80 group-hover:opacity-40 transition-opacity"></div>
+          <span class="absolute top-2 left-2 px-1.5 py-0.5 rounded bg-slate-950/80 font-mono text-[9px] text-cyan-300 font-bold border border-cyan-400/30">RIOT</span>
+          <span class="absolute top-2 right-2 px-1.5 py-0.5 rounded bg-purple-500/20 text-purple-400 font-mono text-[9px] font-bold border border-purple-500/40">540Hz</span>
+          <div class="absolute inset-0 flex items-center justify-center opacity-0 group-hover:opacity-100 transition-all bg-slate-950/60 backdrop-blur-[2px]">
+            <button class="pulse-neon-btn flex items-center gap-1 bg-cyan-500 hover:bg-cyan-400 text-black px-3 py-1.5 rounded-lg font-bold text-xs shadow-lg font-mono">
+              <span class="material-symbols-outlined text-[16px]">play_arrow</span> CHƠI
+            </button>
+          </div>
+        </div>
+        <div class="p-2.5 text-center bg-slate-900 border-t border-slate-800">
+          <h3 class="font-bold text-xs text-white truncate group-hover:text-cyan-400 transition-colors">Valorant</h3>
+        </div>
+      </div>
+
+      <!-- Game 4: Counter-Strike 2 -->
+      <div class="game-card group relative flex flex-col bg-slate-900 rounded-xl overflow-hidden border border-slate-800 hover:border-cyan-400 transition-all cursor-pointer shadow-lg" data-name="counter strike 2 cs2 csgo" data-platform="steam" data-categories="esports,fps">
+        <div class="relative aspect-[3/4] w-full overflow-hidden bg-slate-800">
+          <div class="w-full h-full bg-cover bg-center group-hover:scale-110 transition-transform duration-500 ease-out" style="background-image: url('https://lh3.googleusercontent.com/aida-public/AB6AXuAEG5Z51qHJskujQD4bHi9dp-WjKam9MWRmxzTszoUYUGR-C2GN0JlhR2GV_UsKbGpbyN0Zs7yhxFKmRTzNaGk3uaIk8iOxz9kALQz1DGTV_zPq-8Zc9bDgQAqGF2XRo90Z5dybxwHjLjX1YAvHkjfV7MaNf8U-YK5DZQG-M8Pj0jowYpm2b3yrzK8ETDukPweNdt3WdRHy1Msevj6ab5dIbYX6L8SrtFvVCxFd09nDfSchC6t8--o9');"></div>
+          <div class="absolute inset-0 bg-gradient-to-t from-slate-950 via-transparent to-transparent opacity-80 group-hover:opacity-40 transition-opacity"></div>
+          <span class="absolute top-2 left-2 px-1.5 py-0.5 rounded bg-slate-950/80 font-mono text-[9px] text-amber-300 font-bold border border-amber-400/30">STEAM</span>
+          <div class="absolute inset-0 flex items-center justify-center opacity-0 group-hover:opacity-100 transition-all bg-slate-950/60 backdrop-blur-[2px]">
+            <button class="pulse-neon-btn flex items-center gap-1 bg-cyan-500 hover:bg-cyan-400 text-black px-3 py-1.5 rounded-lg font-bold text-xs shadow-lg font-mono">
+              <span class="material-symbols-outlined text-[16px]">play_arrow</span> CHƠI
+            </button>
+          </div>
+        </div>
+        <div class="p-2.5 text-center bg-slate-900 border-t border-slate-800">
+          <h3 class="font-bold text-xs text-white truncate group-hover:text-cyan-400 transition-colors">Counter-Strike 2</h3>
+        </div>
+      </div>
+
+      <!-- Game 5: FC Online -->
+      <div class="game-card group relative flex flex-col bg-slate-900 rounded-xl overflow-hidden border border-slate-800 hover:border-cyan-400 transition-all cursor-pointer shadow-lg" data-name="fc online fo4 fifa" data-platform="garena" data-categories="esports">
+        <div class="relative aspect-[3/4] w-full overflow-hidden bg-slate-800">
+          <div class="w-full h-full bg-cover bg-center group-hover:scale-110 transition-transform duration-500 ease-out" style="background-image: url('https://lh3.googleusercontent.com/aida-public/AB6AXuB5ZHY-IIPQ4SbBXYve5568SYd1fw48fS_E6voSVRLLIWDiQv74i_y18NQjmCsqtD_4JsC5W-QOzkQurEuziC9UVEFGGvgf3BroT2xPJyiuxc70YLTu44ESZeIoVWnw7gPb5QhpEXFwVJtXHcaBjwtTWyk8sMqEfIbgH39h-6z7iQSm9Nw7uPwYe5Etl6JvXdLHTlud1Ihisk43YYG_qYj6OuT3vdHUbwBr7j-6S6Br-3ncNg2ctsx_');"></div>
+          <div class="absolute inset-0 bg-gradient-to-t from-slate-950 via-transparent to-transparent opacity-80 group-hover:opacity-40 transition-opacity"></div>
+          <span class="absolute top-2 left-2 px-1.5 py-0.5 rounded bg-slate-950/80 font-mono text-[9px] text-emerald-300 font-bold border border-emerald-400/30">GARENA</span>
+          <div class="absolute inset-0 flex items-center justify-center opacity-0 group-hover:opacity-100 transition-all bg-slate-950/60 backdrop-blur-[2px]">
+            <button class="pulse-neon-btn flex items-center gap-1 bg-cyan-500 hover:bg-cyan-400 text-black px-3 py-1.5 rounded-lg font-bold text-xs shadow-lg font-mono">
+              <span class="material-symbols-outlined text-[16px]">play_arrow</span> CHƠI
+            </button>
+          </div>
+        </div>
+        <div class="p-2.5 text-center bg-slate-900 border-t border-slate-800">
+          <h3 class="font-bold text-xs text-white truncate group-hover:text-cyan-400 transition-colors">FC Online (FO4)</h3>
+        </div>
+      </div>
+
+      <!-- Game 6: PUBG -->
+      <div class="game-card group relative flex flex-col bg-slate-900 rounded-xl overflow-hidden border border-slate-800 hover:border-cyan-400 transition-all cursor-pointer shadow-lg" data-name="pubg battlegrounds" data-platform="steam" data-categories="esports,fps,battle-royale">
+        <div class="relative aspect-[3/4] w-full overflow-hidden bg-slate-800">
+          <div class="w-full h-full bg-cover bg-center group-hover:scale-110 transition-transform duration-500 ease-out" style="background-image: url('https://lh3.googleusercontent.com/aida-public/AB6AXuAQ8dqRxHk7EuPZN8_1BGltr5OYnAkj4TbT8c5JO4v6630hccGgShpEEgwby2yF5nD_as-5GXPeX4_-t1xJO4JZlr1g1J1qYPmr92Ak3I0pe8FOeJbWeAsi_cpfAy22OFj0E1oKAzGug7WNjl3O0CvUvk3JcLRpRQ0FGFzYWQUExn3r7SUeiRg-6xOKroEan7SSr8kD6vfKkS-LMDlOPZkele24Rg1DNqia1s8WFaO1FgGex1UGJ9tL');"></div>
+          <div class="absolute inset-0 bg-gradient-to-t from-slate-950 via-transparent to-transparent opacity-80 group-hover:opacity-40 transition-opacity"></div>
+          <span class="absolute top-2 left-2 px-1.5 py-0.5 rounded bg-slate-950/80 font-mono text-[9px] text-amber-300 font-bold border border-amber-400/30">STEAM</span>
+          <div class="absolute inset-0 flex items-center justify-center opacity-0 group-hover:opacity-100 transition-all bg-slate-950/60 backdrop-blur-[2px]">
+            <button class="pulse-neon-btn flex items-center gap-1 bg-cyan-500 hover:bg-cyan-400 text-black px-3 py-1.5 rounded-lg font-bold text-xs shadow-lg font-mono">
+              <span class="material-symbols-outlined text-[16px]">play_arrow</span> CHƠI
+            </button>
+          </div>
+        </div>
+        <div class="p-2.5 text-center bg-slate-900 border-t border-slate-800">
+          <h3 class="font-bold text-xs text-white truncate group-hover:text-cyan-400 transition-colors">PUBG Battlegrounds</h3>
+        </div>
+      </div>
+
+      <!-- Game 7: GTA V / FiveM -->
+      <div class="game-card group relative flex flex-col bg-slate-900 rounded-xl overflow-hidden border border-slate-800 hover:border-cyan-400 transition-all cursor-pointer shadow-lg" data-name="gta v fivem roleplay" data-platform="other" data-categories="rpg">
+        <div class="relative aspect-[3/4] w-full overflow-hidden bg-slate-800">
+          <div class="w-full h-full bg-cover bg-center group-hover:scale-110 transition-transform duration-500 ease-out" style="background-image: url('https://lh3.googleusercontent.com/aida-public/AB6AXuCBN8DTkrrdURUkVDToP0InwI6CNn7FDbJkMQIgC8wdXU5io491vTOIc4w4MwAtVsLaGIvJ2sr-ioLpftmD6wN_Bq_1Wq4ETjKvoomXrX35FV24zVuO-gKg3ikVLBIYlmssvpKdW793vSmB3zO2n27AxMXhcmiWsksmuDIOsrjpPF0DoyjKjNZ4csQoa5bkE86Dy7pM7RfgjKRQpodYDTWvuNepA5Uytll4hqroNnT4eBMg80_kLDoF');"></div>
+          <div class="absolute inset-0 bg-gradient-to-t from-slate-950 via-transparent to-transparent opacity-80 group-hover:opacity-40 transition-opacity"></div>
+          <span class="absolute top-2 left-2 px-1.5 py-0.5 rounded bg-slate-950/80 font-mono text-[9px] text-cyan-300 font-bold border border-cyan-400/30">FIVEM</span>
+          <div class="absolute inset-0 flex items-center justify-center opacity-0 group-hover:opacity-100 transition-all bg-slate-950/60 backdrop-blur-[2px]">
+            <button class="pulse-neon-btn flex items-center gap-1 bg-cyan-500 hover:bg-cyan-400 text-black px-3 py-1.5 rounded-lg font-bold text-xs shadow-lg font-mono">
+              <span class="material-symbols-outlined text-[16px]">play_arrow</span> CHƠI
+            </button>
+          </div>
+        </div>
+        <div class="p-2.5 text-center bg-slate-900 border-t border-slate-800">
+          <h3 class="font-bold text-xs text-white truncate group-hover:text-cyan-400 transition-colors">GTA V (FiveM)</h3>
+        </div>
+      </div>
+
+      <!-- Game 8: Naraka: Bladepoint -->
+      <div class="game-card group relative flex flex-col bg-slate-900 rounded-xl overflow-hidden border border-slate-800 hover:border-cyan-400 transition-all cursor-pointer shadow-lg" data-name="naraka bladepoint" data-platform="steam" data-categories="battle-royale">
+        <div class="relative aspect-[3/4] w-full overflow-hidden bg-slate-800">
+          <div class="w-full h-full bg-cover bg-center group-hover:scale-110 transition-transform duration-500 ease-out" style="background-image: url('https://lh3.googleusercontent.com/aida-public/AB6AXuCsDYn0smoOe8mf1DYibfNT-kGM4dpBo5Uh5CzoVIaCacjUtEwHrkXy2whZ7ff1_hNl2D9k7aZH8Us-bzcmGSNJd9D8zLFcdxZgY4mUEsL7Yx1hEUzW3gaFHqH972kHTxS4VFv5wiNIhY5q_eT_ivDEG5CBfIeHUkeuiS-22LqSQdhRvTm6swF6MkJR1d3vhNFebYWMCUwh7waAvok2y63hp8Dkf6mqO2MnDOadJlKZUi2riSQprt3r');"></div>
+          <div class="absolute inset-0 bg-gradient-to-t from-slate-950 via-transparent to-transparent opacity-80 group-hover:opacity-40 transition-opacity"></div>
+          <span class="absolute top-2 left-2 px-1.5 py-0.5 rounded bg-slate-950/80 font-mono text-[9px] text-amber-300 font-bold border border-amber-400/30">STEAM</span>
+          <div class="absolute inset-0 flex items-center justify-center opacity-0 group-hover:opacity-100 transition-all bg-slate-950/60 backdrop-blur-[2px]">
+            <button class="pulse-neon-btn flex items-center gap-1 bg-cyan-500 hover:bg-cyan-400 text-black px-3 py-1.5 rounded-lg font-bold text-xs shadow-lg font-mono">
+              <span class="material-symbols-outlined text-[16px]">play_arrow</span> CHƠI
+            </button>
+          </div>
+        </div>
+        <div class="p-2.5 text-center bg-slate-900 border-t border-slate-800">
+          <h3 class="font-bold text-xs text-white truncate group-hover:text-cyan-400 transition-colors">Naraka: Bladepoint</h3>
+        </div>
+      </div>
+
+      <!-- Game 9: Genshin Impact -->
+      <div class="game-card group relative flex flex-col bg-slate-900 rounded-xl overflow-hidden border border-slate-800 hover:border-cyan-400 transition-all cursor-pointer shadow-lg" data-name="genshin impact" data-platform="other" data-categories="rpg">
+        <div class="relative aspect-[3/4] w-full overflow-hidden bg-slate-800">
+          <div class="w-full h-full bg-cover bg-center group-hover:scale-110 transition-transform duration-500 ease-out" style="background-image: url('https://lh3.googleusercontent.com/aida-public/AB6AXuCF5NVEgwKqofL1rjLsN8xVd1Pz7r5M70gGEZSej2wKArUmWPm0w5lrSP6coKhPsi3mpoXRhpcCmkbOzy1qFtVQGN5y5SlMhSt6SUYv1KU0Tt50migDcAhR762zMdLZN7fr3RdIkxI9RT7vPNmqpVOvbm1Xnhd0SYL5C_Crcq6m5kNN3vUqLBudQJ_LK-f1q7xxG4BCXNrmH5kmAjUwfzBoN1bvUF9InIUFQh5U9airgN3cUsM9-EYM');"></div>
+          <div class="absolute inset-0 bg-gradient-to-t from-slate-950 via-transparent to-transparent opacity-80 group-hover:opacity-40 transition-opacity"></div>
+          <span class="absolute top-2 left-2 px-1.5 py-0.5 rounded bg-slate-950/80 font-mono text-[9px] text-purple-300 font-bold border border-purple-400/30">HOYOVERSE</span>
+          <div class="absolute inset-0 flex items-center justify-center opacity-0 group-hover:opacity-100 transition-all bg-slate-950/60 backdrop-blur-[2px]">
+            <button class="pulse-neon-btn flex items-center gap-1 bg-cyan-500 hover:bg-cyan-400 text-black px-3 py-1.5 rounded-lg font-bold text-xs shadow-lg font-mono">
+              <span class="material-symbols-outlined text-[16px]">play_arrow</span> CHƠI
+            </button>
+          </div>
+        </div>
+        <div class="p-2.5 text-center bg-slate-900 border-t border-slate-800">
+          <h3 class="font-bold text-xs text-white truncate group-hover:text-cyan-400 transition-colors">Genshin Impact</h3>
+        </div>
+      </div>
+
+      <!-- Game 10: Dota 2 -->
+      <div class="game-card group relative flex flex-col bg-slate-900 rounded-xl overflow-hidden border border-slate-800 hover:border-cyan-400 transition-all cursor-pointer shadow-lg" data-name="dota 2 dota2" data-platform="steam" data-categories="esports,moba">
+        <div class="relative aspect-[3/4] w-full overflow-hidden bg-slate-800">
+          <div class="w-full h-full bg-cover bg-center group-hover:scale-110 transition-transform duration-500 ease-out" style="background-image: url('https://lh3.googleusercontent.com/aida-public/AB6AXuB2B7pB8BaB6wwIvtqY2x6cMGEhh1fOLIHdbeWJHw1AHPc10_dNDlz6B1Jbq0W2w3JHlpi8E3QCmGMmF-o0fhTQBTOVg5hspeGmeugKlpi_7KI8fIQQ8-5wjCDeHK-pNwvUyHxwocZXb22EFBTHIdBwGfMsUszbwTt5PkIQaW2A_n1EwJDIbvuOG6LObp3d8VuKgKgThJY_aKf6_eE1Core_yhbWz2O6SiVZ7JmAA6umJRHGshK3aXQ');"></div>
+          <div class="absolute inset-0 bg-gradient-to-t from-slate-950 via-transparent to-transparent opacity-80 group-hover:opacity-40 transition-opacity"></div>
+          <span class="absolute top-2 left-2 px-1.5 py-0.5 rounded bg-slate-950/80 font-mono text-[9px] text-amber-300 font-bold border border-amber-400/30">STEAM</span>
+          <div class="absolute inset-0 flex items-center justify-center opacity-0 group-hover:opacity-100 transition-all bg-slate-950/60 backdrop-blur-[2px]">
+            <button class="pulse-neon-btn flex items-center gap-1 bg-cyan-500 hover:bg-cyan-400 text-black px-3 py-1.5 rounded-lg font-bold text-xs shadow-lg font-mono">
+              <span class="material-symbols-outlined text-[16px]">play_arrow</span> CHƠI
+            </button>
+          </div>
+        </div>
+        <div class="p-2.5 text-center bg-slate-900 border-t border-slate-800">
+          <h3 class="font-bold text-xs text-white truncate group-hover:text-cyan-400 transition-colors">Dota 2</h3>
+        </div>
+      </div>
+
+      <!-- Game 11: Apex Legends -->
+      <div class="game-card group relative flex flex-col bg-slate-900 rounded-xl overflow-hidden border border-slate-800 hover:border-cyan-400 transition-all cursor-pointer shadow-lg" data-name="apex legends apex" data-platform="steam" data-categories="fps,battle-royale">
+        <div class="relative aspect-[3/4] w-full overflow-hidden bg-slate-800">
+          <div class="w-full h-full bg-cover bg-center group-hover:scale-110 transition-transform duration-500 ease-out" style="background-image: url('https://lh3.googleusercontent.com/aida-public/AB6AXuB5NSqeBIqL6zMcsL4sYFfHjpgvJHcYVhiHqrnA4W0IaylyUe_JXraUGsEs84p8baio9QfXNn4n0ne9NKyGKK_gKxMznIP4ZbsOec13GSl1ad0HFgI1NxFdhLn3NUFdQ-qsYPi1MfbkBjEZFY8HMXVyEbs6hLUESyuM42hMQOUiV4WuVce4WBL9BZQNOzmqruIrR8uMzCyJI5wHfDQAozMRbX3biAI5qbJftse8cHUD9x5NqkXPE_JZ');"></div>
+          <div class="absolute inset-0 bg-gradient-to-t from-slate-950 via-transparent to-transparent opacity-80 group-hover:opacity-40 transition-opacity"></div>
+          <span class="absolute top-2 left-2 px-1.5 py-0.5 rounded bg-slate-950/80 font-mono text-[9px] text-amber-300 font-bold border border-amber-400/30">STEAM/EA</span>
+          <div class="absolute inset-0 flex items-center justify-center opacity-0 group-hover:opacity-100 transition-all bg-slate-950/60 backdrop-blur-[2px]">
+            <button class="pulse-neon-btn flex items-center gap-1 bg-cyan-500 hover:bg-cyan-400 text-black px-3 py-1.5 rounded-lg font-bold text-xs shadow-lg font-mono">
+              <span class="material-symbols-outlined text-[16px]">play_arrow</span> CHƠI
+            </button>
+          </div>
+        </div>
+        <div class="p-2.5 text-center bg-slate-900 border-t border-slate-800">
+          <h3 class="font-bold text-xs text-white truncate group-hover:text-cyan-400 transition-colors">Apex Legends</h3>
+        </div>
+      </div>
+
+      <!-- Game 12: Đấu Trường Chân Lý (TFT) -->
+      <div class="game-card group relative flex flex-col bg-slate-900 rounded-xl overflow-hidden border border-slate-800 hover:border-cyan-400 transition-all cursor-pointer shadow-lg" data-name="dau truong chan ly tft teamfight tactics" data-platform="riot" data-categories="moba">
+        <div class="relative aspect-[3/4] w-full overflow-hidden bg-slate-800">
+          <div class="w-full h-full bg-cover bg-center group-hover:scale-110 transition-transform duration-500 ease-out" style="background-image: url('https://lh3.googleusercontent.com/aida-public/AB6AXuDh6LZ9Jev80VpQIlCS5ZitMbsets5WKSJc7ox3VEEfxO1wi-vgVN-qwreUoGdkM5tkR8NqqsltXdcadR5c2ed8Tz-27XgP-ygac7MO4IRZVNOimLRZMvDTv6Z2aTilxcv2lvQI1Nr13uC2aVHQUSfK7FsemDfbQfTEJbMqyiI2mchC_if_aMqG6u3hRts8BmkiN6ARW3PR3pPLZU33sF8_R-DQIrPbCbmWrRRdYfUpFl9824-IwKc7');"></div>
+          <div class="absolute inset-0 bg-gradient-to-t from-slate-950 via-transparent to-transparent opacity-80 group-hover:opacity-40 transition-opacity"></div>
+          <span class="absolute top-2 left-2 px-1.5 py-0.5 rounded bg-slate-950/80 font-mono text-[9px] text-cyan-300 font-bold border border-cyan-400/30">RIOT</span>
+          <div class="absolute inset-0 flex items-center justify-center opacity-0 group-hover:opacity-100 transition-all bg-slate-950/60 backdrop-blur-[2px]">
+            <button class="pulse-neon-btn flex items-center gap-1 bg-cyan-500 hover:bg-cyan-400 text-black px-3 py-1.5 rounded-lg font-bold text-xs shadow-lg font-mono">
+              <span class="material-symbols-outlined text-[16px]">play_arrow</span> CHƠI
+            </button>
+          </div>
+        </div>
+        <div class="p-2.5 text-center bg-slate-900 border-t border-slate-800">
+          <h3 class="font-bold text-xs text-white truncate group-hover:text-cyan-400 transition-colors">Đấu Trường Chân Lý</h3>
+        </div>
+      </div>
+
+      <!-- Game 13: Call of Duty: Warzone -->
+      <div class="game-card group relative flex flex-col bg-slate-900 rounded-xl overflow-hidden border border-slate-800 hover:border-cyan-400 transition-all cursor-pointer shadow-lg" data-name="call of duty warzone cod" data-platform="other" data-categories="fps,battle-royale">
+        <div class="relative aspect-[3/4] w-full overflow-hidden bg-slate-800">
+          <div class="w-full h-full bg-cover bg-center group-hover:scale-110 transition-transform duration-500 ease-out" style="background-image: url('https://lh3.googleusercontent.com/aida-public/AB6AXuAySgVQBb4592kcYkP0dNA77bWB-eiHZdNs7WcaB0F4Lrg24FNB3qRs_Wp2M5qKV-nUvPiZa52FWRCxJTq3mzIwJZpRYOElgunG3yUfxm9Kb5IEZDRZSV-Mdjf4QFX1Qrp6Eg6p2-1_tincxBPH9yidQUAMKXQ4kBK3RXnUfRkq72RU8F686uaQo9_G3yjARaQxzcB1eTKRJs6X3O_4zm29P0Ua544jDoJIGKxCKlJllYCjyON80dwx');"></div>
+          <div class="absolute inset-0 bg-gradient-to-t from-slate-950 via-transparent to-transparent opacity-80 group-hover:opacity-40 transition-opacity"></div>
+          <span class="absolute top-2 left-2 px-1.5 py-0.5 rounded bg-slate-950/80 font-mono text-[9px] text-cyan-300 font-bold border border-cyan-400/30">BATTLE.NET</span>
+          <div class="absolute inset-0 flex items-center justify-center opacity-0 group-hover:opacity-100 transition-all bg-slate-950/60 backdrop-blur-[2px]">
+            <button class="pulse-neon-btn flex items-center gap-1 bg-cyan-500 hover:bg-cyan-400 text-black px-3 py-1.5 rounded-lg font-bold text-xs shadow-lg font-mono">
+              <span class="material-symbols-outlined text-[16px]">play_arrow</span> CHƠI
+            </button>
+          </div>
+        </div>
+        <div class="p-2.5 text-center bg-slate-900 border-t border-slate-800">
+          <h3 class="font-bold text-xs text-white truncate group-hover:text-cyan-400 transition-colors">COD: Warzone</h3>
+        </div>
+      </div>
+
+      <!-- Game 14: Elden Ring -->
+      <div class="game-card group relative flex flex-col bg-slate-900 rounded-xl overflow-hidden border border-slate-800 hover:border-cyan-400 transition-all cursor-pointer shadow-lg" data-name="elden ring shadow erdtree" data-platform="steam" data-categories="rpg,aaa">
+        <div class="relative aspect-[3/4] w-full overflow-hidden bg-slate-800">
+          <div class="w-full h-full bg-cover bg-center group-hover:scale-110 transition-transform duration-500 ease-out" style="background-image: url('https://lh3.googleusercontent.com/aida-public/AB6AXuBz9vx5H_6fggvwQ4dchScj7K_Zlr5CV3owN9FDub4sKfnXznBs4dj0TagegXlsGqmizq0gbCa4SCImTY2rtM23DXalfM88ZU1e6FnXoyjH_NL3cLIjyHKuQqlZpPrrp-AAqiXyos5DU9ayaWjI6B8tmW-LuEKILB6N2M69J-wqL00ezvklyLIfVOjiieOcT6uf8MQjOMuTO-qk_4AXR5UqcQDNpaNLK553eKzzCTsK__CZ60OgsQXv');"></div>
+          <div class="absolute inset-0 bg-gradient-to-t from-slate-950 via-transparent to-transparent opacity-80 group-hover:opacity-40 transition-opacity"></div>
+          <span class="absolute top-2 left-2 px-1.5 py-0.5 rounded bg-slate-950/80 font-mono text-[9px] text-amber-300 font-bold border border-amber-400/30">STEAM</span>
+          <div class="absolute inset-0 flex items-center justify-center opacity-0 group-hover:opacity-100 transition-all bg-slate-950/60 backdrop-blur-[2px]">
+            <button class="pulse-neon-btn flex items-center gap-1 bg-cyan-500 hover:bg-cyan-400 text-black px-3 py-1.5 rounded-lg font-bold text-xs shadow-lg font-mono">
+              <span class="material-symbols-outlined text-[16px]">play_arrow</span> CHƠI
+            </button>
+          </div>
+        </div>
+        <div class="p-2.5 text-center bg-slate-900 border-t border-slate-800">
+          <h3 class="font-bold text-xs text-white truncate group-hover:text-cyan-400 transition-colors">Elden Ring</h3>
+        </div>
+      </div>
+
+      <!-- Game 15: Honkai: Star Rail -->
+      <div class="game-card group relative flex flex-col bg-slate-900 rounded-xl overflow-hidden border border-slate-800 hover:border-cyan-400 transition-all cursor-pointer shadow-lg" data-name="honkai star rail hsr" data-platform="other" data-categories="rpg">
+        <div class="relative aspect-[3/4] w-full overflow-hidden bg-slate-800">
+          <div class="w-full h-full bg-cover bg-center group-hover:scale-110 transition-transform duration-500 ease-out" style="background-image: url('https://lh3.googleusercontent.com/aida-public/AB6AXuCBTAwyaok-FQ3cobHnjQQlPP1uuaD_2UB1Xvt_PVPrSiiqK134WFTebxjQl6z610XyxxpmIOfNgfsXpEJvHkX_5VNL8unuFsPqTua1v8eoCwQakTdxxNzUGV2aP1eaeF8p4rc_kiUB7OBfugZAhZAfxJBHwjCBKTZDd2RKImjvDSTHd9T-5KLynUTNCV6pxMtFzXWPe60mGBTRKqZgyW8LAfD9NO9a7rtTs1vwoSVpPgLeLPOa1kwT');"></div>
+          <div class="absolute inset-0 bg-gradient-to-t from-slate-950 via-transparent to-transparent opacity-80 group-hover:opacity-40 transition-opacity"></div>
+          <span class="absolute top-2 left-2 px-1.5 py-0.5 rounded bg-slate-950/80 font-mono text-[9px] text-purple-300 font-bold border border-purple-400/30">HOYOVERSE</span>
+          <div class="absolute inset-0 flex items-center justify-center opacity-0 group-hover:opacity-100 transition-all bg-slate-950/60 backdrop-blur-[2px]">
+            <button class="pulse-neon-btn flex items-center gap-1 bg-cyan-500 hover:bg-cyan-400 text-black px-3 py-1.5 rounded-lg font-bold text-xs shadow-lg font-mono">
+              <span class="material-symbols-outlined text-[16px]">play_arrow</span> CHƠI
+            </button>
+          </div>
+        </div>
+        <div class="p-2.5 text-center bg-slate-900 border-t border-slate-800">
+          <h3 class="font-bold text-xs text-white truncate group-hover:text-cyan-400 transition-colors">Honkai: Star Rail</h3>
+        </div>
+      </div>
+
+      <!-- Game 16: Overwatch 2 -->
+      <div class="game-card group relative flex flex-col bg-slate-900 rounded-xl overflow-hidden border border-slate-800 hover:border-cyan-400 transition-all cursor-pointer shadow-lg" data-name="overwatch 2 ow2" data-platform="other" data-categories="fps,esports">
+        <div class="relative aspect-[3/4] w-full overflow-hidden bg-slate-800">
+          <div class="w-full h-full bg-cover bg-center group-hover:scale-110 transition-transform duration-500 ease-out" style="background-image: url('https://lh3.googleusercontent.com/aida-public/AB6AXuCu4-oMrXKiyYy-uuWtlJ0x7LHzryaxAIcvUELqpNpZ0HcKxYjTIDq6xI2mYN-thddcrHWnVt5id3xsJA0KOdl2WscTPbcl-yhAmMAY8aK34xc4Rv8zCjQn45dp8tJ2GxHXxgd0KOVL-Hlf9b-I9lXpvwNyO6_k_ObI1690lFz3ckEGZpouWRrN0ZkNWhmvFzGYu3OSklK54TBxg3mccNiEDnNBytI-pKQFK7IEE8DySFjWbtbPImvh');"></div>
+          <div class="absolute inset-0 bg-gradient-to-t from-slate-950 via-transparent to-transparent opacity-80 group-hover:opacity-40 transition-opacity"></div>
+          <span class="absolute top-2 left-2 px-1.5 py-0.5 rounded bg-slate-950/80 font-mono text-[9px] text-cyan-300 font-bold border border-cyan-400/30">BATTLE.NET</span>
+          <div class="absolute inset-0 flex items-center justify-center opacity-0 group-hover:opacity-100 transition-all bg-slate-950/60 backdrop-blur-[2px]">
+            <button class="pulse-neon-btn flex items-center gap-1 bg-cyan-500 hover:bg-cyan-400 text-black px-3 py-1.5 rounded-lg font-bold text-xs shadow-lg font-mono">
+              <span class="material-symbols-outlined text-[16px]">play_arrow</span> CHƠI
+            </button>
+          </div>
+        </div>
+        <div class="p-2.5 text-center bg-slate-900 border-t border-slate-800">
+          <h3 class="font-bold text-xs text-white truncate group-hover:text-cyan-400 transition-colors">Overwatch 2</h3>
+        </div>
+      </div>
+
+    </div>
+  </main>
+
+  <!-- Interactive Game Launch Modal -->
+  <div id="gameLaunchModal" class="fixed inset-0 z-50 flex items-center justify-center bg-black/80 backdrop-blur-md opacity-0 pointer-events-none transition-all duration-300 scale-95 p-4">
+    <div class="w-full max-w-md bg-slate-900 border border-cyan-500/40 p-6 rounded-2xl shadow-[0_0_50px_rgba(0,240,255,0.3)] flex flex-col items-center text-center gap-4 relative overflow-hidden">
+      <div class="w-16 h-16 rounded-full bg-cyan-500/20 border-2 border-cyan-400 flex items-center justify-center shadow-[0_0_20px_rgba(0,240,255,0.4)] animate-pulse">
+        <span class="material-symbols-outlined text-cyan-400 text-3xl">sports_esports</span>
+      </div>
+      <div>
+        <h3 id="modalGameTitle" class="text-lg font-black text-white font-gaming uppercase tracking-wide">ĐANG KHỞI CHẠY GAME...</h3>
+        <p class="text-xs text-slate-400 mt-1">Đang đồng bộ Cloud Save & tối ưu tần số quét 240Hz / 540Hz...</p>
+      </div>
+
+      <!-- Progress bar -->
+      <div class="w-full bg-slate-800 h-2 rounded-full overflow-hidden border border-slate-700">
+        <div id="modalProgressBar" class="h-full bg-gradient-to-r from-cyan-500 to-purple-600 w-0 transition-all duration-300 rounded-full"></div>
+      </div>
+
+      <div class="flex items-center justify-between w-full text-[11px] font-mono text-slate-400">
+        <span class="text-emerald-400 flex items-center gap-1">
+          <span class="w-1.5 h-1.5 rounded-full bg-emerald-400 animate-ping"></span> DISKLESS 10GBPS
+        </span>
+        <span id="modalStatusText" class="text-cyan-400 font-bold">KẾT NỐI SERVER...</span>
+      </div>
+
+      <button id="modalCloseBtn" class="mt-2 text-xs text-slate-400 hover:text-white underline font-mono">
+        Hủy / Đóng
+      </button>
+    </div>
+  </div>
+
+  <script>
+    // Filtering Logic (Platform, Category, Search)
+    let currentPlatform = 'all';
+    let currentCategory = 'all';
+    let searchQuery = '';
+
+    const cards = document.querySelectorAll('.game-card');
+    const countBadge = document.getElementById('gameCountBadge');
+
+    function filterGames() {
+      let visibleCount = 0;
+      cards.forEach(card => {
+        const name = card.getAttribute('data-name').toLowerCase();
+        const platform = card.getAttribute('data-platform');
+        const categories = card.getAttribute('data-categories').split(',');
+
+        const matchSearch = !searchQuery || name.includes(searchQuery);
+        const matchPlatform = currentPlatform === 'all' || platform === currentPlatform;
+        const matchCategory = currentCategory === 'all' || categories.includes(currentCategory);
+
+        if (matchSearch && matchPlatform && matchCategory) {
+          card.style.display = 'flex';
+          visibleCount++;
+        } else {
+          card.style.display = 'none';
+        }
+      });
+
+      if (countBadge) {
+        countBadge.innerHTML = `Hiển thị: <strong class="text-cyan-400">${visibleCount} / 16</strong> game`;
+      }
+    }
+
+    // Platform buttons
+    document.querySelectorAll('.platform-btn').forEach(btn => {
+      btn.addEventListener('click', () => {
+        document.querySelectorAll('.platform-btn').forEach(b => {
+          b.classList.remove('bg-cyan-500', 'text-black', 'shadow-[0_0_12px_rgba(0,240,255,0.4)]');
+          b.classList.add('bg-slate-800', 'text-slate-300', 'border', 'border-slate-700');
+        });
+        btn.classList.remove('bg-slate-800', 'text-slate-300', 'border', 'border-slate-700');
+        btn.classList.add('bg-cyan-500', 'text-black', 'shadow-[0_0_12px_rgba(0,240,255,0.4)]');
+        currentPlatform = btn.getAttribute('data-platform');
+        filterGames();
+      });
+    });
+
+    // Category pills
+    document.querySelectorAll('.category-pill').forEach(pill => {
+      pill.addEventListener('click', () => {
+        document.querySelectorAll('.category-pill').forEach(p => {
+          p.classList.remove('bg-gradient-to-r', 'from-cyan-500', 'to-purple-600', 'text-white', 'shadow-[0_0_12px_rgba(0,240,255,0.3)]');
+          p.classList.add('bg-slate-800/80', 'text-slate-300', 'border', 'border-slate-700');
+        });
+        pill.classList.remove('bg-slate-800/80', 'text-slate-300', 'border', 'border-slate-700');
+        pill.classList.add('bg-gradient-to-r', 'from-cyan-500', 'to-purple-600', 'text-white', 'shadow-[0_0_12px_rgba(0,240,255,0.3)]');
+        currentCategory = pill.getAttribute('data-category');
+        filterGames();
+      });
+    });
+
+    // Search input
+    const searchInput = document.getElementById('gameSearchInput');
+    searchInput.addEventListener('input', (e) => {
+      searchQuery = e.target.value.toLowerCase().trim();
+      filterGames();
+    });
+
+    // F2 Hotkey to search
+    window.addEventListener('keydown', (e) => {
+      if (e.key === 'F2') {
+        e.preventDefault();
+        searchInput.focus();
+        searchInput.select();
+      }
+    });
+
+    // Launch Game Modal simulation
+    const modal = document.getElementById('gameLaunchModal');
+    const modalTitle = document.getElementById('modalGameTitle');
+    const modalProgress = document.getElementById('modalProgressBar');
+    const modalStatus = document.getElementById('modalStatusText');
+    const modalClose = document.getElementById('modalCloseBtn');
+
+    document.querySelectorAll('.game-card').forEach(card => {
+      card.addEventListener('click', () => {
+        const title = card.querySelector('h3').textContent;
+        modalTitle.textContent = `ĐANG KHỞI CHẠY: ${title.toUpperCase()}`;
+        modal.classList.remove('opacity-0', 'pointer-events-none', 'scale-95');
+        modal.classList.add('opacity-100', 'scale-100');
+
+        modalProgress.style.width = '20%';
+        modalStatus.textContent = 'KIỂM TRA BẢN QUYỀN MÁY VIP...';
+
+        setTimeout(() => {
+          modalProgress.style.width = '65%';
+          modalStatus.textContent = 'TỐI ƯU CẤU HÌNH & TẦN SỐ QUÉT...';
+        }, 700);
+
+        setTimeout(() => {
+          modalProgress.style.width = '100%';
+          modalStatus.textContent = 'VÀO GAME THÀNH CÔNG!';
+        }, 1500);
+
+        setTimeout(() => {
+          modal.classList.add('opacity-0', 'pointer-events-none', 'scale-95');
+          modal.classList.remove('opacity-100', 'scale-100');
+          modalProgress.style.width = '0%';
+        }, 2200);
+      });
+    });
+
+    modalClose.addEventListener('click', (e) => {
+      e.stopPropagation();
+      modal.classList.add('opacity-0', 'pointer-events-none', 'scale-95');
+      modal.classList.remove('opacity-100', 'scale-100');
+    });
+
+    // RAM Optimize Button Simulation
+    const btnOpt = document.getElementById('btnOptimize');
+    btnOpt.addEventListener('click', () => {
+      btnOpt.innerHTML = `<span class="material-symbols-outlined text-[16px] animate-spin">sync</span> ĐANG DỌN RAM...`;
+      setTimeout(() => {
+        btnOpt.innerHTML = `<span class="material-symbols-outlined text-[16px]">check</span> ĐÃ GIẢI PHÓNG 3.2GB RAM!`;
+        setTimeout(() => {
+          btnOpt.innerHTML = `<span class="material-symbols-outlined text-[16px]">bolt</span> <span>TỐI ƯU RAM</span>`;
+        }, 2000);
+      }, 900);
+    });
+  </script>
+</body>
+</html>

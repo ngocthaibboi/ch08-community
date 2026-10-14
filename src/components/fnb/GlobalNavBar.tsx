@@ -23,7 +23,8 @@ export default function GlobalNavBar() {
   const playerLinks = [
     { href: '/', label: 'Trang chủ', icon: 'home' },
     { href: '/booking', label: 'Sơ đồ máy', icon: 'desktop_windows' },
-    { href: '/menu', label: 'Menu đồ ăn', icon: 'restaurant_menu', badge: 'HOT' },
+    { href: '/games', label: 'Menu game', icon: 'sports_esports', badge: '16 GAME', badgeBg: 'bg-cyan-500 text-slate-950' },
+    { href: '/menu', label: 'Menu đồ ăn', icon: 'restaurant_menu', badge: 'HOT', badgeBg: 'bg-rose-500 text-white' },
     { href: '/auth', label: 'Nạp ví tiền', icon: 'account_balance_wallet' },
   ];
 
@@ -209,7 +210,7 @@ export default function GlobalNavBar() {
                   <span>{link.label}</span>
 
                   {link.badge && (
-                    <span className="bg-rose-500 text-white text-[9px] font-black px-1.5 py-0.2 rounded font-mono">
+                    <span className={`${link.badgeBg || 'bg-rose-500 text-white'} text-[9px] font-black px-1.5 py-0.2 rounded font-mono shadow-sm`}>
                       {link.badge}
                     </span>
                   )}
