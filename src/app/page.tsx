@@ -23,7 +23,7 @@ export default function Home() {
 
             <p className="text-slate-400 text-sm sm:text-base leading-relaxed max-w-xl">
               Trang bị 100% màn hình 240Hz siêu mượt, card đồ họa RTX 40 Series thế hệ mới,
-              không gian máy lạnh khử mùi 24/7 và hệ thống Bếp F&amp;B phục vụ tận bàn chuẩn vị.
+              không gian máy lạnh khử mùi 24/7 và hệ thống Bếp phục vụ tận bàn chuẩn vị.
             </p>
 
             {/* Banner Ưu Đãi Nạp Thẻ */}
@@ -55,7 +55,7 @@ export default function Home() {
                 className="px-6 py-3.5 bg-gradient-to-r from-emerald-500 to-teal-600 hover:brightness-110 text-white font-bold text-sm rounded-xl shadow-lg shadow-emerald-500/20 transition flex items-center gap-2"
               >
                 <span className="material-symbols-outlined text-[18px]">restaurant_menu</span>
-                <span>Menu Gọi Món Tận Bàn (F&amp;B)</span>
+                <span>Menu Gọi Món Tận Bàn ()</span>
               </Link>
 
               <a
@@ -188,7 +188,7 @@ export default function Home() {
             <div>
               <span className="text-xs font-bold text-cyan-400 uppercase font-mono">DỊCH VỤ F&amp;B TẠI CHỖ</span>
               <h2 className="text-3xl font-black text-white uppercase tracking-wide font-gaming mt-1">
-                MENU GỌI MÓN &amp; BẾP KDS THỜI GIAN THỰC
+                MENU GỌI MÓN 
               </h2>
               <p className="text-xs text-slate-400 mt-1">
                 Đặt món trực tiếp trên máy gaming, trừ tiền ví tự động, nhân viên bưng tận bàn trong 5-8 phút.
