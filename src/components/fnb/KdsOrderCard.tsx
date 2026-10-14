@@ -45,7 +45,7 @@ export default function KdsOrderCard({
 
   return (
     <div
-      className={`bg-[#0c1322] rounded-xl border flex flex-col justify-between p-5 shadow-xl transition-all ${getBorderColor()}`}
+      className={`bg-slate-900 rounded-xl border flex flex-col justify-between p-6 shadow-xl transition-all ${getBorderColor()}`}
     >
       <div>
         {/* Order Header */}

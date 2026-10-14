@@ -49,24 +49,24 @@ export default function CartSidebar({
   };
 
   return (
-    <div className="bg-[#0b1322] border border-[#26354f] rounded p-3 flex flex-col gap-3 shadow-[0_8px_24px_rgba(0,0,0,0.8)] sticky top-16">
+    <div className="bg-slate-900 border border-slate-800 rounded-xl p-5 flex flex-col gap-4 shadow-2xl sticky top-20">
       {/* Cart Header */}
-      <div className="flex items-center justify-between pb-2 border-b border-[#26354f]">
-        <div className="flex items-center gap-2">
-          <div className="w-8 h-8 rounded bg-primary/20 border border-primary/40 flex items-center justify-center text-primary shadow-[0_0_10px_rgba(0,240,255,0.2)]">
+      <div className="flex items-center justify-between pb-3 border-b border-slate-800">
+        <div className="flex items-center gap-2.5">
+          <div className="w-9 h-9 rounded-lg bg-cyan-500/10 border border-cyan-400/40 flex items-center justify-center text-cyan-400 shadow-[0_0_10px_rgba(0,240,255,0.2)]">
             <span className="material-symbols-outlined text-[20px]">shopping_cart</span>
           </div>
           <div>
-            <div className="flex items-center gap-1.5">
-              <span className="font-headline-sm font-bold text-[14px] text-white uppercase tracking-wide">
+            <div className="flex items-center gap-2">
+              <span className="text-white font-black text-sm uppercase tracking-wide">
                 GIỎ GỌI MÓN
               </span>
-              <span className="px-1.5 py-0.2 bg-primary text-black font-gaming text-[10px] font-black rounded">
+              <span className="px-1.5 py-0.2 bg-cyan-500 text-black font-mono text-[10px] font-black rounded">
                 {totalItemsCount} MÓN
               </span>
             </div>
-            <span className="text-[11px] font-gaming text-secondary flex items-center gap-1">
-              <span className="w-1.5 h-1.5 rounded-full bg-secondary inline-block"></span> GIAO ĐẾN: {pcName}
+            <span className="text-[11px] font-mono text-emerald-400 flex items-center gap-1">
+              <span className="w-1.5 h-1.5 rounded-full bg-emerald-400 inline-block"></span> GIAO ĐẾN: {pcName}
             </span>
           </div>
         </div>
@@ -74,7 +74,7 @@ export default function CartSidebar({
         {cart.length > 0 && (
           <button
             onClick={onClearCart}
-            className="text-slate-400 hover:text-cyber-red p-1 transition-colors"
+            className="text-slate-400 hover:text-rose-500 p-1.5 rounded transition-colors"
             title="Xóa toàn bộ giỏ hàng"
             type="button"
           >
@@ -85,9 +85,9 @@ export default function CartSidebar({
 
       {/* Cart Items List */}
       {cart.length === 0 ? (
-        <div className="py-8 px-4 flex flex-col items-center justify-center text-center text-slate-500 bg-[#080e1a] rounded border border-[#26354f]/50">
+        <div className="py-8 px-4 flex flex-col items-center justify-center text-center text-slate-500 bg-slate-950/60 rounded-lg border border-slate-800/80">
           <span className="material-symbols-outlined text-4xl text-slate-600 mb-2">fastfood</span>
-          <p className="text-xs font-semibold text-slate-400">Giỏ hàng của bạn đang trống</p>
+          <p className="text-xs font-bold text-slate-400">Giỏ hàng của bạn đang trống</p>
           <p className="text-[11px] text-slate-500 mt-1">Bấm "+ THÊM NHANH" trên các món để bắt đầu đặt!</p>
         </div>
       ) : (
@@ -95,27 +95,27 @@ export default function CartSidebar({
           {cart.map((item) => (
             <div
               key={item.id}
-              className="bg-[#080e1a] border border-[#26354f]/60 p-2 rounded flex flex-col gap-1.5 hover:border-primary/40 transition-colors"
+              className="bg-slate-950/80 border border-slate-800 p-2.5 rounded-lg flex flex-col gap-1.5 hover:border-slate-700 transition-colors"
             >
               <div className="flex items-start justify-between gap-1">
                 <div className="flex-1">
-                  <h5 className="text-[13px] font-bold text-white leading-snug">{item.name}</h5>
+                  <h5 className="text-xs font-bold text-white leading-snug">{item.name}</h5>
                   {item.selectedOption && (
-                    <span className="text-[11px] text-secondary font-medium block">
+                    <span className="text-[10px] text-emerald-400 font-medium block">
                       + {item.selectedOption}
                     </span>
                   )}
                 </div>
-                <span className="font-gaming text-[14px] font-bold text-primary whitespace-nowrap">
+                <span className="font-mono text-xs font-bold text-cyan-400 whitespace-nowrap">
                   {(item.price * item.qty).toLocaleString('vi-VN')}đ
                 </span>
               </div>
 
-              <div className="flex items-center justify-between pt-1 border-t border-[#26354f]/40">
-                <span className="text-[10px] text-slate-400 truncate max-w-[150px]">
+              <div className="flex items-center justify-between pt-1 border-t border-slate-800/60">
+                <span className="text-[10px] text-slate-500 truncate max-w-[150px]">
                   {item.note || 'Món chuẩn vị cyber'}
                 </span>
-                <div className="flex items-center gap-1.5 bg-[#121c2e] px-1 py-0.5 rounded border border-[#26354f]">
+                <div className="flex items-center gap-1.5 bg-slate-800 px-1 py-0.5 rounded border border-slate-700">
                   <button
                     onClick={() => onUpdateQty(item.id, -1)}
                     className="text-slate-400 hover:text-white px-1 leading-none font-bold"
@@ -123,7 +123,7 @@ export default function CartSidebar({
                   >
                     -
                   </button>
-                  <span className="font-gaming text-[12px] font-bold text-white px-1">
+                  <span className="font-mono text-xs font-bold text-white px-1">
                     {item.qty}
                   </span>
                   <button
@@ -141,67 +141,64 @@ export default function CartSidebar({
       )}
 
       {/* Note to Staff / Kitchen */}
-      <div className="flex flex-col gap-1">
-        <label className="text-[11px] font-semibold text-slate-400 flex items-center justify-between">
-          <span>Lời nhắn bếp / nhân viên:</span>
-          <span className="text-[10px] text-slate-500">Tùy chọn</span>
-        </label>
+      <div>
+        <label className="text-slate-400 text-xs block mb-1 font-semibold">Lời nhắn bếp / nhân viên:</label>
         <input
           value={note}
           onChange={(e) => setNote(e.target.value)}
           placeholder="VD: Làm cay nhiều, lấy thêm muỗng nĩa..."
-          className="w-full bg-[#080e1a] border border-[#26354f] rounded px-2.5 py-1.5 text-[12px] text-white placeholder:text-slate-600 focus:outline-none focus:border-primary transition-colors font-body-md"
+          className="bg-slate-800 border border-slate-700 text-white rounded-lg px-4 py-2 focus:border-cyan-400 focus:outline-none w-full text-xs"
           type="text"
         />
       </div>
 
-      {/* Payment Method Radio Selector */}
-      <div className="flex flex-col gap-1.5">
-        <span className="text-[11px] font-bold text-slate-400 uppercase tracking-wider">Thanh toán:</span>
+      {/* Payment Method Selector */}
+      <div className="space-y-1.5">
+        <span className="text-slate-400 text-xs font-bold block uppercase tracking-wider">Hình thức thanh toán:</span>
         <label
           onClick={() => setPaymentMethod('ACCOUNT_BALANCE')}
-          className={`flex items-center justify-between p-2 rounded cursor-pointer transition-colors border ${
+          className={`flex items-center justify-between p-2.5 rounded-lg cursor-pointer transition-colors border ${
             paymentMethod === 'ACCOUNT_BALANCE'
-              ? 'bg-[#0e1828] border-secondary/60 shadow-[0_0_10px_rgba(0,255,136,0.15)]'
-              : 'bg-[#080e1a] border-[#26354f]/60 hover:bg-[#0f192b]'
+              ? 'bg-slate-800 border-cyan-400 shadow-[0_0_10px_rgba(0,240,255,0.15)]'
+              : 'bg-slate-950/60 border-slate-800 hover:bg-slate-800/40'
           }`}
         >
           <div className="flex items-center gap-2">
             <input
               checked={paymentMethod === 'ACCOUNT_BALANCE'}
               onChange={() => setPaymentMethod('ACCOUNT_BALANCE')}
-              className="accent-secondary w-3.5 h-3.5"
+              className="accent-cyan-400 w-3.5 h-3.5"
               name="payment_mode"
               type="radio"
             />
             <div className="flex flex-col leading-tight">
-              <span className="text-[12px] font-bold text-white">Trừ tài khoản máy trạm</span>
-              <span className="text-[10px] text-secondary font-gaming">
+              <span className="text-xs font-bold text-white">Trừ ví tài khoản máy</span>
+              <span className="text-[10px] text-emerald-400 font-mono">
                 Khả dụng: {accountBalance.toLocaleString('vi-VN')}đ
               </span>
             </div>
           </div>
-          <span className="material-symbols-outlined text-secondary text-[18px]">account_balance_wallet</span>
+          <span className="material-symbols-outlined text-emerald-400 text-[18px]">account_balance_wallet</span>
         </label>
 
         <label
           onClick={() => setPaymentMethod('CASH_OR_QR')}
-          className={`flex items-center justify-between p-2 rounded cursor-pointer transition-colors border ${
+          className={`flex items-center justify-between p-2.5 rounded-lg cursor-pointer transition-colors border ${
             paymentMethod === 'CASH_OR_QR'
-              ? 'bg-[#0e1828] border-primary/60 shadow-[0_0_10px_rgba(0,240,255,0.15)]'
-              : 'bg-[#080e1a] border-[#26354f]/60 hover:bg-[#0f192b]'
+              ? 'bg-slate-800 border-cyan-400 shadow-[0_0_10px_rgba(0,240,255,0.15)]'
+              : 'bg-slate-950/60 border-slate-800 hover:bg-slate-800/40'
           }`}
         >
           <div className="flex items-center gap-2">
             <input
               checked={paymentMethod === 'CASH_OR_QR'}
               onChange={() => setPaymentMethod('CASH_OR_QR')}
-              className="accent-primary w-3.5 h-3.5"
+              className="accent-cyan-400 w-3.5 h-3.5"
               name="payment_mode"
               type="radio"
             />
             <div className="flex flex-col leading-tight">
-              <span className="text-[12px] font-semibold text-slate-300">Tiền mặt tại bàn / Quét QR</span>
+              <span className="text-xs font-semibold text-slate-300">Tiền mặt tại bàn / Quét QR</span>
               <span className="text-[10px] text-slate-500">Thu khi nhân viên bưng món</span>
             </div>
           </div>
@@ -210,22 +207,22 @@ export default function CartSidebar({
       </div>
 
       {/* Price Breakdown */}
-      <div className="bg-[#080e1a] border border-[#26354f]/60 p-2.5 rounded flex flex-col gap-1 text-[12px]">
+      <div className="bg-slate-950/90 border border-slate-800 p-3 rounded-lg flex flex-col gap-1.5 text-xs">
         <div className="flex items-center justify-between text-slate-400">
           <span>Tiền món ({totalItemsCount} món):</span>
-          <span className="text-white font-gaming">{subTotal.toLocaleString('vi-VN')}đ</span>
+          <span className="text-white font-mono">{subTotal.toLocaleString('vi-VN')}đ</span>
         </div>
         <div className="flex items-center justify-between text-slate-400">
           <span>Phục vụ tận máy:</span>
-          <span className="text-secondary font-bold text-[11px] font-gaming">MIỄN PHÍ</span>
+          <span className="text-emerald-400 font-bold font-mono">MIỄN PHÍ</span>
         </div>
         <div className="flex items-center justify-between text-slate-400">
           <span>Ưu đãi VIP (-5%):</span>
-          <span className="text-secondary font-gaming">-{vipDiscount.toLocaleString('vi-VN')}đ</span>
+          <span className="text-emerald-400 font-mono">-{vipDiscount.toLocaleString('vi-VN')}đ</span>
         </div>
-        <div className="pt-1.5 mt-0.5 border-t border-[#26354f]/60 flex items-center justify-between">
-          <span className="font-bold text-[13px] text-white uppercase">Tổng thanh toán:</span>
-          <span className="font-gaming text-[20px] font-black text-primary">
+        <div className="pt-2 mt-1 border-t border-slate-800 flex items-center justify-between">
+          <span className="text-white font-black text-xs uppercase">Tổng thanh toán:</span>
+          <span className="font-mono text-xl font-black text-cyan-400">
             {total.toLocaleString('vi-VN')}đ
           </span>
         </div>
@@ -235,14 +232,14 @@ export default function CartSidebar({
       <button
         onClick={handleOrderSubmit}
         disabled={cart.length === 0 || isSubmitting}
-        className={`w-full py-3 px-4 rounded flex items-center justify-center gap-2 font-gaming font-black text-[14px] uppercase tracking-wider transition-all shadow-[0_0_20px_rgba(0,240,255,0.45)] hover:shadow-[0_0_28px_rgba(0,240,255,0.65)] active:scale-[0.98] ${
+        className={`w-full py-3.5 px-4 rounded-xl flex items-center justify-center gap-2 font-mono font-black text-sm uppercase tracking-wide transition-all ${
           cart.length === 0
             ? 'bg-slate-800 text-slate-500 cursor-not-allowed shadow-none'
-            : 'bg-primary hover:bg-[#38f8ff] text-black'
+            : 'bg-gradient-to-r from-cyan-500 to-purple-600 hover:from-cyan-400 hover:to-purple-500 text-white shadow-[0_0_20px_rgba(0,240,255,0.4)] active:scale-[0.98]'
         }`}
         type="button"
       >
-        <span className="material-symbols-outlined text-[20px] font-black">
+        <span className="material-symbols-outlined text-[18px]">
           {isSubmitting ? 'sync' : 'bolt'}
         </span>
         <span>{isSubmitting ? 'ĐANG GỬI BẾP...' : '⚡ ĐẶT MÓN - GIAO TẬN BÀN'}</span>

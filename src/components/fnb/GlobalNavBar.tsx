@@ -7,109 +7,111 @@ import { usePathname } from 'next/navigation';
 export default function GlobalNavBar() {
   const pathname = usePathname();
 
-  const navItems = [
-    {
-      href: '/menu',
-      label: 'Menu Gọi Món',
-      sublabel: 'Client Quán Net',
-      icon: 'restaurant_menu',
-      badge: 'SCREEN_2',
-      color: 'cyan',
-    },
-    {
-      href: '/kds',
-      label: 'Màn Hình Bếp KDS',
-      sublabel: 'Điều Hành Bếp & Bar',
-      icon: 'soup_kitchen',
-      badge: 'SCREEN_4',
-      color: 'amber',
-    },
-    {
-      href: '/dashboard',
-      label: 'Dashboard F&B',
-      sublabel: 'Doanh Thu & Hỗ Trợ',
-      icon: 'monitoring',
-      badge: 'REPORT',
-      color: 'emerald',
-    },
-    {
-      href: '/booking',
-      label: 'Sơ Đồ Máy Trạm',
-      sublabel: 'Chọn Máy VIP-08',
-      icon: 'grid_view',
-      badge: 'MAP',
-      color: 'purple',
-    },
+  const navLinks = [
+    { href: '/', label: 'Trang Chủ', icon: 'home' },
+    { href: '/booking', label: 'Sơ Đồ Máy', icon: 'desktop_windows', member: 'TV 2' },
+    { href: '/menu', label: 'Menu Đồ Ăn', icon: 'restaurant_menu', member: 'TV 3 (Bạn)' },
+    { href: '/kds', label: 'Màn Hình Bếp', icon: 'soup_kitchen', member: 'TV 3 (Bạn)' },
+    { href: '/dashboard', label: 'Thống Kê Doanh Thu', icon: 'monitoring', member: 'TV 4' },
+    { href: '/auth', label: 'Nạp Tiền Ví', icon: 'account_balance_wallet', member: 'TV 1 (Thái)' },
   ];
 
   return (
-    <nav className="bg-[#050912] border-b border-cyan-500/20 px-3 py-1.5 flex items-center justify-between z-50 sticky top-0 backdrop-blur-md">
-      {/* Brand & Project Info */}
-      <div className="flex items-center gap-2">
-        <Link href="/" className="flex items-center gap-2 hover:opacity-85 transition-opacity">
-          <div className="w-7 h-7 rounded bg-gradient-to-tr from-cyan-500 to-emerald-400 p-0.5 flex items-center justify-center shadow-[0_0_10px_rgba(0,240,255,0.3)]">
-            <div className="w-full h-full bg-[#070e1d] rounded flex items-center justify-center">
-              <span className="material-symbols-outlined text-cyan-400 text-[18px]">sports_esports</span>
-            </div>
-          </div>
-          <span className="font-gaming font-black text-xs tracking-wider text-cyan-400 hidden sm:inline">
-            CYBER GAME
+    <header className="sticky top-0 z-50 flex flex-col shadow-2xl">
+      {/* 24/7 Telemetry & Cyber Info Bar */}
+      <div className="bg-[#050912] border-b border-slate-800 px-4 py-1 flex items-center justify-between text-[11px] font-mono text-slate-400">
+        <div className="flex items-center gap-3">
+          <span className="flex items-center gap-1.5 text-emerald-400 font-bold">
+            <span className="w-2 h-2 rounded-full bg-emerald-400 inline-block animate-ping"></span>
+            CYBER ZONE SERVER: ONLINE
           </span>
-        </Link>
-        <span className="text-slate-600 hidden md:inline">|</span>
-        <span className="text-[10px] text-slate-400 font-mono hidden md:inline bg-[#0c1424] px-2 py-0.5 rounded border border-slate-800">
-          Nhánh: <span className="text-emerald-400 font-bold">feature/fnb</span> (Minh Nhật)
-        </span>
-      </div>
+          <span className="text-slate-700 hidden sm:inline">|</span>
+          <span className="text-slate-400 hidden sm:inline">Tầng 1 &amp; Tầng 2: 82/100 Máy Đang Hoạt Động</span>
+        </div>
 
-      {/* Main Switcher Buttons */}
-      <div className="flex items-center gap-1 sm:gap-2">
-        <span className="text-[10px] text-slate-400 font-bold uppercase tracking-wider hidden lg:inline mr-1">
-          Chuyển màn hình:
-        </span>
-
-        {navItems.map((item) => {
-          const isActive = pathname === item.href;
-
-          return (
-            <Link
-              key={item.href}
-              href={item.href}
-              className={`flex items-center gap-1.5 px-2.5 py-1 rounded-lg text-xs font-semibold transition-all duration-200 border ${
-                isActive
-                  ? item.color === 'cyan'
-                    ? 'bg-cyan-500/20 border-cyan-400 text-cyan-300 shadow-[0_0_12px_rgba(0,240,255,0.3)] font-bold'
-                    : item.color === 'amber'
-                    ? 'bg-amber-500/20 border-amber-400 text-amber-300 shadow-[0_0_12px_rgba(255,183,3,0.3)] font-bold'
-                    : item.color === 'emerald'
-                    ? 'bg-emerald-500/20 border-emerald-400 text-emerald-300 shadow-[0_0_12px_rgba(16,185,129,0.3)] font-bold'
-                    : 'bg-purple-500/20 border-purple-400 text-purple-300 shadow-[0_0_12px_rgba(168,85,247,0.3)] font-bold'
-                  : 'bg-[#0d1424] hover:bg-[#152038] text-slate-300 border-slate-800 hover:border-slate-700'
-              }`}
-            >
-              <span className={`material-symbols-outlined text-[16px] ${isActive ? 'text-inherit' : 'text-slate-400'}`}>
-                {item.icon}
-              </span>
-              <span className="hidden sm:inline">{item.label}</span>
-              <span className="text-[9px] font-mono px-1 py-0.2 rounded bg-black/40 text-slate-300 border border-slate-700/60 hidden md:inline">
-                {item.badge}
-              </span>
-              {isActive && (
-                <span className="w-1.5 h-1.5 rounded-full bg-cyan-400 animate-ping inline-block"></span>
-              )}
-            </Link>
-          );
-        })}
-      </div>
-
-      {/* Database & Sync Status Indicator */}
-      <div className="flex items-center gap-2">
-        <div className="flex items-center gap-1.5 bg-[#0c1424] border border-emerald-500/30 px-2.5 py-1 rounded-lg text-[11px] font-mono">
-          <span className="w-2 h-2 rounded-full bg-emerald-400 inline-block animate-pulse"></span>
-          <span className="text-emerald-400 font-bold hidden xl:inline">SUPABASE CONNECTED</span>
-          <span className="text-slate-400 text-[10px] hidden sm:inline">(pgbouncer:6543)</span>
+        <div className="flex items-center gap-4">
+          <span className="text-slate-300 flex items-center gap-1">
+            <span className="material-symbols-outlined text-[14px] text-cyan-400">headset_mic</span>
+            Hỗ trợ kỹ thuật 24/7: <strong className="text-cyan-400 font-bold">1900.8888 (Ext 101)</strong>
+          </span>
+          <span className="bg-purple-950/60 border border-purple-500/40 text-purple-300 text-[10px] px-2 py-0.2 rounded font-bold hidden md:inline">
+            HỘI VIÊN VIP
+          </span>
         </div>
       </div>
-    </nav>
+
+      {/* Main Navbar Cyber Zone */}
+      <nav className="bg-slate-900/95 backdrop-blur-md border-b border-slate-800 px-4 py-2.5 flex items-center justify-between gap-4">
+        {/* Brand Logo Cyber Zone */}
+        <Link href="/" className="flex items-center gap-2.5 group flex-shrink-0">
+          <div className="w-9 h-9 rounded-xl bg-gradient-to-r from-cyan-500 to-purple-600 p-0.5 flex items-center justify-center shadow-[0_0_15px_rgba(0,240,255,0.4)] group-hover:scale-105 transition-transform">
+            <div className="w-full h-full bg-slate-950 rounded-[10px] flex items-center justify-center">
+              <span className="material-symbols-outlined text-cyan-400 text-[20px]">sports_esports</span>
+            </div>
+          </div>
+          <div className="flex flex-col leading-none">
+            <span className="font-gaming font-black text-lg tracking-wider text-white group-hover:text-cyan-400 transition-colors">
+              CYBER ZONE
+            </span>
+            <span className="text-[9px] font-mono text-cyan-400 uppercase tracking-widest font-bold">
+              ESPORTS GAMING LOUNGE
+            </span>
+          </div>
+        </Link>
+
+        {/* Navigation Items (Connecting All Branches) */}
+        <div className="flex items-center gap-1 sm:gap-1.5 overflow-x-auto no-scrollbar py-0.5">
+          {navLinks.map((link) => {
+            const isActive = pathname === link.href;
+
+            return (
+              <Link
+                key={link.href}
+                href={link.href}
+                className={`flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-bold transition-all duration-200 flex-shrink-0 ${
+                  isActive
+                    ? 'bg-gradient-to-r from-cyan-500 to-purple-600 text-white shadow-[0_0_15px_rgba(0,240,255,0.4)]'
+                    : 'bg-slate-800/80 hover:bg-slate-800 text-slate-300 hover:text-white border border-slate-700/60 hover:border-cyan-500/40'
+                }`}
+              >
+                <span className="material-symbols-outlined text-[16px]">{link.icon}</span>
+                <span>{link.label}</span>
+                {link.member && (
+                  <span
+                    className={`text-[9px] font-mono px-1 py-0.2 rounded hidden xl:inline ${
+                      isActive ? 'bg-black/30 text-white' : 'bg-slate-900 text-slate-400'
+                    }`}
+                  >
+                    {link.member}
+                  </span>
+                )}
+              </Link>
+            );
+          })}
+        </div>
+
+        {/* Quick User Balance & Topup Action */}
+        <div className="flex items-center gap-2 flex-shrink-0">
+          <Link
+            href="/auth"
+            className="flex items-center gap-2 bg-slate-800 border border-slate-700 px-2.5 py-1.5 rounded-lg hover:border-cyan-400 transition-colors"
+          >
+            <span className="material-symbols-outlined text-emerald-400 text-[16px]">account_balance_wallet</span>
+            <div className="flex flex-col leading-none text-left">
+              <span className="text-[9px] text-slate-400 font-semibold uppercase">Ví Máy: VIP-08</span>
+              <span className="font-mono text-xs font-bold text-emerald-400">250.000đ</span>
+            </div>
+          </Link>
+
+          <Link
+            href="/auth"
+            className="bg-cyan-500 hover:bg-cyan-400 text-black font-bold text-xs px-3 py-2 rounded-lg transition-all shadow-[0_0_12px_rgba(0,240,255,0.3)] hidden sm:flex items-center gap-1"
+          >
+            <span className="material-symbols-outlined text-[15px]">add_circle</span>
+            <span>Nạp Thẻ</span>
+          </Link>
+        </div>
+      </nav>
+    </header>
   );
 }

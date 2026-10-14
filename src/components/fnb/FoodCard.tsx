@@ -28,10 +28,10 @@ export default function FoodCard({ item, onAddToCart }: FoodCardProps) {
   };
 
   return (
-    <div className="bg-[#0b1322] border border-[#26354f] hover:border-primary/60 rounded p-2.5 flex flex-col justify-between group transition-all duration-200 hover:shadow-[0_4px_16px_rgba(0,240,255,0.15)]">
+    <div className="bg-slate-900 border border-slate-800 hover:border-cyan-400 rounded-xl p-3 flex flex-col justify-between group transition-all duration-200 hover:shadow-[0_4px_20px_rgba(0,240,255,0.2)]">
       <div>
         {/* Item Image with Badges */}
-        <div className="relative h-36 w-full rounded overflow-hidden bg-black mb-2">
+        <div className="relative h-36 w-full rounded-lg overflow-hidden bg-black mb-2.5">
           <img
             src={item.image}
             alt={item.name}
@@ -39,38 +39,38 @@ export default function FoodCard({ item, onAddToCart }: FoodCardProps) {
             loading="lazy"
           />
           {item.isHot && (
-            <span className="absolute top-1.5 left-1.5 bg-cyber-red text-white text-[10px] font-black px-1.5 py-0.5 rounded font-gaming tracking-wider uppercase">
+            <span className="absolute top-1.5 left-1.5 bg-rose-600 text-white text-[10px] font-black px-2 py-0.5 rounded font-mono tracking-wider uppercase shadow-md">
               HOT
             </span>
           )}
           {item.isBestSeller && !item.isHot && (
-            <span className="absolute top-1.5 left-1.5 bg-[#059669] text-white text-[10px] font-black px-1.5 py-0.5 rounded font-gaming tracking-wider uppercase">
+            <span className="absolute top-1.5 left-1.5 bg-emerald-600 text-white text-[10px] font-black px-2 py-0.5 rounded font-mono tracking-wider uppercase shadow-md">
               BESTSELLER
             </span>
           )}
           {item.badge && !item.isHot && !item.isBestSeller && (
-            <span className="absolute top-1.5 left-1.5 bg-[#17253b] text-primary border border-primary/40 text-[10px] font-bold px-1.5 py-0.5 rounded font-gaming tracking-wider uppercase">
+            <span className="absolute top-1.5 left-1.5 bg-slate-950 text-cyan-400 border border-cyan-400/50 text-[10px] font-bold px-2 py-0.5 rounded font-mono tracking-wider uppercase">
               {item.badge}
             </span>
           )}
-          <span className="absolute bottom-1.5 right-1.5 bg-black/80 text-slate-300 text-[10px] px-1.5 py-0.5 rounded font-medium flex items-center gap-0.5 backdrop-blur-sm">
-            <span className="material-symbols-outlined text-[12px] text-primary">timer</span> ~{item.prepTime} phút
+          <span className="absolute bottom-1.5 right-1.5 bg-black/80 text-slate-300 text-[10px] px-2 py-0.5 rounded font-medium flex items-center gap-0.5 backdrop-blur-sm font-mono">
+            <span className="material-symbols-outlined text-[12px] text-cyan-400">timer</span> ~{item.prepTime} phút
           </span>
         </div>
 
         {/* Title & Price Bar */}
-        <div className="flex items-start justify-between gap-1">
-          <h4 className="font-headline-sm text-[15px] font-bold text-white group-hover:text-primary transition-colors leading-tight">
+        <div className="flex items-start justify-between gap-1 mb-1">
+          <h4 className="text-white font-black text-sm group-hover:text-cyan-400 transition-colors leading-tight">
             {item.name}
           </h4>
-          <span className="font-gaming text-[17px] font-extrabold text-primary whitespace-nowrap">
+          <span className="font-mono text-base font-black text-cyan-400 whitespace-nowrap">
             {item.price.toLocaleString('vi-VN')}đ
           </span>
         </div>
 
-        {/* Spicy Option Chips (if any) */}
+        {/* Spicy Option Chips */}
         {item.spicyLevels && item.spicyLevels.length > 0 && (
-          <div className="flex items-center gap-1 mt-2 text-[11px]">
+          <div className="flex items-center gap-1.5 mt-2 text-[11px]">
             <span className="text-slate-400 font-semibold">Cấp cay:</span>
             <div className="flex items-center gap-1">
               {item.spicyLevels.map((lvl) => {
@@ -82,8 +82,8 @@ export default function FoodCard({ item, onAddToCart }: FoodCardProps) {
                     onClick={() => setSelectedSpicy(lvl)}
                     className={`w-5 h-5 rounded text-[10px] font-bold transition-all ${
                       isSelected
-                        ? 'bg-cyber-red text-white shadow-sm font-black scale-105'
-                        : 'bg-[#131f33] text-slate-300 hover:text-white'
+                        ? 'bg-rose-600 text-white shadow-sm font-black scale-105'
+                        : 'bg-slate-800 text-slate-400 hover:text-white hover:bg-slate-700'
                     }`}
                   >
                     {lvl}
@@ -94,13 +94,13 @@ export default function FoodCard({ item, onAddToCart }: FoodCardProps) {
           </div>
         )}
 
-        {/* Options / Addon chips (if any) */}
+        {/* Options / Addon chips */}
         {item.options && item.options.length > 0 && (
           <div className="flex flex-wrap items-center gap-1 mt-2 text-[11px] text-slate-400">
             {item.options.map((opt, i) => (
               <span
                 key={i}
-                className="bg-[#121c2c] px-1.5 py-0.5 rounded text-secondary border border-secondary/20"
+                className="bg-slate-800 border border-slate-700/80 px-1.5 py-0.5 rounded text-emerald-400 font-medium"
               >
                 {opt}
               </span>
@@ -108,19 +108,21 @@ export default function FoodCard({ item, onAddToCart }: FoodCardProps) {
           </div>
         )}
 
-        {/* Note detail without options */}
+        {/* Note detail */}
         {item.noteDetail && (!item.options || item.options.length === 0) && (!item.spicyLevels || item.spicyLevels.length === 0) && (
           <div className="flex items-center gap-1 mt-2 text-[11px] text-slate-400">
-            <span className="bg-[#121c2c] px-1.5 py-0.5 rounded text-slate-300">{item.noteDetail}</span>
+            <span className="bg-slate-800 border border-slate-700 px-1.5 py-0.5 rounded text-slate-300">
+              {item.noteDetail}
+            </span>
           </div>
         )}
       </div>
 
       {/* Quick Add Button */}
-      <div className="mt-2.5 pt-2 border-t border-[#26354f]/60 flex items-center gap-1.5">
+      <div className="mt-3 pt-2.5 border-t border-slate-800 flex items-center gap-1.5">
         <button
           onClick={handleQuickAdd}
-          className="flex-1 py-1.5 bg-primary/10 hover:bg-primary text-primary hover:text-black border border-primary/40 font-gaming font-bold text-[12px] uppercase rounded transition-all flex items-center justify-center gap-1 active:scale-95 shadow-sm"
+          className="flex-1 py-2 bg-cyan-500 hover:bg-cyan-400 text-black font-bold text-xs uppercase rounded-lg transition-all flex items-center justify-center gap-1 active:scale-95 shadow-[0_0_12px_rgba(0,240,255,0.25)] font-mono"
           type="button"
         >
           <span className="material-symbols-outlined text-[16px]">add</span> THÊM NHANH

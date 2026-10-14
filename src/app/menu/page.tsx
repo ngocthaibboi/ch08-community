@@ -354,53 +354,53 @@ export default function CyberMenuClient() {
         {/* Left & Center: Search, Categories & Food Matrix */}
         <div className="col-span-12 lg:col-span-8 xl:col-span-9 flex flex-col gap-3">
           {/* Quick Search & Filter Bar */}
-          <div className="flex items-center gap-2 bg-[#0c1424] border border-[#26354f] p-2 rounded">
+          <div className="flex items-center gap-2 bg-slate-900 border border-slate-800 p-2.5 rounded-xl">
             <div className="relative flex-1">
-              <span className="material-symbols-outlined absolute left-2.5 top-1/2 -translate-y-1/2 text-primary text-[18px]">
+              <span className="material-symbols-outlined absolute left-3 top-1/2 -translate-y-1/2 text-cyan-400 text-[18px]">
                 search
               </span>
               <input
                 value={searchQuery}
                 onChange={(e) => setSearchQuery(e.target.value)}
-                className="w-full bg-[#070b14] border border-[#26354f]/60 rounded pl-9 pr-16 py-1.5 text-slate-100 placeholder:text-slate-500 text-[13px] focus:outline-none focus:border-primary transition-colors font-body-md"
+                className="w-full bg-slate-800 border border-slate-700 rounded-lg pl-10 pr-16 py-2 text-white placeholder:text-slate-500 text-sm focus:outline-none focus:border-cyan-400 transition-colors"
                 placeholder="Tìm tên món ăn, thức uống, combo cày game..."
                 type="text"
               />
-              <span className="absolute right-2 top-1/2 -translate-y-1/2 text-[10px] font-gaming bg-[#131d2e] border border-[#26354f] text-slate-400 px-1.5 py-0.5 rounded">
+              <span className="absolute right-2.5 top-1/2 -translate-y-1/2 text-[10px] font-mono bg-slate-900 border border-slate-700 text-slate-400 px-1.5 py-0.5 rounded">
                 F3 /
               </span>
             </div>
 
             {/* Quick Filter Badges */}
-            <div className="hidden sm:flex items-center gap-1.5 flex-shrink-0">
+            <div className="hidden sm:flex items-center gap-2 flex-shrink-0">
               <button
                 type="button"
                 onClick={() => setFilterHotOnly(!filterHotOnly)}
-                className={`px-2.5 py-1.5 rounded text-[12px] font-bold flex items-center gap-1 transition-colors border ${
+                className={`px-3 py-2 rounded-lg text-xs font-bold flex items-center gap-1.5 transition-colors border ${
                   filterHotOnly
-                    ? 'bg-cyber-yellow text-black border-cyber-yellow'
-                    : 'bg-[#121c2e] hover:bg-[#1a273f] text-cyber-yellow border-cyber-yellow/40'
+                    ? 'bg-amber-400 text-black border-amber-400 shadow-[0_0_10px_rgba(251,191,36,0.3)]'
+                    : 'bg-slate-800 hover:bg-slate-700 text-amber-400 border-slate-700'
                 }`}
               >
-                <span className="material-symbols-outlined text-[15px]">local_fire_department</span> Món HOT
+                <span className="material-symbols-outlined text-[16px]">local_fire_department</span> Món HOT
               </button>
 
               <button
                 type="button"
                 onClick={() => setFilterAvailableOnly(!filterAvailableOnly)}
-                className={`px-2.5 py-1.5 rounded text-[12px] font-bold flex items-center gap-1 transition-colors border ${
+                className={`px-3 py-2 rounded-lg text-xs font-bold flex items-center gap-1.5 transition-colors border ${
                   filterAvailableOnly
-                    ? 'bg-secondary text-black border-secondary'
-                    : 'bg-[#121c2e] hover:bg-[#1a273f] text-secondary border-secondary/40'
+                    ? 'bg-emerald-400 text-black border-emerald-400 shadow-[0_0_10px_rgba(52,211,153,0.3)]'
+                    : 'bg-slate-800 hover:bg-slate-700 text-emerald-400 border-slate-700'
                 }`}
               >
-                <span className="material-symbols-outlined text-[15px]">check_circle</span> Sẵn Hàng
+                <span className="material-symbols-outlined text-[16px]">check_circle</span> Sẵn Hàng
               </button>
             </div>
           </div>
 
           {/* Gaming Mechanical Category Tabs */}
-          <div className="flex items-center gap-1.5 overflow-x-auto pb-1 no-scrollbar">
+          <div className="flex items-center gap-2 overflow-x-auto pb-1 no-scrollbar">
             {categories.map((cat) => {
               const isActive = selectedCategory === cat.id;
               return (
@@ -408,17 +408,17 @@ export default function CyberMenuClient() {
                   key={cat.id}
                   onClick={() => setSelectedCategory(cat.id)}
                   type="button"
-                  className={`flex items-center gap-1.5 px-3 py-2 font-headline-sm font-bold text-[13px] rounded tracking-wider flex-shrink-0 transition-all ${
+                  className={`flex items-center gap-1.5 px-3.5 py-2 font-bold text-xs rounded-lg tracking-wider flex-shrink-0 transition-all ${
                     isActive
-                      ? 'bg-primary text-black shadow-[0_0_12px_rgba(0,240,255,0.4)]'
-                      : 'bg-[#0c1424] hover:bg-[#142036] hover:text-primary text-slate-300 border border-[#26354f]/60'
+                      ? 'bg-gradient-to-r from-cyan-500 to-purple-600 text-white shadow-[0_0_15px_rgba(0,240,255,0.4)]'
+                      : 'bg-slate-900 hover:bg-slate-800 text-slate-300 border border-slate-800 hover:border-slate-700'
                   }`}
                 >
                   <span className="material-symbols-outlined text-[18px]">{cat.icon}</span>
                   <span>{cat.name}</span>
                   <span
-                    className={`text-[10px] px-1.5 py-0.2 rounded font-gaming ${
-                      isActive ? 'bg-black/30 text-black font-black' : 'bg-[#152238] text-slate-400'
+                    className={`text-[10px] px-1.5 py-0.2 rounded font-mono ${
+                      isActive ? 'bg-black/30 text-white font-black' : 'bg-slate-800 text-slate-400'
                     }`}
                   >
                     {cat.count}
@@ -429,35 +429,35 @@ export default function CyberMenuClient() {
           </div>
 
           {/* Hero Promo Banner: Combo Chiến Game Xuyên Đêm */}
-          <div className="bg-gradient-to-r from-[#121c2e] via-[#0d1728] to-[#1a1226] border border-primary/30 rounded p-3 relative overflow-hidden flex flex-col md:flex-row items-center justify-between gap-3 shadow-[0_4px_16px_rgba(0,0,0,0.6)]">
-            <div className="flex items-center gap-3 w-full md:w-auto">
-              <div className="relative w-24 h-20 rounded overflow-hidden flex-shrink-0 border border-primary/40 bg-black">
+          <div className="bg-slate-900 border border-slate-800 rounded-xl p-5 relative overflow-hidden flex flex-col md:flex-row items-center justify-between gap-4 shadow-xl">
+            <div className="flex items-center gap-4 w-full md:w-auto">
+              <div className="relative w-28 h-20 rounded-lg overflow-hidden flex-shrink-0 border border-slate-700 bg-black">
                 <img
                   className="w-full h-full object-cover"
                   alt="Combo bữa ăn đêm game thủ"
                   src="https://lh3.googleusercontent.com/aida-public/AB6AXuBymHLb3l1JmWlngJPpyVNfJn_0RCAbnaJG2NAs6alMIt8W-U6SFskoTKEjkvd0Kt7vvjBCCvoWMq-9GbL09b6AtcIxPDPxwB7KFmS-8eNKEzsGrF2k2wBnSiH6P_TwccorCzRjVwDrD24mrKtmtIwLqea1VJLEjpo4i_G2Xh5Wp3aisud9TovqNKYIws2Eae0UKcMazvvkyEXFpBb49Ifw47OL3AkVvC8BrmHmkz9pNJMX_WznqEn6"
                 />
-                <span className="absolute top-0 left-0 bg-cyber-red text-white text-[9px] font-bold px-1 uppercase tracking-wider font-gaming">
+                <span className="absolute top-0 left-0 bg-rose-600 text-white text-[10px] font-black px-1.5 py-0.2 uppercase tracking-wider font-mono">
                   -20%
                 </span>
               </div>
               <div>
-                <div className="flex items-center gap-1.5">
-                  <span className="text-[10px] font-bold bg-primary/20 text-primary px-1.5 py-0.5 rounded uppercase font-gaming">
+                <div className="flex items-center gap-2">
+                  <span className="text-[10px] font-bold bg-cyan-500/20 text-cyan-400 border border-cyan-500/40 px-2 py-0.5 rounded uppercase font-mono">
                     COMBO CÀY ĐÊM
                   </span>
-                  <span className="text-[11px] text-slate-400">1x Cơm Đùi Gà + 1x Sting Dâu + 1x Snack</span>
+                  <span className="text-xs text-slate-400">1x Cơm Đùi Gà + 1x Sting Dâu + 1x Snack</span>
                 </div>
-                <h3 className="font-headline-sm text-[16px] font-bold text-white uppercase tracking-wide mt-0.5">
+                <h3 className="text-white font-black text-lg uppercase tracking-wide mt-1">
                   COMBO THỨC ĐÊM CHIẾN GAME
                 </h3>
-                <div className="flex items-center gap-2 mt-0.5">
-                  <span className="font-gaming text-[20px] font-black text-secondary leading-none">
+                <div className="flex items-center gap-2.5 mt-1">
+                  <span className="font-mono text-2xl font-black text-emerald-400 leading-none">
                     69.000đ
                   </span>
-                  <span className="text-[12px] line-through text-slate-500 font-gaming">85.000đ</span>
-                  <span className="text-[11px] text-primary flex items-center gap-0.5">
-                    <span className="material-symbols-outlined text-[13px]">bolt</span> Tiết kiệm 16k
+                  <span className="text-xs line-through text-slate-500 font-mono">85.000đ</span>
+                  <span className="text-xs text-cyan-400 font-semibold flex items-center gap-0.5">
+                    <span className="material-symbols-outlined text-[14px]">bolt</span> Tiết kiệm 16k
                   </span>
                 </div>
               </div>
@@ -465,7 +465,7 @@ export default function CyberMenuClient() {
 
             <button
               onClick={handleAddNightCombo}
-              className="w-full md:w-auto px-5 py-2.5 bg-secondary hover:bg-[#34d399] text-black font-gaming font-extrabold text-[13px] uppercase rounded tracking-wider flex items-center justify-center gap-1.5 shadow-[0_0_15px_rgba(0,255,136,0.4)] active:scale-95 transition-all flex-shrink-0"
+              className="w-full md:w-auto px-6 py-3 bg-gradient-to-r from-cyan-500 to-purple-600 hover:from-cyan-400 hover:to-purple-500 text-white font-bold text-xs uppercase rounded-xl tracking-wider flex items-center justify-center gap-2 shadow-[0_0_15px_rgba(0,240,255,0.4)] active:scale-95 transition-all flex-shrink-0 font-mono"
               type="button"
             >
               <span className="material-symbols-outlined text-[18px]">add_shopping_cart</span>
