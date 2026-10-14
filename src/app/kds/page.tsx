@@ -3,68 +3,38 @@
 import React, { useState, useEffect } from 'react';
 import KdsOrderCard from '@/components/fnb/KdsOrderCard';
 import { Order, OrderStatus, KdsFilterStation } from '@/types/fnb';
+import {
+  getStoredOrders,
+  updateOrderStatus,
+  addOrder,
+  resetOrdersToDefault,
+  STORAGE_EVENT_NAME,
+} from '@/lib/orderStore';
 
 export default function KitchenDisplaySystem() {
-  const [currentTime, setCurrentTime] = useState('04:04:35');
+  const [currentTime, setCurrentTime] = useState('00:00:00');
   const [audioEnabled, setAudioEnabled] = useState(true);
   const [stationFilter, setStationFilter] = useState<KdsFilterStation>('ALL');
   const [runnerNotification, setRunnerNotification] = useState<string | null>(null);
+  const [orders, setOrders] = useState<Order[]>([]);
 
-  // Initial order data
-  const [orders, setOrders] = useState<Order[]>([
-    {
-      id: 'ord-1043',
-      orderNumber: 1043,
-      pcName: 'REG-24',
-      zoneName: 'TẦNG 1 • ZONE REGULAR',
-      status: 'PENDING',
-      paymentMethod: 'CASH_OR_QR',
-      totalAmount: 114000,
-      timeElapsed: '09:15',
-      note: 'LÀM CAY VỪA, TRỨNG LÒNG ĐÀO MỀM!',
-      station: 'HOT_KITCHEN',
-      items: ['2x Mì Trộn Indomie Double Trứng', '2x Sting Dâu Đá'],
-    },
-    {
-      id: 'ord-1042',
-      orderNumber: 1042,
-      pcName: 'VIP-08',
-      zoneName: 'PHÒNG RIÊNG VIP TẦNG 2',
-      status: 'COOKING',
-      paymentMethod: 'ACCOUNT_BALANCE',
-      totalAmount: 90000,
-      timeElapsed: '04:18',
-      note: 'THÊM 01 TRỨNG ỐP LA CHÍN KỸ 100%, KHÔNG ỚT CHUÔNG',
-      station: 'HOT_KITCHEN',
-      items: ['1x Cơm Bò Lúc Lắc', '1x Monster Energy Lạnh (Đã rót sẵn)'],
-    },
-    {
-      id: 'ord-1040',
-      orderNumber: 1040,
-      pcName: 'ARENA-03',
-      zoneName: 'SÂN KHẤU THI ĐẤU PRO',
-      status: 'READY',
-      paymentMethod: 'ACCOUNT_BALANCE',
-      totalAmount: 101000,
-      timeElapsed: 'READY',
-      note: 'Đã đặt khay số 04 tại bàn giao đồ ăn tầng 1',
-      station: 'BAR',
-      items: ['1x Combo Cày Đêm Esports', '1x Trà Đào Cam Sả 1L'],
-    },
-    {
-      id: 'ord-1044',
-      orderNumber: 1044,
-      pcName: 'VIP-12',
-      zoneName: 'PHÒNG STREAM TẦNG 2',
-      status: 'PENDING',
-      paymentMethod: 'ACCOUNT_BALANCE',
-      totalAmount: 75000,
-      timeElapsed: '02:05',
-      note: 'GIAO GẤP: ĐANG TRONG TRẬN TOURNAMENT FINAL',
-      station: 'HOT_KITCHEN',
-      items: ['1x Bánh Mì Chảo Đặc Biệt Cyber', '1x Monster Energy Trắng Lạnh'],
-    },
-  ]);
+  // Load and subscribe to synchronized orders
+  useEffect(() => {
+    // Initial load
+    setOrders(getStoredOrders());
+
+    const syncHandler = () => {
+      setOrders(getStoredOrders());
+    };
+
+    window.addEventListener(STORAGE_EVENT_NAME, syncHandler);
+    window.addEventListener('storage', syncHandler);
+
+    return () => {
+      window.removeEventListener(STORAGE_EVENT_NAME, syncHandler);
+      window.removeEventListener('storage', syncHandler);
+    };
+  }, []);
 
   // Live Digital Clock
   useEffect(() => {
@@ -78,43 +48,6 @@ export default function KitchenDisplaySystem() {
     updateTime();
     const interval = setInterval(updateTime, 1000);
     return () => clearInterval(interval);
-  }, []);
-
-  // Sync with LocalStorage Orders from Client Menu
-  useEffect(() => {
-    try {
-      const stored = localStorage.getItem('cyber_orders');
-      if (stored) {
-        const parsed = JSON.parse(stored);
-        if (Array.isArray(parsed) && parsed.length > 0) {
-          setOrders((prev) => {
-            const combined = [...parsed];
-            // Add initial mock orders if not already present
-            prev.forEach((p) => {
-              if (!combined.some((c) => c.id === p.id)) {
-                combined.push(p);
-              }
-            });
-            return combined;
-          });
-        }
-      }
-    } catch {
-      // Fallback
-    }
-
-    const handleNewOrderEvent = (e: Event) => {
-      const customEvent = e as CustomEvent<Order>;
-      if (customEvent.detail) {
-        playSoundEffect('beep');
-        setOrders((prev) => [customEvent.detail, ...prev]);
-      }
-    };
-
-    window.addEventListener('cyber_order_created', handleNewOrderEvent);
-    return () => {
-      window.removeEventListener('cyber_order_created', handleNewOrderEvent);
-    };
   }, []);
 
   // Web Audio Beep / Chime
@@ -142,30 +75,28 @@ export default function KitchenDisplaySystem() {
         osc.stop(ctx.currentTime + 0.4);
       }
     } catch {
-      // AudioContext may be restricted by browser until user gesture
+      // AudioContext fallback
     }
   };
 
   // Status Counts
   const pendingCount = orders.filter((o) => o.status === 'PENDING').length;
   const cookingCount = orders.filter((o) => o.status === 'COOKING').length;
-  const readyCount = orders.filter((o) => o.status === 'READY').length;
+  const readyCount = orders.filter((o) => o.status === 'READY' || o.status === 'DELIVERED').length;
 
-  // Update Status
+  // Update Status - Persists to orderStore and updates Dashboard revenue
   const handleUpdateStatus = (orderId: string, nextStatus: OrderStatus) => {
-    playSoundEffect(nextStatus === 'READY' ? 'success' : 'beep');
-    setOrders((prev) =>
-      prev.map((ord) => {
-        if (ord.id === orderId) {
-          return {
-            ...ord,
-            status: nextStatus,
-            timeElapsed: nextStatus === 'READY' ? 'READY' : ord.timeElapsed,
-          };
-        }
-        return ord;
-      })
-    );
+    playSoundEffect(nextStatus === 'READY' || nextStatus === 'DELIVERED' ? 'success' : 'beep');
+    const updated = updateOrderStatus(orderId, nextStatus);
+    setOrders(updated);
+
+    const target = updated.find((o) => o.id === orderId);
+    if (nextStatus === 'READY' && target) {
+      setRunnerNotification(
+        `✓ Đã hoàn thành đơn #${target.orderNumber} (${target.pcName}) - Doanh thu +${target.totalAmount.toLocaleString('vi-VN')}đ đã được ghi nhận vào Bảng Thống Kê!`
+      );
+      setTimeout(() => setRunnerNotification(null), 4500);
+    }
   };
 
   // Notify Runner
@@ -174,7 +105,7 @@ export default function KitchenDisplaySystem() {
     if (targetOrder) {
       playSoundEffect('success');
       setRunnerNotification(
-        `Đã phát chuông điều phối Runner tới trạm lấy khay đồ của máy ${targetOrder.pcName}!`
+        `🔔 Đã phát chuông điều phối Runner mang món đến máy ${targetOrder.pcName}!`
       );
       setTimeout(() => {
         setRunnerNotification(null);
@@ -182,7 +113,7 @@ export default function KitchenDisplaySystem() {
     }
   };
 
-  // Quick Simulation: Add mock new order
+  // Quick Simulation: Add mock new order from client machine
   const handleAddMockOrder = () => {
     playSoundEffect('beep');
     const newNum = Math.floor(1050 + Math.random() * 50);
@@ -195,11 +126,21 @@ export default function KitchenDisplaySystem() {
       paymentMethod: 'ACCOUNT_BALANCE',
       totalAmount: 85000,
       timeElapsed: '00:01',
-      note: 'Vui lòng giao sớm, khách đang đói',
+      note: 'Vui lòng giao sớm, khách đang chơi rank LOL',
       station: 'HOT_KITCHEN',
       items: ['1x Cơm Gà Xối Mỡ Da Giòn', '1x Sting Dâu Đá'],
+      createdAt: new Date().toISOString(),
     };
-    setOrders((prev) => [mockOrder, ...prev]);
+
+    const updated = addOrder(mockOrder);
+    setOrders(updated);
+  };
+
+  const handleResetData = () => {
+    if (confirm('Khôi phục danh sách đơn bếp về mặc định ban đầu?')) {
+      const reset = resetOrdersToDefault();
+      setOrders(reset);
+    }
   };
 
   // Filtered Orders
@@ -220,7 +161,7 @@ export default function KitchenDisplaySystem() {
           </div>
 
           {/* Metric Status Badges */}
-          <div className="flex gap-2">
+          <div className="flex flex-wrap gap-2">
             <span className="bg-rose-500/20 border border-rose-500/40 text-rose-400 px-3 py-1.5 rounded-lg text-xs font-bold font-mono flex items-center gap-1.5">
               <span className="w-2 h-2 rounded-full bg-rose-500 inline-block animate-pulse"></span>
               CHỜ XỬ LÝ: {pendingCount}
@@ -231,7 +172,7 @@ export default function KitchenDisplaySystem() {
             </span>
             <span className="bg-emerald-500/20 border border-emerald-500/40 text-emerald-400 px-3 py-1.5 rounded-lg text-xs font-bold font-mono flex items-center gap-1.5">
               <span className="w-2 h-2 rounded-full bg-emerald-400 inline-block"></span>
-              SẴN SÀNG: {readyCount}
+              HOÀN THÀNH: {readyCount}
             </span>
           </div>
         </div>
@@ -291,15 +232,24 @@ export default function KitchenDisplaySystem() {
             title="Tạo đơn giả lập từ máy khách"
           >
             <span className="material-symbols-outlined text-[16px]">add_circle</span>
-            <span>+ Giả Lập Đơn Mới</span>
+            <span>+ Thêm Đơn Test</span>
+          </button>
+
+          {/* Reset button */}
+          <button
+            onClick={handleResetData}
+            className="bg-[#141b2b] hover:bg-rose-950/40 text-slate-400 hover:text-rose-400 border border-slate-700 hover:border-rose-500/40 px-2.5 py-2 rounded-lg text-xs transition"
+            title="Khôi phục trạng thái ban đầu"
+          >
+            <span className="material-symbols-outlined text-[16px]">refresh</span>
           </button>
         </div>
       </header>
 
-      {/* Runner Notification Toast */}
+      {/* Runner / Sync Notification Toast */}
       {runnerNotification && (
-        <div className="bg-emerald-950/80 border-2 border-emerald-400 text-emerald-200 px-4 py-3 rounded-xl mb-4 flex items-center gap-3 shadow-[0_0_20px_rgba(16,185,129,0.3)] animate-fade-in">
-          <span className="material-symbols-outlined text-2xl text-emerald-400">delivery_dining</span>
+        <div className="bg-emerald-950/90 border-2 border-emerald-400 text-emerald-200 px-4 py-3 rounded-xl mb-4 flex items-center gap-3 shadow-[0_0_20px_rgba(16,185,129,0.3)] animate-bounce">
+          <span className="material-symbols-outlined text-2xl text-emerald-400">check_circle</span>
           <div className="font-bold text-sm">{runnerNotification}</div>
         </div>
       )}

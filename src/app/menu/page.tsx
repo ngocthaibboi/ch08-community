@@ -4,7 +4,8 @@ import React, { useState, useMemo } from 'react';
 import ClientHeader from '@/components/fnb/ClientHeader';
 import FoodCard from '@/components/fnb/FoodCard';
 import CartSidebar from '@/components/fnb/CartSidebar';
-import { MenuItem, CartItem, PaymentMethod } from '@/types/fnb';
+import { MenuItem, CartItem, PaymentMethod, Order } from '@/types/fnb';
+import { addOrder } from '@/lib/orderStore';
 
 const INITIAL_MENU_ITEMS: MenuItem[] = [
   {
@@ -300,17 +301,8 @@ export default function CyberMenuClient() {
       ),
     };
 
-    // Save to localStorage for KDS Kitchen screen to pick up instantly
-    try {
-      if (typeof window !== 'undefined') {
-        const existingStr = localStorage.getItem('cyber_orders');
-        const existingOrders = existingStr ? JSON.parse(existingStr) : [];
-        localStorage.setItem('cyber_orders', JSON.stringify([newKdsOrder, ...existingOrders]));
-        window.dispatchEvent(new CustomEvent('cyber_order_created', { detail: newKdsOrder }));
-      }
-    } catch {
-      // LocalStorage fallback
-    }
+    // Save to localStorage and notify KDS & Dashboard
+    addOrder(newKdsOrder);
 
     // Set active KDS ticker
     const firstItem = cart[0];
