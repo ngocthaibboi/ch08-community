@@ -1,5 +1,16 @@
 'use client';
 
+export interface WalletTransaction {
+  id: string;
+  type: 'TOPUP' | 'FNB_PAYMENT';
+  amount: number;
+  description: string;
+  method?: string;
+  pcName: string;
+  timestamp: string;
+  dateIso: string;
+}
+
 export interface UserWallet {
   userName: string;
   pcName: string;
@@ -7,16 +18,46 @@ export interface UserWallet {
   userTier: string;
   balance: number;
   hourlyRate: number; // e.g. 20,000đ/hour for VIP Room
-  lastTransaction?: {
-    type: 'TOPUP' | 'FNB_PAYMENT';
-    amount: number;
-    description: string;
-    timestamp: string;
-  };
+  transactions: WalletTransaction[];
+  lastTransaction?: WalletTransaction;
 }
 
 export const STORAGE_KEY_WALLET = 'cyber_user_wallet';
 export const WALLET_EVENT_NAME = 'cyber_wallet_updated';
+export const BASELINE_TOPUP_REVENUE = 12450000; // Doanh thu nạp thẻ giờ chơi ca trước
+
+export const INITIAL_TRANSACTIONS: WalletTransaction[] = [
+  {
+    id: 'tx-1',
+    type: 'TOPUP',
+    amount: 200000,
+    description: 'Nạp tiền tài khoản hội viên qua QR VietQR',
+    method: 'QR',
+    pcName: 'VIP-08',
+    timestamp: '19:30:12',
+    dateIso: new Date(Date.now() - 1000 * 60 * 120).toISOString(),
+  },
+  {
+    id: 'tx-2',
+    type: 'TOPUP',
+    amount: 100000,
+    description: 'Nạp tiền mặt tại quầy thu ngân',
+    method: 'CASH',
+    pcName: 'REG-14',
+    timestamp: '20:15:45',
+    dateIso: new Date(Date.now() - 1000 * 60 * 75).toISOString(),
+  },
+  {
+    id: 'tx-3',
+    type: 'TOPUP',
+    amount: 50000,
+    description: 'Nạp tiền thẻ ATM nội địa',
+    method: 'ATM',
+    pcName: 'ARENA-02',
+    timestamp: '21:05:00',
+    dateIso: new Date(Date.now() - 1000 * 60 * 25).toISOString(),
+  },
+];
 
 export const INITIAL_WALLET: UserWallet = {
   userName: 'ProGamer_VN',
@@ -25,6 +66,8 @@ export const INITIAL_WALLET: UserWallet = {
   userTier: 'HỘI VIÊN VIP GOLD',
   balance: 250000,
   hourlyRate: 20000,
+  transactions: INITIAL_TRANSACTIONS,
+  lastTransaction: INITIAL_TRANSACTIONS[0],
 };
 
 /**
@@ -52,7 +95,11 @@ export function getStoredWallet(): UserWallet {
     }
     const parsed = JSON.parse(raw);
     if (parsed && typeof parsed.balance === 'number') {
-      return parsed;
+      return {
+        ...INITIAL_WALLET,
+        ...parsed,
+        transactions: Array.isArray(parsed.transactions) ? parsed.transactions : INITIAL_TRANSACTIONS,
+      };
     }
     localStorage.setItem(STORAGE_KEY_WALLET, JSON.stringify(INITIAL_WALLET));
     return INITIAL_WALLET;
@@ -80,16 +127,24 @@ export function broadcastWalletUpdate(wallet: UserWallet) {
 export function topupWallet(amount: number, method: string = 'QR'): UserWallet {
   const current = getStoredWallet();
   const newBalance = current.balance + amount;
+  const tx: WalletTransaction = {
+    id: `tx-${Date.now()}`,
+    type: 'TOPUP',
+    amount,
+    description: `Khách nạp tiền qua ${method.toUpperCase()}`,
+    method,
+    pcName: current.pcName,
+    timestamp: new Date().toLocaleTimeString('vi-VN'),
+    dateIso: new Date().toISOString(),
+  };
+
   const updated: UserWallet = {
     ...current,
     balance: newBalance,
-    lastTransaction: {
-      type: 'TOPUP',
-      amount,
-      description: `Nạp tiền qua ${method.toUpperCase()}`,
-      timestamp: new Date().toLocaleTimeString('vi-VN'),
-    },
+    transactions: [tx, ...(current.transactions || [])],
+    lastTransaction: tx,
   };
+
   broadcastWalletUpdate(updated);
   return updated;
 }
@@ -103,18 +158,41 @@ export function deductWallet(amount: number, description: string = 'Thanh toán 
     return { success: false, wallet: current };
   }
   const newBalance = current.balance - amount;
+  const tx: WalletTransaction = {
+    id: `tx-${Date.now()}`,
+    type: 'FNB_PAYMENT',
+    amount,
+    description,
+    pcName: current.pcName,
+    timestamp: new Date().toLocaleTimeString('vi-VN'),
+    dateIso: new Date().toISOString(),
+  };
+
   const updated: UserWallet = {
     ...current,
     balance: newBalance,
-    lastTransaction: {
-      type: 'FNB_PAYMENT',
-      amount,
-      description,
-      timestamp: new Date().toLocaleTimeString('vi-VN'),
-    },
+    transactions: [tx, ...(current.transactions || [])],
+    lastTransaction: tx,
   };
+
   broadcastWalletUpdate(updated);
   return { success: true, wallet: updated };
+}
+
+/**
+ * Calculate total topup revenue for Ops Dashboard
+ */
+export function calculateTotalTopupRevenue(): {
+  totalTopup: number;
+  recentTopups: WalletTransaction[];
+} {
+  const wallet = getStoredWallet();
+  const topups = (wallet.transactions || []).filter((t) => t.type === 'TOPUP');
+  const liveTopupSum = topups.reduce((sum, t) => sum + (t.amount || 0), 0);
+  return {
+    totalTopup: BASELINE_TOPUP_REVENUE + liveTopupSum,
+    recentTopups: topups.slice(0, 5),
+  };
 }
 
 /**

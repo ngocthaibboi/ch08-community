@@ -16,15 +16,25 @@ export default function GlobalNavBar() {
   const [pendingOrdersCount, setPendingOrdersCount] = useState(0);
   const [wallet, setWallet] = useState<UserWallet>(INITIAL_WALLET);
 
-  // Exact 6 links requested by user
-  const navLinks = [
+  // Check if currently inside Staff / Kitchen Operations Portal
+  const isStaffPortal = pathname === '/kds' || pathname === '/dashboard';
+
+  // Links for Player Portal (Clean, no staff clutter)
+  const playerLinks = [
     { href: '/', label: 'Trang chủ', icon: 'home' },
     { href: '/booking', label: 'Sơ đồ máy', icon: 'desktop_windows' },
     { href: '/menu', label: 'Menu đồ ăn', icon: 'restaurant_menu', badge: 'HOT' },
-    { href: '/kds', label: 'Màn hình bếp', icon: 'soup_kitchen', countBadge: true },
-    { href: '/dashboard', label: 'Thống kê doanh thu', icon: 'monitoring', liveBadge: true },
     { href: '/auth', label: 'Nạp ví tiền', icon: 'account_balance_wallet' },
   ];
+
+  // Links for Staff & Kitchen Operations Portal
+  const staffLinks = [
+    { href: '/kds', label: 'Màn hình bếp KDS', icon: 'soup_kitchen', countBadge: true },
+    { href: '/dashboard', label: 'Thống kê doanh thu & Vận hành', icon: 'monitoring', liveBadge: true },
+    { href: '/auth', label: 'Quầy nạp tiền', icon: 'point_of_sale' },
+  ];
+
+  const currentNavLinks = isStaffPortal ? staffLinks : playerLinks;
 
   // Synchronize orders count and wallet balance
   useEffect(() => {
@@ -64,7 +74,7 @@ export default function GlobalNavBar() {
     if (!isDragging || !navContainerRef.current) return;
     e.preventDefault();
     const x = e.pageX - navContainerRef.current.offsetLeft;
-    const walk = (x - startX) * 1.6; // Scroll speed multiplier
+    const walk = (x - startX) * 1.6;
     if (Math.abs(walk) > 4) {
       setHasMoved(true);
     }
@@ -81,9 +91,8 @@ export default function GlobalNavBar() {
 
   const scrollNav = (direction: 'left' | 'right') => {
     if (!navContainerRef.current) return;
-    const distance = 240;
     navContainerRef.current.scrollBy({
-      left: direction === 'left' ? -distance : distance,
+      left: direction === 'left' ? -200 : 200,
       behavior: 'smooth',
     });
   };
@@ -91,49 +100,74 @@ export default function GlobalNavBar() {
   return (
     <header className="sticky top-0 z-50 flex flex-col shadow-2xl">
       {/* 24/7 Telemetry & Cyber Info Bar */}
-      <div className="bg-[#050912] border-b border-slate-800 px-4 py-1 flex items-center justify-between text-[11px] font-mono text-slate-400">
+      <div className={`px-4 py-1 flex items-center justify-between text-[11px] font-mono border-b ${
+        isStaffPortal ? 'bg-[#0f140c] border-amber-900/60 text-amber-300' : 'bg-[#050912] border-slate-800 text-slate-400'
+      }`}>
         <div className="flex items-center gap-3">
-          <span className="flex items-center gap-1.5 text-emerald-400 font-bold">
-            <span className="w-2 h-2 rounded-full bg-emerald-400 inline-block animate-ping"></span>
-            CYBER ZONE SERVER: ONLINE
-          </span>
+          {isStaffPortal ? (
+            <span className="flex items-center gap-1.5 text-amber-400 font-bold">
+              <span className="w-2 h-2 rounded-full bg-amber-400 inline-block animate-pulse"></span>
+              CỔNG NHÂN VIÊN &amp; VẬN HÀNH BẾP (STAFF PORTAL)
+            </span>
+          ) : (
+            <span className="flex items-center gap-1.5 text-emerald-400 font-bold">
+              <span className="w-2 h-2 rounded-full bg-emerald-400 inline-block animate-ping"></span>
+              CỔNG NGƯỜI CHƠI • CYBER ZONE SERVER: ONLINE
+            </span>
+          )}
           <span className="text-slate-700 hidden sm:inline">|</span>
-          <span className="text-slate-400 hidden sm:inline">Tầng 1 &amp; Tầng 2: 82/100 Máy Đang Hoạt Động</span>
+          <span className="hidden sm:inline">
+            {isStaffPortal
+              ? `Đơn bếp đang hoạt động: ${pendingOrdersCount} đơn • Khu vực pha chế & bếp nóng sẵn sàng`
+              : 'Tầng 1 & Tầng 2: 82/100 Máy Đang Hoạt Động'}
+          </span>
         </div>
 
         <div className="flex items-center gap-4">
-          <span className="text-slate-300 flex items-center gap-1">
-            <span className="material-symbols-outlined text-[14px] text-cyan-400">headset_mic</span>
-            Hỗ trợ 24/7: <strong className="text-cyan-400 font-bold">1900.8888</strong>
+          <span className="hidden md:inline">
+            Hỗ trợ 24/7: <strong className={isStaffPortal ? 'text-amber-400' : 'text-cyan-400'}>1900.8888</strong>
           </span>
-          <span className="bg-purple-950/60 border border-purple-500/40 text-purple-300 text-[10px] px-2 py-0.2 rounded font-bold hidden md:inline">
-            HỘI VIÊN VIP
+          <span className={`text-[10px] px-2 py-0.2 rounded font-bold font-mono border ${
+            isStaffPortal
+              ? 'bg-amber-950/80 border-amber-500/50 text-amber-300'
+              : 'bg-purple-950/60 border-purple-500/40 text-purple-300'
+          }`}>
+            {isStaffPortal ? 'STAFF / KITCHEN MODE' : 'HỘI VIÊN VIP'}
           </span>
         </div>
       </div>
 
-      {/* Main Navbar Cyber Zone */}
-      <nav className="bg-slate-900/95 backdrop-blur-md border-b border-slate-800 px-3 sm:px-4 py-2.5 flex items-center justify-between gap-2 sm:gap-4 relative">
-        {/* Brand Logo Cyber Zone */}
-        <Link href="/" className="flex items-center gap-2 group flex-shrink-0">
-          <div className="w-9 h-9 rounded-xl bg-gradient-to-r from-cyan-500 to-purple-600 p-0.5 flex items-center justify-center shadow-[0_0_15px_rgba(0,240,255,0.4)] group-hover:scale-105 transition-transform">
+      {/* Main Navbar */}
+      <nav className={`backdrop-blur-md border-b px-3 sm:px-4 py-2.5 flex items-center justify-between gap-2 sm:gap-4 relative transition-colors ${
+        isStaffPortal ? 'bg-[#0c1322]/98 border-amber-500/30' : 'bg-slate-900/95 border-slate-800'
+      }`}>
+        {/* Brand Logo */}
+        <Link href={isStaffPortal ? '/kds' : '/'} className="flex items-center gap-2 group flex-shrink-0">
+          <div className={`w-9 h-9 rounded-xl p-0.5 flex items-center justify-center transition-transform group-hover:scale-105 shadow-md ${
+            isStaffPortal
+              ? 'bg-gradient-to-r from-amber-500 to-orange-600 shadow-[0_0_15px_rgba(245,158,11,0.4)]'
+              : 'bg-gradient-to-r from-cyan-500 to-purple-600 shadow-[0_0_15px_rgba(0,240,255,0.4)]'
+          }`}>
             <div className="w-full h-full bg-slate-950 rounded-[10px] flex items-center justify-center">
-              <span className="material-symbols-outlined text-cyan-400 text-[20px]">sports_esports</span>
+              <span className={`material-symbols-outlined text-[20px] ${isStaffPortal ? 'text-amber-400' : 'text-cyan-400'}`}>
+                {isStaffPortal ? 'soup_kitchen' : 'sports_esports'}
+              </span>
             </div>
           </div>
           <div className="flex flex-col leading-none">
-            <span className="font-gaming font-black text-base sm:text-lg tracking-wider text-white group-hover:text-cyan-400 transition-colors">
-              CYBER ZONE
+            <span className="font-gaming font-black text-base sm:text-lg tracking-wider text-white">
+              {isStaffPortal ? 'CYBER OPS' : 'CYBER ZONE'}
             </span>
-            <span className="text-[8px] sm:text-[9px] font-mono text-cyan-400 uppercase tracking-widest font-bold">
-              ESPORTS LOUNGE
+            <span className={`text-[8px] sm:text-[9px] font-mono uppercase tracking-widest font-bold ${
+              isStaffPortal ? 'text-amber-400' : 'text-cyan-400'
+            }`}>
+              {isStaffPortal ? 'BẾP & VẬN HÀNH' : 'ESPORTS LOUNGE'}
             </span>
           </div>
         </Link>
 
-        {/* Draggable & Scrollable Menu Navigation Bar */}
-        <div className="relative flex-1 max-w-4xl mx-1 sm:mx-2 flex items-center">
-          {/* Scroll Left Button */}
+        {/* Scrollable Navigation Bar */}
+        <div className="relative flex-1 max-w-2xl mx-1 sm:mx-2 flex items-center">
           <button
             onClick={() => scrollNav('left')}
             className="hidden md:flex w-7 h-7 rounded-lg bg-slate-800/90 hover:bg-slate-700 text-slate-300 hover:text-cyan-400 border border-slate-700/80 items-center justify-center mr-1 shadow-md z-10 flex-shrink-0 transition"
@@ -142,7 +176,6 @@ export default function GlobalNavBar() {
             <span className="material-symbols-outlined text-[18px]">chevron_left</span>
           </button>
 
-          {/* Draggable Scroll Area */}
           <div
             ref={navContainerRef}
             onMouseDown={handleMouseDown}
@@ -152,12 +185,9 @@ export default function GlobalNavBar() {
             className={`flex items-center gap-1.5 sm:gap-2 overflow-x-auto select-none py-1 px-1 rounded-xl scrollbar-none transition-colors ${
               isDragging ? 'cursor-grabbing' : 'cursor-grab'
             }`}
-            style={{
-              scrollbarWidth: 'none',
-              msOverflowStyle: 'none',
-            }}
+            style={{ scrollbarWidth: 'none', msOverflowStyle: 'none' }}
           >
-            {navLinks.map((link) => {
+            {currentNavLinks.map((link) => {
               const isActive = pathname === link.href;
 
               return (
@@ -165,14 +195,13 @@ export default function GlobalNavBar() {
                   key={link.href}
                   href={link.href}
                   onClick={(e) => {
-                    // Prevent accidental navigation when dragging
-                    if (hasMoved) {
-                      e.preventDefault();
-                    }
+                    if (hasMoved) e.preventDefault();
                   }}
                   className={`flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-bold transition-all duration-200 flex-shrink-0 whitespace-nowrap ${
                     isActive
-                      ? 'bg-gradient-to-r from-cyan-500 to-purple-600 text-white shadow-[0_0_15px_rgba(0,240,255,0.4)] ring-1 ring-cyan-300'
+                      ? isStaffPortal
+                        ? 'bg-gradient-to-r from-amber-500 to-orange-600 text-black font-black shadow-[0_0_15px_rgba(245,158,11,0.4)]'
+                        : 'bg-gradient-to-r from-cyan-500 to-purple-600 text-white shadow-[0_0_15px_rgba(0,240,255,0.4)] ring-1 ring-cyan-300'
                       : 'bg-slate-800/80 hover:bg-slate-800 text-slate-300 hover:text-white border border-slate-700/60 hover:border-cyan-500/40'
                   }`}
                 >
@@ -186,7 +215,7 @@ export default function GlobalNavBar() {
                   )}
 
                   {link.countBadge && pendingOrdersCount > 0 && (
-                    <span className="bg-amber-500 text-black text-[9px] font-black px-1.5 py-0.2 rounded-full font-mono animate-pulse">
+                    <span className="bg-amber-400 text-black text-[9px] font-black px-1.5 py-0.2 rounded-full font-mono animate-pulse">
                       {pendingOrdersCount}
                     </span>
                   )}
@@ -199,7 +228,6 @@ export default function GlobalNavBar() {
             })}
           </div>
 
-          {/* Scroll Right Button */}
           <button
             onClick={() => scrollNav('right')}
             className="hidden md:flex w-7 h-7 rounded-lg bg-slate-800/90 hover:bg-slate-700 text-slate-300 hover:text-cyan-400 border border-slate-700/80 items-center justify-center ml-1 shadow-md z-10 flex-shrink-0 transition"
@@ -209,20 +237,54 @@ export default function GlobalNavBar() {
           </button>
         </div>
 
-        {/* Quick User Balance & Topup Action */}
+        {/* Portal Switcher & User Balance */}
         <div className="flex items-center gap-2 flex-shrink-0">
-          <Link
-            href="/auth"
-            className="flex items-center gap-1.5 sm:gap-2 bg-slate-800 border border-slate-700 px-2 sm:px-2.5 py-1.5 rounded-lg hover:border-cyan-400 transition-colors"
-          >
-            <span className="material-symbols-outlined text-emerald-400 text-[16px]">account_balance_wallet</span>
-            <div className="flex flex-col leading-none text-left">
-              <span className="text-[8px] sm:text-[9px] text-slate-400 font-semibold uppercase">Ví Máy: {wallet.pcName}</span>
-              <span className="font-mono text-xs font-bold text-emerald-400">
-                {wallet.balance.toLocaleString('vi-VN')}đ
-              </span>
-            </div>
-          </Link>
+          {!isStaffPortal ? (
+            <>
+              {/* Player Wallet Badge */}
+              <Link
+                href="/auth"
+                className="flex items-center gap-1.5 sm:gap-2 bg-slate-800 border border-slate-700 px-2 sm:px-2.5 py-1.5 rounded-lg hover:border-cyan-400 transition-colors"
+              >
+                <span className="material-symbols-outlined text-emerald-400 text-[16px]">account_balance_wallet</span>
+                <div className="flex flex-col leading-none text-left">
+                  <span className="text-[8px] sm:text-[9px] text-slate-400 font-semibold uppercase">Ví Máy: {wallet.pcName}</span>
+                  <span className="font-mono text-xs font-bold text-emerald-400">
+                    {wallet.balance.toLocaleString('vi-VN')}đ
+                  </span>
+                </div>
+              </Link>
+
+              {/* Portal Switch Button: Jump to Staff Portal */}
+              <Link
+                href="/kds"
+                className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-amber-500/20 hover:bg-amber-500/30 text-amber-300 hover:text-amber-200 border border-amber-500/40 text-xs font-bold transition font-mono shadow-[0_0_12px_rgba(245,158,11,0.25)] cursor-pointer"
+                title="Dành cho Nhân viên / Bếp: Quản lý đơn & Doanh thu"
+              >
+                <span className="material-symbols-outlined text-[16px] text-amber-400">soup_kitchen</span>
+                <span className="hidden sm:inline">Cổng Bếp / Vận Hành</span>
+                {pendingOrdersCount > 0 && (
+                  <span className="bg-amber-500 text-black text-[9px] font-black px-1.5 py-0.2 rounded-full font-mono animate-pulse">
+                    {pendingOrdersCount}
+                  </span>
+                )}
+                <span className="material-symbols-outlined text-[14px]">arrow_forward</span>
+              </Link>
+            </>
+          ) : (
+            <>
+              {/* Portal Switch Button: Return to Player Portal */}
+              <Link
+                href="/"
+                className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-cyan-500/20 hover:bg-cyan-500/30 text-cyan-300 hover:text-cyan-200 border border-cyan-500/40 text-xs font-bold transition font-mono shadow-[0_0_12px_rgba(0,240,255,0.25)] cursor-pointer"
+                title="Quay lại Cổng Khách Hàng / Đặt Món Tại Máy"
+              >
+                <span className="material-symbols-outlined text-[16px] text-cyan-400">sports_esports</span>
+                <span className="hidden sm:inline">Cổng Người Chơi</span>
+                <span className="material-symbols-outlined text-[14px]">arrow_forward</span>
+              </Link>
+            </>
+          )}
         </div>
       </nav>
     </header>

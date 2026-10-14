@@ -8,48 +8,57 @@ import {
   STORAGE_EVENT_NAME,
   addOrder,
 } from '@/lib/orderStore';
+import {
+  getStoredWallet,
+  calculateTotalTopupRevenue,
+  WALLET_EVENT_NAME,
+  WalletTransaction,
+} from '@/lib/walletStore';
 import { Order } from '@/types/fnb';
 
 export default function DashboardFnb() {
   const [dateFilter, setDateFilter] = useState('today');
   const [orders, setOrders] = useState<Order[]>([]);
-  const [stats, setStats] = useState(() => calculateLiveDashboardStats([]));
-  const [lastCompletedNotice, setLastCompletedNotice] = useState<string | null>(null);
+  const [fnbStats, setFnbStats] = useState(() => calculateLiveDashboardStats([]));
+  const [topupStats, setTopupStats] = useState<{ totalTopup: number; recentTopups: WalletTransaction[] }>({
+    totalTopup: 12450000,
+    recentTopups: [],
+  });
+  const [lastNotice, setLastNotice] = useState<string | null>(null);
 
-  // Sync real-time data from kitchen orders
+  // Sync real-time data from kitchen orders & wallet store
   useEffect(() => {
     const updateDashboard = () => {
-      const stored = getStoredOrders();
-      setOrders(stored);
-      const computed = calculateLiveDashboardStats(stored);
-      setStats(computed);
+      const storedOrders = getStoredOrders();
+      setOrders(storedOrders);
+      setFnbStats(calculateLiveDashboardStats(storedOrders));
+      setTopupStats(calculateTotalTopupRevenue());
     };
 
     updateDashboard();
 
-    const handleOrdersChange = () => {
-      const stored = getStoredOrders();
-      setOrders(stored);
-      const computed = calculateLiveDashboardStats(stored);
-      setStats(computed);
+    const handleSync = () => {
+      updateDashboard();
     };
 
-    window.addEventListener(STORAGE_EVENT_NAME, handleOrdersChange);
-    window.addEventListener('storage', handleOrdersChange);
+    window.addEventListener(STORAGE_EVENT_NAME, handleSync);
+    window.addEventListener(WALLET_EVENT_NAME, handleSync);
+    window.addEventListener('storage', handleSync);
 
     return () => {
-      window.removeEventListener(STORAGE_EVENT_NAME, handleOrdersChange);
-      window.removeEventListener('storage', handleOrdersChange);
+      window.removeEventListener(STORAGE_EVENT_NAME, handleSync);
+      window.removeEventListener(WALLET_EVENT_NAME, handleSync);
+      window.removeEventListener('storage', handleSync);
     };
   }, []);
 
-  // Track new completions to show celebratory live banner
+  // Track latest kitchen order completions
   useEffect(() => {
     const readyOrDelivered = orders.filter((o) => o.status === 'READY' || o.status === 'DELIVERED');
     if (readyOrDelivered.length > 0) {
       const latest = readyOrDelivered[0];
-      setLastCompletedNotice(
-        `Đơn #${latest.orderNumber} (${latest.pcName}) hoàn tất - Doanh thu F&B vừa được cộng thêm +${latest.totalAmount.toLocaleString('vi-VN')}đ!`
+      setLastNotice(
+        `Bếp vừa hoàn tất đơn #${latest.orderNumber} (${latest.pcName}) - Doanh thu F&B +${latest.totalAmount.toLocaleString('vi-VN')}đ!`
       );
     }
   }, [orders]);
@@ -93,7 +102,7 @@ export default function DashboardFnb() {
     );
   };
 
-  // Quick test: add an order from dashboard
+  // Quick simulation: add order from client
   const handleQuickAddOrder = () => {
     const num = Math.floor(1060 + Math.random() * 40);
     const mock: Order = {
@@ -105,7 +114,7 @@ export default function DashboardFnb() {
       paymentMethod: 'ACCOUNT_BALANCE',
       totalAmount: 115000,
       timeElapsed: '00:01',
-      note: 'Ưu tiên làm nhanh',
+      note: 'Ưu tiên làm nhanh, khách đang thi đấu',
       station: 'HOT_KITCHEN',
       items: ['1x Cơm Bò Lúc Lắc Phô Mai', '1x Monster Energy Trắng Lạnh'],
       createdAt: new Date().toISOString(),
@@ -113,22 +122,25 @@ export default function DashboardFnb() {
     addOrder(mock);
   };
 
+  // Total Business Revenue (F&B + Top-up Hours)
+  const totalCombinedRevenue = fnbStats.totalRevenue + topupStats.totalTopup;
+
   return (
     <div className="min-h-screen bg-[#070e1d] text-slate-100 p-4 lg:p-6 font-sans select-none">
-      {/* Top Header Dashboard */}
-      <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center bg-[#0c1322] border border-cyan-500/20 p-4 rounded-xl mb-6 shadow-xl gap-4">
+      {/* Top Header Operations Dashboard */}
+      <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center bg-[#0c1322] border border-amber-500/30 p-4 rounded-xl mb-6 shadow-xl gap-4">
         <div>
           <div className="flex items-center gap-2">
-            <span className="font-gaming font-black text-xl text-cyan-400 tracking-wider">
-              BẢNG ĐIỀU HÀNH &amp; DOANH THU F&amp;B
+            <span className="font-gaming font-black text-xl text-amber-400 tracking-wider">
+              BẢNG VẬN HÀNH &amp; DOANH THU TOÀN QUÁN (OPS PORTAL)
             </span>
             <span className="bg-emerald-500/20 text-emerald-400 border border-emerald-500/40 text-[10px] font-mono px-2 py-0.5 rounded font-bold flex items-center gap-1">
               <span className="w-1.5 h-1.5 rounded-full bg-emerald-400 animate-ping"></span>
-              REALTIME SYNC VỚI KDS BẾP
+              REALTIME TỰ ĐỘNG KHỚP 2 CỔNG
             </span>
           </div>
           <p className="text-xs text-slate-400 mt-1">
-            Dữ liệu kết nối trực tiếp với Màn hình Bếp (KDS). Khi bếp bấm Hoàn thành đơn, doanh thu sẽ tự động tăng tương ứng với giá trị đơn hàng.
+            Dữ liệu đồng bộ trực tiếp: Khách đặt món ở Cổng Người Chơi ➔ Màn hình bếp nhảy đơn; Khách nạp tiền ví ➔ Doanh thu tự động cập nhật vào Bảng Vận Hành.
           </p>
         </div>
 
@@ -138,7 +150,7 @@ export default function DashboardFnb() {
             <button
               onClick={() => setDateFilter('today')}
               className={`px-3 py-1.5 rounded-md font-bold transition ${
-                dateFilter === 'today' ? 'bg-cyan-500 text-black shadow-[0_0_10px_rgba(0,240,255,0.4)]' : 'text-slate-400 hover:text-white'
+                dateFilter === 'today' ? 'bg-amber-400 text-black shadow-[0_0_10px_rgba(251,191,36,0.4)]' : 'text-slate-400 hover:text-white'
               }`}
             >
               Hôm Nay
@@ -146,7 +158,7 @@ export default function DashboardFnb() {
             <button
               onClick={() => setDateFilter('week')}
               className={`px-3 py-1.5 rounded-md font-bold transition ${
-                dateFilter === 'week' ? 'bg-cyan-500 text-black' : 'text-slate-400 hover:text-white'
+                dateFilter === 'week' ? 'bg-amber-400 text-black' : 'text-slate-400 hover:text-white'
               }`}
             >
               7 Ngày
@@ -154,7 +166,7 @@ export default function DashboardFnb() {
             <button
               onClick={() => setDateFilter('month')}
               className={`px-3 py-1.5 rounded-md font-bold transition ${
-                dateFilter === 'month' ? 'bg-cyan-500 text-black' : 'text-slate-400 hover:text-white'
+                dateFilter === 'month' ? 'bg-amber-400 text-black' : 'text-slate-400 hover:text-white'
               }`}
             >
               Tháng Này
@@ -163,7 +175,7 @@ export default function DashboardFnb() {
 
           <Link
             href="/kds"
-            className="bg-amber-500 hover:bg-amber-400 text-black font-bold px-3 py-2 rounded-lg text-xs font-mono flex items-center gap-1.5 transition shadow-[0_0_12px_rgba(255,183,3,0.3)]"
+            className="bg-amber-500 hover:bg-amber-400 text-black font-bold px-3 py-2 rounded-lg text-xs font-mono flex items-center gap-1.5 transition shadow-[0_0_12px_rgba(255,183,3,0.3)] cursor-pointer"
           >
             <span className="material-symbols-outlined text-[16px]">soup_kitchen</span>
             <span>Mở Màn Hình Bếp (KDS) &rarr;</span>
@@ -171,12 +183,12 @@ export default function DashboardFnb() {
         </div>
       </div>
 
-      {/* Live Revenue Notice Banner */}
-      {lastCompletedNotice && (
-        <div className="bg-emerald-950/60 border border-emerald-500/40 text-emerald-200 px-4 py-2.5 rounded-xl mb-6 flex items-center justify-between text-xs shadow-lg">
+      {/* Live Notice Banner */}
+      {lastNotice && (
+        <div className="bg-emerald-950/70 border border-emerald-500/50 text-emerald-200 px-4 py-2.5 rounded-xl mb-6 flex items-center justify-between text-xs shadow-lg">
           <div className="flex items-center gap-2">
             <span className="material-symbols-outlined text-emerald-400 text-[18px]">verified</span>
-            <span className="font-semibold">{lastCompletedNotice}</span>
+            <span className="font-semibold">{lastNotice}</span>
           </div>
           <span className="text-[11px] font-mono text-emerald-400 font-bold bg-emerald-900/60 px-2 py-0.5 rounded">
             + Doanh Thu Tự Động Khớp
@@ -184,95 +196,97 @@ export default function DashboardFnb() {
         </div>
       )}
 
-      {/* 4 Stat Cards - Using REAL DATA from orders */}
+      {/* 4 Stat Cards - Using REAL DATA from kitchen orders and player wallet topups */}
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 mb-6">
-        {/* Stat 1: Total Revenue */}
+        {/* Card 1: Doanh Thu F&B Bếp */}
         <div className="bg-[#0c1322] border border-cyan-500/30 rounded-xl p-4 flex flex-col justify-between shadow-lg relative overflow-hidden">
           <div className="absolute top-0 right-0 w-24 h-24 bg-cyan-500/5 rounded-full blur-2xl"></div>
           <div className="flex justify-between items-start mb-2">
-            <span className="text-xs text-slate-400 font-semibold">Doanh Thu F&amp;B Thực Tế</span>
+            <span className="text-xs text-slate-400 font-semibold">Doanh Thu F&amp;B Bếp</span>
             <div className="w-8 h-8 rounded-lg flex items-center justify-center bg-cyan-500/20 text-cyan-400">
-              <span className="material-symbols-outlined text-[18px]">payments</span>
+              <span className="material-symbols-outlined text-[18px]">restaurant</span>
             </div>
           </div>
           <div>
             <div className="text-2xl lg:text-3xl font-black text-cyan-400 font-gaming tracking-wide">
-              {stats.formattedRevenue}
+              {fnbStats.formattedRevenue}
             </div>
             <div className="flex items-center gap-2 mt-1">
               <span className="text-xs font-bold text-emerald-400 font-mono">
-                +{stats.formattedLiveCompleted}
+                +{fnbStats.formattedLiveCompleted}
               </span>
-              <span className="text-[11px] text-slate-400 truncate">từ các đơn bếp đã hoàn thành</span>
+              <span className="text-[11px] text-slate-400 truncate">từ các đơn bếp đã nấu xong</span>
             </div>
           </div>
         </div>
 
-        {/* Stat 2: Total Kitchen Orders */}
+        {/* Card 2: Doanh Thu Nạp Ví Giờ Chơi */}
+        <div className="bg-[#0c1322] border border-emerald-500/30 rounded-xl p-4 flex flex-col justify-between shadow-lg relative overflow-hidden">
+          <div className="absolute top-0 right-0 w-24 h-24 bg-emerald-500/5 rounded-full blur-2xl"></div>
+          <div className="flex justify-between items-start mb-2">
+            <span className="text-xs text-slate-400 font-semibold">Doanh Thu Nạp Ví Giờ Chơi</span>
+            <div className="w-8 h-8 rounded-lg flex items-center justify-center bg-emerald-500/20 text-emerald-400">
+              <span className="material-symbols-outlined text-[18px]">account_balance_wallet</span>
+            </div>
+          </div>
+          <div>
+            <div className="text-2xl lg:text-3xl font-black text-emerald-400 font-gaming tracking-wide">
+              {topupStats.totalTopup.toLocaleString('vi-VN')}đ
+            </div>
+            <div className="flex items-center gap-2 mt-1">
+              <span className="text-xs font-bold text-emerald-400 font-mono">Realtime</span>
+              <span className="text-[11px] text-slate-400 truncate">từ các lượt khách nạp tài khoản</span>
+            </div>
+          </div>
+        </div>
+
+        {/* Card 3: Tổng Doanh Thu Toàn Quán */}
+        <div className="bg-[#0c1322] border border-amber-500/40 rounded-xl p-4 flex flex-col justify-between shadow-lg relative overflow-hidden">
+          <div className="absolute top-0 right-0 w-24 h-24 bg-amber-500/10 rounded-full blur-2xl"></div>
+          <div className="flex justify-between items-start mb-2">
+            <span className="text-xs text-amber-300 font-bold uppercase tracking-wider">Tổng Doanh Thu Hợp Nhất</span>
+            <div className="w-8 h-8 rounded-lg flex items-center justify-center bg-amber-500/20 text-amber-400">
+              <span className="material-symbols-outlined text-[18px]">payments</span>
+            </div>
+          </div>
+          <div>
+            <div className="text-2xl lg:text-3xl font-black text-amber-400 font-gaming tracking-wide">
+              {totalCombinedRevenue.toLocaleString('vi-VN')}đ
+            </div>
+            <div className="flex items-center gap-2 mt-1">
+              <span className="text-xs font-bold text-amber-400 font-mono">F&amp;B + Giờ Chơi</span>
+              <span className="text-[11px] text-slate-400 truncate">tổng hợp tự động từ 2 cổng</span>
+            </div>
+          </div>
+        </div>
+
+        {/* Card 4: Tình Trạng Đơn Bếp */}
         <div className="bg-[#0c1322] border border-slate-800 hover:border-amber-500/40 rounded-xl p-4 flex flex-col justify-between shadow-lg transition">
           <div className="flex justify-between items-start mb-2">
-            <span className="text-xs text-slate-400 font-semibold">Tổng Số Đơn Bếp</span>
-            <div className="w-8 h-8 rounded-lg flex items-center justify-center bg-amber-500/20 text-amber-400">
-              <span className="material-symbols-outlined text-[18px]">receipt_long</span>
+            <span className="text-xs text-slate-400 font-semibold">Tình Trạng Đơn Bếp (KDS)</span>
+            <div className="w-8 h-8 rounded-lg flex items-center justify-center bg-purple-500/20 text-purple-400">
+              <span className="material-symbols-outlined text-[18px]">soup_kitchen</span>
             </div>
           </div>
           <div>
             <div className="text-2xl lg:text-3xl font-black text-white font-gaming tracking-wide">
-              {stats.totalOrdersCount} đơn
+              {fnbStats.totalOrdersCount} đơn
             </div>
             <div className="flex items-center gap-2 mt-1">
               <span className="text-xs font-bold text-amber-400 font-mono">
-                Đang nấu: {stats.cookingCount}
+                Đang nấu: {fnbStats.cookingCount}
               </span>
               <span className="text-[11px] text-slate-400">
-                • Chờ: {stats.pendingCount} • Xong: {stats.completedCount}
+                • Chờ: {fnbStats.pendingCount} • Xong: {fnbStats.completedCount}
               </span>
-            </div>
-          </div>
-        </div>
-
-        {/* Stat 3: Average Cook Time */}
-        <div className="bg-[#0c1322] border border-slate-800 hover:border-emerald-500/40 rounded-xl p-4 flex flex-col justify-between shadow-lg transition">
-          <div className="flex justify-between items-start mb-2">
-            <span className="text-xs text-slate-400 font-semibold">Thời Gian Nấu TB / Đơn</span>
-            <div className="w-8 h-8 rounded-lg flex items-center justify-center bg-emerald-500/20 text-emerald-400">
-              <span className="material-symbols-outlined text-[18px]">timer</span>
-            </div>
-          </div>
-          <div>
-            <div className="text-2xl lg:text-3xl font-black text-white font-gaming tracking-wide">
-              5.8 phút
-            </div>
-            <div className="flex items-center gap-2 mt-1">
-              <span className="text-xs font-bold text-emerald-400 font-mono">-1.2 phút</span>
-              <span className="text-[11px] text-slate-400 truncate">Cam kết quán net: &lt; 8 phút</span>
-            </div>
-          </div>
-        </div>
-
-        {/* Stat 4: Staff Call Requests */}
-        <div className="bg-[#0c1322] border border-slate-800 hover:border-rose-500/40 rounded-xl p-4 flex flex-col justify-between shadow-lg transition">
-          <div className="flex justify-between items-start mb-2">
-            <span className="text-xs text-slate-400 font-semibold">Gọi Nhân Viên Tại Máy</span>
-            <div className="w-8 h-8 rounded-lg flex items-center justify-center bg-rose-500/20 text-rose-400">
-              <span className="material-symbols-outlined text-[18px]">support_agent</span>
-            </div>
-          </div>
-          <div>
-            <div className="text-2xl lg:text-3xl font-black text-white font-gaming tracking-wide">
-              {supportCalls.length} lượt
-            </div>
-            <div className="flex items-center gap-2 mt-1">
-              <span className="text-xs font-bold text-emerald-400 font-mono">100% phục vụ</span>
-              <span className="text-[11px] text-slate-400 truncate">Phản hồi TB: 38 giây</span>
             </div>
           </div>
         </div>
       </div>
 
-      {/* Main Grid: Best Sellers & Live Support / Completed Orders */}
+      {/* Main Grid: Best Sellers & Operations Live Stream */}
       <div className="grid grid-cols-1 lg:grid-cols-12 gap-6">
-        {/* Left: Top Best Selling Items (7 cols) */}
+        {/* Left: Top Best Selling Items & Completed Kitchen Orders (7 cols) */}
         <div className="lg:col-span-7 bg-[#0c1322] border border-slate-800 rounded-xl p-5 shadow-xl flex flex-col justify-between">
           <div>
             <div className="flex justify-between items-center pb-3 border-b border-slate-800 mb-4">
@@ -280,11 +294,11 @@ export default function DashboardFnb() {
                 <span className="material-symbols-outlined text-cyan-400 text-xl">star</span>
                 <h3 className="font-bold text-base text-white">Top Món Ăn Bán Chạy Nhất (Khớp dữ liệu đơn)</h3>
               </div>
-              <span className="text-xs text-slate-500 font-mono">Cập nhật tự động</span>
+              <span className="text-xs text-slate-500 font-mono">Tự động cập nhật</span>
             </div>
 
             <div className="space-y-3">
-              {stats.bestSellers.map((item) => (
+              {fnbStats.bestSellers.map((item) => (
                 <div
                   key={item.rank}
                   className="bg-[#141b2b] p-3 rounded-lg border border-slate-800 flex items-center justify-between gap-3 hover:border-slate-700 transition"
@@ -328,19 +342,19 @@ export default function DashboardFnb() {
               <div className="flex items-center gap-2">
                 <span className="material-symbols-outlined text-emerald-400 text-base">task_alt</span>
                 <span className="font-bold text-xs uppercase tracking-wider text-slate-300">
-                  Đơn Hàng Vừa Hoàn Tất Từ Bếp ({stats.recentCompletedOrders.length})
+                  Đơn Hàng Vừa Hoàn Tất Từ Bếp ({fnbStats.recentCompletedOrders.length})
                 </span>
               </div>
-              <span className="text-[11px] text-slate-500 font-mono">Khớp với KDS Bếp</span>
+              <span className="text-[11px] text-slate-500 font-mono">Khớp 100% với KDS Bếp</span>
             </div>
 
             <div className="space-y-2 max-h-48 overflow-y-auto no-scrollbar">
-              {stats.recentCompletedOrders.length === 0 ? (
+              {fnbStats.recentCompletedOrders.length === 0 ? (
                 <div className="text-xs text-slate-500 text-center py-3">
                   Chưa có đơn mới hoàn thành. Vào <Link href="/kds" className="text-cyan-400 underline font-bold">Màn hình Bếp</Link> để bấm hoàn thành đơn!
                 </div>
               ) : (
-                stats.recentCompletedOrders.map((ord) => (
+                fnbStats.recentCompletedOrders.map((ord) => (
                   <div
                     key={ord.id}
                     className="p-2.5 rounded-lg bg-[#141b2b] border border-slate-800 flex items-center justify-between text-xs"
@@ -370,9 +384,49 @@ export default function DashboardFnb() {
           </div>
         </div>
 
-        {/* Right: Live Support / Call Staff Feed (5 cols) */}
-        <div className="lg:col-span-5 bg-[#0c1322] border border-slate-800 rounded-xl p-5 shadow-xl flex flex-col justify-between">
-          <div>
+        {/* Right: Live Topups from Player Portal & Support Calls (5 cols) */}
+        <div className="lg:col-span-5 space-y-6">
+          {/* Live Topup Feed from Player Portal */}
+          <div className="bg-[#0c1322] border border-slate-800 rounded-xl p-5 shadow-xl">
+            <div className="flex justify-between items-center pb-3 border-b border-slate-800 mb-3">
+              <div className="flex items-center gap-2">
+                <span className="material-symbols-outlined text-emerald-400 text-xl">account_balance_wallet</span>
+                <h3 className="font-bold text-base text-white">Lịch Sử Nạp Tiền Ví Của Khách</h3>
+              </div>
+              <span className="bg-emerald-500/20 text-emerald-400 text-[10px] px-2 py-0.5 rounded font-mono font-bold">
+                TỪ CỔNG NGƯỜI CHƠI
+              </span>
+            </div>
+
+            <div className="space-y-2.5">
+              {topupStats.recentTopups.map((tx) => (
+                <div
+                  key={tx.id}
+                  className="p-3 rounded-lg bg-[#141b2b] border border-slate-800 flex items-center justify-between text-xs"
+                >
+                  <div>
+                    <div className="flex items-center gap-2">
+                      <span className="font-mono font-bold text-cyan-400">{tx.pcName}</span>
+                      <span className="text-[10px] bg-slate-800 text-slate-300 px-1.5 py-0.2 rounded font-mono uppercase">
+                        {tx.method || 'ONLINE'}
+                      </span>
+                    </div>
+                    <div className="text-[11px] text-slate-400 mt-0.5">{tx.description}</div>
+                  </div>
+
+                  <div className="text-right">
+                    <span className="font-mono font-bold text-emerald-400 text-sm">
+                      +{tx.amount.toLocaleString('vi-VN')}đ
+                    </span>
+                    <div className="text-[10px] text-slate-500 font-mono">{tx.timestamp}</div>
+                  </div>
+                </div>
+              ))}
+            </div>
+          </div>
+
+          {/* Live Support Calls Feed */}
+          <div className="bg-[#0c1322] border border-slate-800 rounded-xl p-5 shadow-xl">
             <div className="flex justify-between items-center pb-3 border-b border-slate-800 mb-4">
               <div className="flex items-center gap-2">
                 <span className="material-symbols-outlined text-rose-500 text-xl animate-pulse">
@@ -392,25 +446,25 @@ export default function DashboardFnb() {
                 return (
                   <div
                     key={call.id}
-                    className={`p-3.5 rounded-lg border transition-all ${
+                    className={`p-3 rounded-lg border transition-all ${
                       isReceiving
                         ? 'bg-[#1a1525] border-rose-500/60 shadow-[0_0_12px_rgba(255,42,85,0.2)]'
                         : 'bg-[#141b2b] border-slate-800 opacity-70'
                     }`}
                   >
-                    <div className="flex justify-between items-start mb-1.5">
+                    <div className="flex justify-between items-start mb-1">
                       <div className="flex items-center gap-2">
-                        <span className="font-mono font-black text-cyan-400 text-base">{call.pc}</span>
-                        <span className="text-xs text-slate-400">{call.zone}</span>
+                        <span className="font-mono font-black text-cyan-400 text-sm">{call.pc}</span>
+                        <span className="text-[11px] text-slate-400">{call.zone}</span>
                       </div>
-                      <span className="text-[11px] text-slate-500 font-mono">{call.time}</span>
+                      <span className="text-[10px] text-slate-500 font-mono">{call.time}</span>
                     </div>
 
-                    <p className="text-xs text-slate-300 mb-3 leading-relaxed">{call.content}</p>
+                    <p className="text-xs text-slate-300 mb-2 leading-relaxed">{call.content}</p>
 
                     <div className="flex justify-between items-center pt-2 border-t border-slate-800/80">
                       <span
-                        className={`text-[11px] font-bold font-mono px-2 py-0.5 rounded ${
+                        className={`text-[10px] font-bold font-mono px-2 py-0.5 rounded ${
                           isReceiving ? 'bg-rose-500/20 text-rose-400' : 'bg-emerald-500/20 text-emerald-400'
                         }`}
                       >
@@ -430,19 +484,16 @@ export default function DashboardFnb() {
                 );
               })}
             </div>
-          </div>
 
-          {/* Quick Order Simulator for testing */}
-          <div className="mt-4 pt-3 border-t border-slate-800 space-y-2">
-            <button
-              onClick={handleQuickAddOrder}
-              className="w-full bg-[#141b2b] hover:bg-cyan-500/20 text-cyan-400 border border-cyan-500/40 py-2 rounded-lg text-xs font-mono font-bold transition flex items-center justify-center gap-1.5"
-            >
-              <span className="material-symbols-outlined text-[16px]">add_circle</span>
-              <span>+ Tạo đơn khách đặt thử nghiệm</span>
-            </button>
-            <div className="text-[11px] text-slate-500 text-center">
-              Sau khi bấm tạo, hãy mở tab <Link href="/kds" className="text-amber-400 font-bold underline">Màn Hình Bếp</Link> để bấm Hoàn thành và theo dõi doanh thu nhảy số ngay lập tức!
+            {/* Quick Test simulator */}
+            <div className="mt-4 pt-3 border-t border-slate-800 space-y-2">
+              <button
+                onClick={handleQuickAddOrder}
+                className="w-full bg-[#141b2b] hover:bg-amber-500/20 text-amber-400 border border-amber-500/40 py-2 rounded-lg text-xs font-mono font-bold transition flex items-center justify-center gap-1.5 cursor-pointer"
+              >
+                <span className="material-symbols-outlined text-[16px]">add_circle</span>
+                <span>+ Giả lập khách đặt món từ máy trạm</span>
+              </button>
             </div>
           </div>
         </div>
