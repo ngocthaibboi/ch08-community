@@ -4,6 +4,7 @@ import React, { useRef, useState, useEffect } from 'react';
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
 import { getStoredOrders, STORAGE_EVENT_NAME } from '@/lib/orderStore';
+import { getStoredWallet, WALLET_EVENT_NAME, UserWallet, INITIAL_WALLET } from '@/lib/walletStore';
 
 export default function GlobalNavBar() {
   const pathname = usePathname();
@@ -13,6 +14,7 @@ export default function GlobalNavBar() {
   const [scrollLeft, setScrollLeft] = useState(0);
   const [hasMoved, setHasMoved] = useState(false);
   const [pendingOrdersCount, setPendingOrdersCount] = useState(0);
+  const [wallet, setWallet] = useState<UserWallet>(INITIAL_WALLET);
 
   // Exact 6 links requested by user
   const navLinks = [
@@ -24,25 +26,28 @@ export default function GlobalNavBar() {
     { href: '/auth', label: 'Nạp ví tiền', icon: 'account_balance_wallet' },
   ];
 
-  // Update pending orders count for badge
+  // Synchronize orders count and wallet balance
   useEffect(() => {
-    const updateCount = () => {
+    const updateAll = () => {
       try {
         const orders = getStoredOrders();
         const pending = orders.filter((o) => o.status === 'PENDING' || o.status === 'COOKING').length;
         setPendingOrdersCount(pending);
+        setWallet(getStoredWallet());
       } catch {
         // Fallback
       }
     };
 
-    updateCount();
-    window.addEventListener(STORAGE_EVENT_NAME, updateCount);
-    window.addEventListener('storage', updateCount);
+    updateAll();
+    window.addEventListener(STORAGE_EVENT_NAME, updateAll);
+    window.addEventListener(WALLET_EVENT_NAME, updateAll);
+    window.addEventListener('storage', updateAll);
 
     return () => {
-      window.removeEventListener(STORAGE_EVENT_NAME, updateCount);
-      window.removeEventListener('storage', updateCount);
+      window.removeEventListener(STORAGE_EVENT_NAME, updateAll);
+      window.removeEventListener(WALLET_EVENT_NAME, updateAll);
+      window.removeEventListener('storage', updateAll);
     };
   }, []);
 
@@ -212,8 +217,10 @@ export default function GlobalNavBar() {
           >
             <span className="material-symbols-outlined text-emerald-400 text-[16px]">account_balance_wallet</span>
             <div className="flex flex-col leading-none text-left">
-              <span className="text-[8px] sm:text-[9px] text-slate-400 font-semibold uppercase">Ví Máy: VIP-08</span>
-              <span className="font-mono text-xs font-bold text-emerald-400">250.000đ</span>
+              <span className="text-[8px] sm:text-[9px] text-slate-400 font-semibold uppercase">Ví Máy: {wallet.pcName}</span>
+              <span className="font-mono text-xs font-bold text-emerald-400">
+                {wallet.balance.toLocaleString('vi-VN')}đ
+              </span>
             </div>
           </Link>
         </div>

@@ -1,40 +1,120 @@
 'use client';
 
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import Link from 'next/link';
+import {
+  getStoredWallet,
+  topupWallet,
+  resetWalletToDefault,
+  calculateRemainingPlayTime,
+  WALLET_EVENT_NAME,
+  UserWallet,
+  INITIAL_WALLET,
+} from '@/lib/walletStore';
 
 export default function AuthAndWallet() {
   const [activeTab, setActiveTab] = useState<'topup' | 'login'>('topup');
   const [amount, setAmount] = useState('50000');
   const [paymentMethod, setPaymentMethod] = useState<'qr' | 'atm' | 'cash'>('qr');
-  const [isSuccess, setIsSuccess] = useState(false);
+  const [isProcessing, setIsProcessing] = useState(false);
+  const [successToast, setSuccessToast] = useState<{
+    added: number;
+    newBalance: number;
+  } | null>(null);
+
+  const [wallet, setWallet] = useState<UserWallet>(INITIAL_WALLET);
+
+  // Synchronize wallet state across tabs and components
+  useEffect(() => {
+    setWallet(getStoredWallet());
+
+    const handleWalletUpdate = () => {
+      setWallet(getStoredWallet());
+    };
+
+    window.addEventListener(WALLET_EVENT_NAME, handleWalletUpdate);
+    window.addEventListener('storage', handleWalletUpdate);
+
+    return () => {
+      window.removeEventListener(WALLET_EVENT_NAME, handleWalletUpdate);
+      window.removeEventListener('storage', handleWalletUpdate);
+    };
+  }, []);
 
   const quickAmounts = ['20000', '50000', '100000', '200000', '500000'];
 
   const handleTopup = (e: React.FormEvent) => {
     e.preventDefault();
-    setIsSuccess(true);
+    const numAmount = parseInt(amount, 10);
+    if (isNaN(numAmount) || numAmount <= 0) {
+      alert('Vui lòng nhập số tiền nạp hợp lệ!');
+      return;
+    }
+
+    setIsProcessing(true);
+
     setTimeout(() => {
-      setIsSuccess(false);
-      alert(`Nạp thành công ${parseInt(amount).toLocaleString('vi-VN')}đ vào tài khoản máy VIP-08!`);
-    }, 1200);
+      // Execute real topup logic and update shared wallet store
+      const updated = topupWallet(numAmount, paymentMethod);
+      setWallet(updated);
+      setIsProcessing(false);
+
+      // Show success notification
+      setSuccessToast({
+        added: numAmount,
+        newBalance: updated.balance,
+      });
+
+      setTimeout(() => {
+        setSuccessToast(null);
+      }, 5000);
+    }, 600);
   };
 
+  const handleResetWallet = () => {
+    if (confirm('Khôi phục số dư ví tài khoản về mặc định 250.000đ?')) {
+      const reset = resetWalletToDefault();
+      setWallet(reset);
+    }
+  };
+
+  const remainingTimeStr = calculateRemainingPlayTime(wallet.balance, wallet.hourlyRate);
+
   return (
-    <div className="min-h-screen bg-slate-950 text-slate-100 p-4 lg:p-8 flex flex-col items-center justify-center font-sans">
+    <div className="min-h-screen bg-slate-950 text-slate-100 p-4 lg:p-8 flex flex-col items-center justify-center font-sans select-none">
       <div className="w-full max-w-xl">
         {/* Module Header Badge */}
         <div className="text-center mb-6">
           <span className="bg-gradient-to-r from-cyan-500 to-purple-600 text-white font-mono text-[10px] uppercase font-bold px-3 py-1 rounded-full shadow-[0_0_12px_rgba(0,240,255,0.3)]">
-            PHÂN CÔNG THÀNH VIÊN 1 (THÁI) • FEATURE/AUTH
+            CỔNG NẠP TIỀN ĐỒNG BỘ TOÀN HỆ THỐNG
           </span>
           <h1 className="text-3xl font-black text-white mt-2 font-gaming tracking-wide">
             CỔNG TÀI KHOẢN &amp; NẠP TIỀN VÍ
           </h1>
           <p className="text-slate-400 text-xs mt-1">
-            Hệ thống quản lý định danh người chơi và nạp số dư chơi game, gọi món tận máy.
+            Số dư được đồng bộ trực tiếp lên thanh Menu và màn hình gọi đồ ăn tại bàn máy.
           </p>
         </div>
+
+        {/* Success Alert Toast */}
+        {successToast && (
+          <div className="bg-emerald-950/90 border-2 border-emerald-400 text-emerald-200 px-4 py-3.5 rounded-xl mb-6 shadow-[0_0_20px_rgba(16,185,129,0.4)] flex items-center justify-between animate-bounce">
+            <div className="flex items-center gap-3">
+              <span className="material-symbols-outlined text-3xl text-emerald-400">check_circle</span>
+              <div>
+                <div className="font-bold text-sm text-white">
+                  NẠP THÀNH CÔNG +{successToast.added.toLocaleString('vi-VN')}đ!
+                </div>
+                <div className="text-xs text-emerald-300">
+                  Số dư mới: <strong className="text-white font-mono">{successToast.newBalance.toLocaleString('vi-VN')}đ</strong> (Đã cộng trực tiếp vào ví máy {wallet.pcName})
+                </div>
+              </div>
+            </div>
+            <span className="bg-emerald-500 text-black text-[10px] font-black px-2 py-1 rounded font-mono uppercase">
+              ĐÃ CỘNG TIỀN
+            </span>
+          </div>
+        )}
 
         {/* User Account Card */}
         <div className="bg-slate-900 border border-slate-800 rounded-xl p-6 mb-6 shadow-2xl relative overflow-hidden">
@@ -48,29 +128,47 @@ export default function AuthAndWallet() {
                 </div>
               </div>
               <div>
-                <h3 className="text-white font-black text-base">ProGamer_VN</h3>
+                <h3 className="text-white font-black text-base">{wallet.userName}</h3>
                 <span className="bg-emerald-500/20 text-emerald-400 border border-emerald-500/40 text-[10px] px-2 py-0.2 rounded font-bold font-mono">
-                  HỘI VIÊN VIP GOLD
+                  {wallet.userTier}
                 </span>
               </div>
             </div>
 
             <div className="text-right">
               <span className="text-slate-400 text-xs block">Vị Trí Hiện Tại:</span>
-              <span className="text-cyan-400 font-mono font-black text-sm">MÁY VIP-08 / TẦNG 2</span>
+              <span className="text-cyan-400 font-mono font-black text-sm">
+                MÁY {wallet.pcName} / TẦNG 2
+              </span>
             </div>
           </div>
 
           <div className="grid grid-cols-2 gap-4 mt-4 text-xs">
-            <div className="bg-slate-800/60 p-3 rounded-lg border border-slate-700/60">
-              <span className="text-slate-400 block mb-0.5">Số Dư Khả Dụng:</span>
-              <span className="font-mono text-xl font-black text-emerald-400">250.000đ</span>
+            <div className="bg-slate-800/80 p-3.5 rounded-lg border border-emerald-500/30 shadow-[inset_0_0_15px_rgba(16,185,129,0.1)]">
+              <div className="flex justify-between items-center mb-0.5">
+                <span className="text-slate-400">Số Dư Khả Dụng:</span>
+                <span className="w-2 h-2 rounded-full bg-emerald-400 inline-block animate-ping"></span>
+              </div>
+              <span className="font-mono text-2xl font-black text-emerald-400 tracking-tight">
+                {wallet.balance.toLocaleString('vi-VN')}đ
+              </span>
             </div>
-            <div className="bg-slate-800/60 p-3 rounded-lg border border-slate-700/60">
-              <span className="text-slate-400 block mb-0.5">Thời Gian Chơi Còn:</span>
-              <span className="font-mono text-xl font-black text-cyan-400">12:30:15</span>
+            <div className="bg-slate-800/80 p-3.5 rounded-lg border border-cyan-500/30 shadow-[inset_0_0_15px_rgba(0,240,255,0.1)]">
+              <span className="text-slate-400 block mb-0.5">Thời Gian Chơi Quy Đổi:</span>
+              <span className="font-mono text-2xl font-black text-cyan-400 tracking-tight">
+                {remainingTimeStr}
+              </span>
             </div>
           </div>
+
+          {wallet.lastTransaction && (
+            <div className="mt-3 pt-3 border-t border-slate-800/80 flex items-center justify-between text-[11px] text-slate-400 font-mono">
+              <span>Giao dịch gần nhất: {wallet.lastTransaction.description}</span>
+              <span className={wallet.lastTransaction.type === 'TOPUP' ? 'text-emerald-400 font-bold' : 'text-rose-400 font-bold'}>
+                {wallet.lastTransaction.type === 'TOPUP' ? '+' : '-'}{wallet.lastTransaction.amount.toLocaleString('vi-VN')}đ ({wallet.lastTransaction.timestamp})
+              </span>
+            </div>
+          )}
         </div>
 
         {/* Tab Switcher */}
@@ -176,14 +274,29 @@ export default function AuthAndWallet() {
 
             <button
               type="submit"
-              disabled={isSuccess}
-              className="w-full bg-gradient-to-r from-cyan-500 to-purple-600 text-white font-bold py-3 rounded-xl transition-all shadow-[0_0_15px_rgba(0,240,255,0.4)] flex items-center justify-center gap-2 font-mono text-sm tracking-wide active:scale-98"
+              disabled={isProcessing}
+              className="w-full bg-gradient-to-r from-cyan-500 to-purple-600 hover:opacity-95 text-white font-bold py-3.5 rounded-xl transition-all shadow-[0_0_15px_rgba(0,240,255,0.4)] flex items-center justify-center gap-2 font-mono text-sm tracking-wide active:scale-98 cursor-pointer"
             >
               <span className="material-symbols-outlined text-[18px]">
-                {isSuccess ? 'sync' : 'bolt'}
+                {isProcessing ? 'sync' : 'bolt'}
               </span>
-              <span>{isSuccess ? 'ĐANG XỬ LÝ GIAO DỊCH...' : `NẠP NGAY ${parseInt(amount || '0').toLocaleString('vi-VN')}đ`}</span>
+              <span>
+                {isProcessing
+                  ? 'ĐANG XÁC THỰC VÀ CỘNG TIỀN...'
+                  : `XÁC NHẬN NẠP +${parseInt(amount || '0').toLocaleString('vi-VN')}đ VÀO VÍ`}
+              </span>
             </button>
+
+            <div className="flex justify-between items-center pt-2 text-[11px] text-slate-500">
+              <span>Hỗ trợ nạp tự động 24/7 không tính phí</span>
+              <button
+                type="button"
+                onClick={handleResetWallet}
+                className="text-slate-400 hover:text-rose-400 underline"
+              >
+                Reset ví về 250k
+              </button>
+            </div>
           </form>
         ) : (
           <div className="bg-slate-900 border border-slate-800 rounded-xl p-6 shadow-2xl space-y-4">
@@ -192,7 +305,7 @@ export default function AuthAndWallet() {
               <label className="text-slate-400 text-xs block mb-1">Tên tài khoản hoặc số điện thoại:</label>
               <input
                 type="text"
-                defaultValue="ProGamer_VN"
+                defaultValue={wallet.userName}
                 className="bg-slate-800 border border-slate-700 text-white rounded-lg px-4 py-2 focus:border-cyan-400 focus:outline-none w-full text-sm"
               />
             </div>
@@ -216,7 +329,7 @@ export default function AuthAndWallet() {
         {/* Back Link */}
         <div className="text-center mt-6">
           <Link href="/menu" className="text-xs text-cyan-400 hover:underline font-mono">
-            &larr; Quay lại gọi món F&amp;B tại máy VIP-08
+            &larr; Quay lại gọi món F&amp;B tại máy {wallet.pcName}
           </Link>
         </div>
       </div>

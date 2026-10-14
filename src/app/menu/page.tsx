@@ -6,6 +6,12 @@ import FoodCard from '@/components/fnb/FoodCard';
 import CartSidebar from '@/components/fnb/CartSidebar';
 import { MenuItem, CartItem, PaymentMethod, Order } from '@/types/fnb';
 import { addOrder } from '@/lib/orderStore';
+import {
+  getStoredWallet,
+  deductWallet,
+  calculateRemainingPlayTime,
+  WALLET_EVENT_NAME,
+} from '@/lib/walletStore';
 
 const INITIAL_MENU_ITEMS: MenuItem[] = [
   {
@@ -131,6 +137,28 @@ export default function CyberMenuClient() {
   const [filterAvailableOnly, setFilterAvailableOnly] = useState(false);
 
   const [accountBalance, setAccountBalance] = useState(250000);
+  const [walletPcName, setWalletPcName] = useState('VIP-08');
+
+  // Synchronize account balance with shared wallet store
+  React.useEffect(() => {
+    const updateWallet = () => {
+      try {
+        const w = getStoredWallet();
+        setAccountBalance(w.balance);
+        setWalletPcName(w.pcName);
+      } catch {
+        // Fallback
+      }
+    };
+    updateWallet();
+    window.addEventListener(WALLET_EVENT_NAME, updateWallet);
+    window.addEventListener('storage', updateWallet);
+    return () => {
+      window.removeEventListener(WALLET_EVENT_NAME, updateWallet);
+      window.removeEventListener('storage', updateWallet);
+    };
+  }, []);
+
   const [orderSuccessModal, setOrderSuccessModal] = useState<{
     orderNumber: number;
     total: number;
@@ -281,14 +309,21 @@ export default function CyberMenuClient() {
     const newOrderNumber = Math.floor(1000 + Math.random() * 9000);
 
     if (paymentMethod === 'ACCOUNT_BALANCE') {
-      setAccountBalance((prev) => prev - total);
+      const deductRes = deductWallet(total, `Thanh toán F&B đơn #${newOrderNumber}`);
+      if (!deductRes.success) {
+        alert(
+          `Số dư tài khoản ví (${accountBalance.toLocaleString('vi-VN')}đ) không đủ để thanh toán ${total.toLocaleString('vi-VN')}đ! Vui lòng nạp thêm tiền vào ví tại thanh menu trên cùng.`
+        );
+        return;
+      }
+      setAccountBalance(deductRes.wallet.balance);
     }
 
     // Create synchronized order for KDS screen
     const newKdsOrder = {
       id: `ord-${newOrderNumber}`,
       orderNumber: newOrderNumber,
-      pcName: 'VIP-08',
+      pcName: walletPcName || 'VIP-08',
       zoneName: 'ZONE VIP A • TẦNG 2',
       status: 'PENDING' as const,
       paymentMethod,
@@ -323,21 +358,19 @@ export default function CyberMenuClient() {
     setCart([]);
   };
 
-  // Calculate real remaining time from account balance (20.000đ/hour for VIP station)
-  const remainingHours = Math.floor(accountBalance / 20000);
-  const remainingMins = Math.floor(((accountBalance % 20000) / 20000) * 60);
-  const formattedRemainingTime = `${String(remainingHours).padStart(2, '0')}:${String(remainingMins).padStart(2, '0')}:15`;
+  const formattedRemainingTime = calculateRemainingPlayTime(accountBalance, 20000);
 
   return (
     <div className="min-h-screen bg-[#070e1d] text-slate-100 font-sans flex flex-col">
       {/* Top Gaming Client HUD Bar */}
       <ClientHeader
-        pcName="VIP-08"
+        pcName={walletPcName}
         zoneName="Tầng 2 (Màn 240Hz)"
         balance={accountBalance}
         remainingTime={formattedRemainingTime}
         userName="ProGamer_VN"
         userTier="Hội viên VIP"
+        onTopup={() => (window.location.href = '/auth')}
         currentOrderTicker={currentTicker}
       />
 
