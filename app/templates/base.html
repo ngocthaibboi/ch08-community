@@ -1,0 +1,78 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>CYBER ZONE - Gaming Lounge & eSports Stadium</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
+</head>
+<body class="bg-[#090d16] text-slate-200 min-h-screen flex flex-col font-sans selection:bg-cyan-500 selection:text-black">
+
+    <!-- THANH THÔNG TIN NHANH TRÊN CÙNG -->
+    <div class="bg-black/60 border-b border-slate-800 text-[11px] text-slate-400 py-1.5 px-4">
+        <div class="max-w-7xl mx-auto flex flex-wrap justify-between items-center gap-2">
+            <div class="flex items-center gap-4">
+                <span class="flex items-center gap-1.5 text-emerald-400"><span class="w-2 h-2 rounded-full bg-emerald-400 animate-ping"></span> ĐANG MỞ CỬA 24/7</span>
+                <span><i class="fa-solid fa-location-dot text-slate-500 mr-1"></i> 182 Lê Duẩn, TP. Vinh (Gần ĐH Vinh)</span>
+            </div>
+            <div class="flex items-center gap-4">
+                <span><i class="fa-solid fa-phone text-slate-500 mr-1"></i> Hotline nạp thẻ: 0988.123.456</span>
+                <span class="text-cyan-400 font-semibold">Tặng 50% nạp lần đầu</span>
+            </div>
+        </div>
+    </div>
+
+    <!-- NAVBAR CHÍNH -->
+    <nav class="border-b border-slate-800/80 bg-[#0c1222]/90 backdrop-blur-md sticky top-0 z-50">
+        <div class="max-w-7xl mx-auto px-4 h-16 flex items-center justify-between">
+            <a href="/" class="flex items-center gap-2.5">
+                <div class="w-9 h-9 rounded-lg bg-cyan-500 flex items-center justify-center text-black font-black text-xl shadow-lg shadow-cyan-500/30">
+                    CZ
+                </div>
+                <div>
+                    <span class="text-xl font-black tracking-wider text-white">CYBER<span class="text-cyan-400">ZONE</span></span>
+                    <span class="block text-[9px] text-slate-400 tracking-widest font-mono uppercase">Gaming Lounge</span>
+                </div>
+            </a>
+
+            <!-- MENU -->
+            <div class="hidden md:flex items-center gap-6 text-sm font-medium text-slate-300">
+                <a href="/" class="text-cyan-400">Trang chủ</a>
+                <a href="#bang-gia" class="hover:text-cyan-400 transition">Bảng giá máy</a>
+                <a href="#khu-vuc" class="hover:text-cyan-400 transition">Cấu hình máy</a>
+                <a href="#dich-vu" class="hover:text-cyan-400 transition">Menu Bếp F&B</a>
+            </div>
+
+            <!-- NÚT TÀI KHOẢN -->
+            <div class="flex items-center gap-3">
+                <a href="/auth/login" class="px-4 py-2 rounded-lg font-semibold text-xs text-slate-300 hover:text-white hover:bg-slate-800 transition">
+                    Đăng nhập
+                </a>
+                <a href="/auth/register" class="px-4 py-2 bg-cyan-500 hover:bg-cyan-400 text-black rounded-lg font-bold text-xs shadow-md shadow-cyan-500/20 transition">
+                    Đăng ký hội viên
+                </a>
+            </div>
+        </div>
+    </nav>
+
+    <!-- NỘI DUNG -->
+    <main class="flex-1">
+        {% block content %}{% endblock %}
+    </main>
+
+    <!-- FOOTER CHUẨN THÔNG TIN DOANH NGHIỆP -->
+    <footer class="border-t border-slate-800/80 bg-black/40 py-8 px-4 text-xs text-slate-500">
+        <div class="max-w-7xl mx-auto flex flex-col md:flex-row justify-between items-center gap-4">
+            <div>
+                <p class="font-bold text-slate-300">HỆ THỐNG PHÒNG MÁY CYBER ZONE eSPORTS</p>
+                <p class="mt-1">Thời gian hoạt động: Toàn bộ các ngày trong tuần (24/7). Chỗ để xe miễn phí có bảo vệ.</p>
+            </div>
+            <div class="text-slate-400">
+                Đồ án Web Quản Lý Quán Net Cyber • Nhóm 4 thành viên (Python Flask ORM)
+            </div>
+        </div>
+    </footer>
+
+</body>
+</html>

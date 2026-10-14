@@ -1,0 +1,140 @@
+{% extends "base.html" %}
+
+{% block content %}
+<div class="max-w-7xl mx-auto px-4 py-8">
+
+    <!-- HERO SECTION 2 CỘT THỰC TẾ -->
+    <div class="grid grid-cols-1 lg:grid-cols-12 gap-8 items-center py-6 mb-12">
+        <!-- Cột trái: Thông tin & Lời mời chơi -->
+        <div class="lg:col-span-7 space-y-6 text-left">
+            <div class="inline-flex items-center gap-2 px-3 py-1 rounded bg-cyan-500/10 border border-cyan-500/30 text-cyan-400 text-xs font-mono font-semibold">
+                <i class="fa-solid fa-gamepad"></i> HỆ THỐNG 60 MÁY THI ĐẤU ESPORTS
+            </div>
+
+            <h1 class="text-4xl md:text-6xl font-black text-white leading-tight">
+                Chiến Game Cực Mượt.<br>
+                <span class="text-cyan-400">Không Lo Về Giá.</span>
+            </h1>
+
+            <p class="text-sm md:text-base text-slate-400 max-w-xl leading-relaxed">
+                Cyber Zone trang bị 100% màn hình 240Hz, card đồ họa RTX thế hệ mới, điều hòa 20°C mở liên tục và phục vụ ăn uống nóng sốt tận bàn máy.
+            </p>
+
+            <!-- Khung ưu đãi nạp tiền -->
+            <div class="p-4 rounded-xl bg-slate-900/90 border border-slate-800 flex items-center justify-between gap-4 max-w-lg">
+                <div>
+                    <span class="text-xs text-slate-400 block font-medium">Khuyến mãi hội viên mới</span>
+                    <span class="text-sm font-bold text-white">Nạp 50.000đ nhận ngay <span class="text-cyan-400">75.000đ</span> vào ví</span>
+                </div>
+                <a href="/auth/register" class="shrink-0 px-4 py-2 bg-cyan-500 hover:bg-cyan-400 text-black text-xs font-bold rounded-lg transition">
+                    Nhận ưu đãi
+                </a>
+            </div>
+
+            <div class="flex items-center gap-4 pt-2">
+                <a href="/auth/login" class="px-6 py-3.5 bg-gradient-to-r from-cyan-500 to-blue-600 hover:brightness-110 text-white font-bold text-sm rounded-xl shadow-lg shadow-cyan-500/20 transition">
+                    <i class="fa-solid fa-right-to-bracket mr-1.5"></i> Đăng nhập vào máy
+                </a>
+                <a href="#bang-gia" class="px-6 py-3.5 bg-slate-900 hover:bg-slate-800 border border-slate-700 text-slate-200 font-semibold text-sm rounded-xl transition">
+                    Xem giá & Cấu hình máy
+                </a>
+            </div>
+        </div>
+
+        <!-- Cột phải: Card Cấu hình Dàn máy "Sát thủ" -->
+        <div class="lg:col-span-5">
+            <div class="bg-gradient-to-b from-slate-900 to-[#0e1628] border border-cyan-500/40 rounded-2xl p-6 shadow-2xl relative overflow-hidden">
+                <div class="absolute -right-8 -top-8 w-32 h-32 bg-cyan-500/10 rounded-full blur-2xl"></div>
+
+                <div class="flex justify-between items-start mb-6">
+                    <div>
+                        <span class="px-2.5 py-1 rounded bg-red-500/20 border border-red-500/40 text-red-400 text-[10px] font-bold tracking-wider uppercase">
+                            KHU THI ĐẤU SUPER VIP
+                        </span>
+                        <h3 class="text-xl font-black text-white mt-2">DÀN MÁY BATTLE PRO</h3>
+                    </div>
+                    <span class="text-2xl font-black text-cyan-400">18.000đ<span class="text-xs text-slate-400 font-normal">/giờ</span></span>
+                </div>
+
+                <!-- Danh sách linh kiện chi tiết đúng chất dân công nghệ -->
+                <div class="space-y-3 font-mono text-xs">
+                    <div class="flex items-center justify-between p-2.5 rounded-lg bg-black/40 border border-slate-800">
+                        <span class="text-slate-400"><i class="fa-solid fa-microchip mr-2 text-cyan-400"></i>Vi xử lý</span>
+                        <span class="text-white font-bold">Intel Core i7 14700F</span>
+                    </div>
+                    <div class="flex items-center justify-between p-2.5 rounded-lg bg-black/40 border border-slate-800">
+                        <span class="text-slate-400"><i class="fa-solid fa-vr-cardboard mr-2 text-cyan-400"></i>Card đồ họa</span>
+                        <span class="text-emerald-400 font-bold">NVIDIA RTX 4070 12GB</span>
+                    </div>
+                    <div class="flex items-center justify-between p-2.5 rounded-lg bg-black/40 border border-slate-800">
+                        <span class="text-slate-400"><i class="fa-solid fa-tv mr-2 text-cyan-400"></i>Màn hình</span>
+                        <span class="text-white font-bold">ASUS ROG 24.5" 240Hz 0.5ms</span>
+                    </div>
+                    <div class="flex items-center justify-between p-2.5 rounded-lg bg-black/40 border border-slate-800">
+                        <span class="text-slate-400"><i class="fa-solid fa-keyboard mr-2 text-cyan-400"></i>Gaming Gear</span>
+                        <span class="text-white font-bold">Zowie EC2 + Phím Cơ Akko</span>
+                    </div>
+                </div>
+
+                <div class="mt-6 pt-4 border-t border-slate-800 flex items-center justify-between text-xs text-slate-400">
+                    <span>Trạng thái khu vực:</span>
+                    <span class="text-emerald-400 font-bold flex items-center gap-1.5">
+                        <span class="w-2 h-2 rounded-full bg-emerald-400"></span> Còn 6 máy trống
+                    </span>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- BẢNG GIÁ THEO KHU VỰC THẬT CỦA QUÁN NET -->
+    <div id="bang-gia" class="py-12 border-t border-slate-800/80">
+        <div class="text-left mb-8">
+            <h2 class="text-2xl font-black text-white uppercase tracking-wide">BẢNG GIÁ DỊCH VỤ GIỜ CHƠI</h2>
+            <p class="text-xs text-slate-400 mt-1">Phù hợp từ nhu cầu giải trí cơ bản đến thi đấu chuyên nghiệp</p>
+        </div>
+
+        <div class="grid grid-cols-1 md:grid-cols-3 gap-6">
+            <!-- Khu Thường -->
+            <div class="bg-slate-900/60 border border-slate-800 rounded-xl p-6 hover:border-slate-700 transition">
+                <span class="text-xs font-bold text-slate-400 uppercase">Khu Tiêu Chuẩn</span>
+                <div class="text-3xl font-black text-white my-3">9.000đ <span class="text-xs font-normal text-slate-500">/ giờ</span></div>
+                <p class="text-xs text-slate-400 mb-6">Cấu hình phổ thông cân mượt LOL, FIFA Online 4, Valorant, Đột Kích.</p>
+                <ul class="text-xs space-y-2.5 text-slate-300 border-t border-slate-800 pt-4">
+                    <li><i class="fa-solid fa-check text-cyan-400 mr-2"></i> Core i5 12400F + RAM 16GB</li>
+                    <li><i class="fa-solid fa-check text-cyan-400 mr-2"></i> GTX 1660 Super 6GB</li>
+                    <li><i class="fa-solid fa-check text-cyan-400 mr-2"></i> Màn hình 27" 144Hz cong</li>
+                    <li><i class="fa-solid fa-check text-cyan-400 mr-2"></i> Ghế Gaming bọc da êm ái</li>
+                </ul>
+            </div>
+
+            <!-- Khu VIP (Nổi bật) -->
+            <div class="bg-gradient-to-b from-slate-900 to-[#0e182e] border-2 border-cyan-500 rounded-xl p-6 shadow-xl relative">
+                <span class="absolute -top-3 right-4 px-3 py-0.5 rounded-full bg-cyan-500 text-black text-[10px] font-black uppercase">Được chọn nhiều nhất</span>
+                <span class="text-xs font-bold text-cyan-400 uppercase">Khu VIP Đấu Trường</span>
+                <div class="text-3xl font-black text-white my-3">14.000đ <span class="text-xs font-normal text-slate-500">/ giờ</span></div>
+                <p class="text-xs text-slate-400 mb-6">Trải nghiệm hoàn hảo cho PUBG, CS2, Naraka, Black Myth Wukong.</p>
+                <ul class="text-xs space-y-2.5 text-slate-300 border-t border-slate-800 pt-4">
+                    <li><i class="fa-solid fa-check text-cyan-400 mr-2"></i> Core i5 13400F + RAM 32GB</li>
+                    <li><i class="fa-solid fa-check text-cyan-400 mr-2"></i> RTX 3060Ti 8GB</li>
+                    <li><i class="fa-solid fa-check text-cyan-400 mr-2"></i> Màn hình 24.5" 240Hz IPS chuyên FPS</li>
+                    <li><i class="fa-solid fa-check text-cyan-400 mr-2"></i> Chuột Logitech G102 + Phím Blue Switch</li>
+                </ul>
+            </div>
+
+            <!-- Phòng Couple / Stream -->
+            <div class="bg-slate-900/60 border border-slate-800 rounded-xl p-6 hover:border-slate-700 transition">
+                <span class="text-xs font-bold text-purple-400 uppercase">Phòng Đôi (Couple) & Stream</span>
+                <div class="text-3xl font-black text-white my-3">22.000đ <span class="text-xs font-normal text-slate-500">/ giờ</span></div>
+                <p class="text-xs text-slate-400 mb-6">Không gian riêng tư có cửa cách âm, sofa đôi, mic và webcam rời cho Streamer.</p>
+                <ul class="text-xs space-y-2.5 text-slate-300 border-t border-slate-800 pt-4">
+                    <li><i class="fa-solid fa-check text-purple-400 mr-2"></i> Core i7 13700K + RTX 4070</li>
+                    <li><i class="fa-solid fa-check text-purple-400 mr-2"></i> Màn hình 2K 240Hz siêu sắc nét</li>
+                    <li><i class="fa-solid fa-check text-purple-400 mr-2"></i> Ghế sofa da nằm ngả lưng 180°</li>
+                    <li><i class="fa-solid fa-check text-purple-400 mr-2"></i> Cửa cách âm riêng biệt</li>
+                </ul>
+            </div>
+        </div>
+    </div>
+
+</div>
+{% endblock %}
