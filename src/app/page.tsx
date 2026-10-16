@@ -3,136 +3,235 @@ import Link from 'next/link';
 
 export default function Home() {
   return (
-    <div className="min-h-screen bg-[#090d16] text-slate-200 font-sans selection:bg-cyan-500 selection:text-black">
-      {/* HERO BANNER SECTION (Từ Bạn Thái - Leader) */}
+    <div className="min-h-screen bg-[#030712] text-slate-100 font-sans selection:bg-emerald-400 selection:text-black">
+      {/* ══════════ 1. HEADER BANNER: TRUNG TÂM DỊCH VỤ MÁY TRẠM & HỘI VIÊN ══════════ */}
       <div className="max-w-7xl mx-auto px-4 py-8 lg:py-12">
-        <div className="grid grid-cols-1 lg:grid-cols-12 gap-8 items-center mb-16">
-          {/* Cột trái: Giới thiệu & Kêu gọi hành động */}
-          <div className="lg:col-span-7 space-y-6">
-            <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-cyan-500/10 border border-cyan-500/30 text-cyan-400 text-xs font-semibold">
-              <span className="w-2 h-2 rounded-full bg-cyan-400 animate-pulse"></span>
-              Phòng máy Tiêu chuẩn eSports 5 sao đầu tiên tại Vinh
+        
+        {/* BANNER THÔNG BÁO LIÊN THÔNG VỚI WEB BẠN THÁI */}
+        <div className="mb-8 p-4 rounded-2xl bg-gradient-to-r from-emerald-950/60 via-[#070d1e] to-slate-900 border border-emerald-500/40 shadow-xl flex flex-col md:flex-row items-start md:items-center justify-between gap-4 font-mono text-xs">
+          <div className="flex items-center gap-3">
+            <span className="w-2.5 h-2.5 rounded-full bg-emerald-400 animate-ping shrink-0"></span>
+            <div>
+              <span className="text-emerald-400 font-bold block uppercase tracking-wide">
+                HỆ THỐNG LIÊN THÔNG REALTIME VỚI CỔNG ĐẶT CHỖ BẠN THÁI
+              </span>
+              <span className="text-slate-300 text-[11px] block mt-0.5">
+                Vừa cập nhật: <strong className="text-amber-400">VIP-02 đã được giữ chỗ trước</strong> cho khách hàng <strong className="text-white">Nguyễn Văn A</strong> (Mã CZ-2026-X89)
+              </span>
+            </div>
+          </div>
+          <Link
+            href="/booking"
+            className="px-4 py-2 bg-emerald-400 hover:bg-emerald-300 text-black font-extrabold text-[11px] rounded-xl transition shadow-md shadow-emerald-500/20 shrink-0"
+          >
+            Mở Sơ Đồ Máy &rarr;
+          </Link>
+        </div>
+
+        {/* HERO SECTION GỌN GÀNG ĐỒNG BỘ NHẬN DIỆN THƯƠNG HIỆU */}
+        <div className="grid grid-cols-1 lg:grid-cols-12 gap-8 items-center mb-14">
+          <div className="lg:col-span-7 space-y-5">
+            <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-emerald-500/10 border border-emerald-500/30 text-emerald-400 text-xs font-mono font-bold">
+              <span className="w-2 h-2 rounded-full bg-emerald-400 animate-pulse"></span>
+              CYBER ZONE ESPORTS &amp; ENTERTAINMENT COMPLEX
             </div>
 
-            <h1 className="text-4xl sm:text-5xl lg:text-6xl font-black text-white tracking-tight leading-none font-gaming">
-              CHIẾN GAME ĐỈNH CAO <br />
-              <span className="text-transparent bg-clip-text bg-gradient-to-r from-cyan-400 via-teal-300 to-indigo-400">
-                KHÔNG GIAN ESPORTS
+            <h1 className="text-3xl sm:text-5xl lg:text-6xl font-black text-white tracking-tight leading-tight font-gaming uppercase">
+              CỔNG DỊCH VỤ <br />
+              <span className="text-transparent bg-clip-text bg-gradient-to-r from-emerald-400 via-teal-300 to-cyan-400">
+                MÁY TRẠM &amp; HỘI VIÊN
               </span>
             </h1>
 
-            <p className="text-slate-400 text-sm sm:text-base leading-relaxed max-w-xl">
-              Trang bị 100% màn hình 240Hz siêu mượt, card đồ họa RTX 40 Series thế hệ mới,
-              không gian máy lạnh khử mùi 24/7 và hệ thống Bếp phục vụ tận bàn chuẩn vị.
+            <p className="text-slate-300 text-sm leading-relaxed max-w-xl">
+              Hệ thống máy trạm liên thông 24/7: Theo dõi sơ đồ chỗ ngồi realtime, khởi động nhanh kho 16 game bản quyền, gọi món Bếp bưng tận bàn trong 5-8 phút và nạp ví tiền tự động.
             </p>
 
-            {/* Banner Ưu Đãi Nạp Thẻ */}
-            <div className="p-4 rounded-xl bg-slate-900 border border-slate-800 flex items-center justify-between gap-4 max-w-xl">
-              <div>
-                <span className="text-xs font-bold text-cyan-400 font-mono">CHƯƠNG TRÌNH HỘI VIÊN MỚI</span>
-                <p className="text-sm text-slate-200 font-bold mt-0.5">Tặng ngay 50% giá trị nạp lần đầu</p>
-                <p className="text-[11px] text-slate-500">Áp dụng cho tất cả tài khoản đăng ký mới tuần này</p>
-              </div>
+            {/* 3 Nút hành động nhanh */}
+            <div className="flex flex-wrap items-center gap-3 pt-2 font-mono text-xs">
               <Link
-                href="/auth"
-                className="shrink-0 px-4 py-2 bg-cyan-500 hover:bg-cyan-400 text-black text-xs font-bold rounded-lg transition shadow-[0_0_12px_rgba(0,240,255,0.3)]"
+                href="/booking"
+                className="px-5 py-3.5 bg-gradient-to-r from-emerald-400 via-teal-400 to-cyan-500 hover:brightness-110 text-black font-black rounded-xl shadow-lg shadow-emerald-500/25 transition flex items-center gap-2"
               >
-                Nhận ưu đãi
+                <span className="material-symbols-outlined text-[18px]">desktop_windows</span>
+                <span>Xem Sơ Đồ Máy Trạm</span>
               </Link>
-            </div>
 
-            <div className="flex flex-wrap items-center gap-3 pt-2">
               <Link
                 href="/games"
-                className="px-6 py-3.5 bg-gradient-to-r from-cyan-500 to-purple-600 hover:brightness-110 text-white font-black text-sm rounded-xl shadow-lg shadow-cyan-500/30 transition flex items-center gap-2 ring-1 ring-cyan-300"
+                className="px-5 py-3.5 bg-slate-900 hover:bg-slate-800 border border-emerald-500/30 text-white font-bold rounded-xl transition flex items-center gap-2 hover:border-emerald-400"
               >
-                <span className="material-symbols-outlined text-[20px]">sports_esports</span>
-                <span>Kho Game Máy Trạm (16 Game)</span>
+                <span className="material-symbols-outlined text-[18px] text-cyan-400">sports_esports</span>
+                <span>Kho Game (16 Game)</span>
               </Link>
 
               <Link
                 href="/menu"
-                className="px-6 py-3.5 bg-gradient-to-r from-emerald-500 to-teal-600 hover:brightness-110 text-white font-bold text-sm rounded-xl shadow-lg shadow-emerald-500/20 transition flex items-center gap-2"
+                className="px-5 py-3.5 bg-slate-900 hover:bg-slate-800 border border-white/10 text-slate-200 font-bold rounded-xl transition flex items-center gap-2"
               >
-                <span className="material-symbols-outlined text-[18px]">restaurant_menu</span>
-                <span>Menu Gọi Món Tận Bàn (F&amp;B)</span>
-              </Link>
-
-              <Link
-                href="/auth"
-                className="px-5 py-3.5 bg-slate-900 hover:bg-slate-800 border border-slate-700 text-slate-200 font-semibold text-sm rounded-xl transition flex items-center gap-2"
-              >
-                <span className="material-symbols-outlined text-[18px]">account_balance_wallet</span>
-                <span>Nạp Tiền Vào Máy</span>
+                <span className="material-symbols-outlined text-[18px] text-emerald-400">restaurant_menu</span>
+                <span>Menu Bếp F&amp;B</span>
               </Link>
             </div>
           </div>
 
-          {/* Cột phải: Card Cấu hình Dàn máy "Sát thủ" */}
+          {/* Cột phải: Card Máy hiện tại của bạn (VIP-08) */}
           <div className="lg:col-span-5">
-            <div className="bg-gradient-to-b from-slate-900 to-[#0e1628] border border-cyan-500/40 rounded-2xl p-6 shadow-2xl relative overflow-hidden">
-              <div className="absolute -right-8 -top-8 w-32 h-32 bg-cyan-500/10 rounded-full blur-2xl"></div>
+            <div className="bg-gradient-to-b from-[#0c1424] to-[#060b14] border border-emerald-500/40 rounded-3xl p-6 shadow-2xl relative overflow-hidden">
+              <div className="absolute -right-8 -top-8 w-32 h-32 bg-emerald-500/10 rounded-full blur-2xl"></div>
 
-              <div className="flex justify-between items-start mb-6">
+              <div className="flex justify-between items-start mb-5">
                 <div>
-                  <span className="px-2.5 py-1 rounded bg-rose-500/20 border border-rose-500/40 text-rose-400 text-[10px] font-bold tracking-wider uppercase font-mono">
-                    KHU THI ĐẤU SUPER VIP
+                  <span className="px-2.5 py-1 rounded bg-cyan-500/20 border border-cyan-500/40 text-cyan-300 text-[10px] font-bold tracking-wider uppercase font-mono">
+                    MÁY ĐANG SỬ DỤNG
                   </span>
-                  <h3 className="text-xl font-black text-white mt-2 font-gaming">DÀN MÁY BATTLE PRO</h3>
+                  <h3 className="text-2xl font-black text-white mt-1.5 font-gaming">MÁY TRẠM: VIP-08</h3>
                 </div>
-                <span className="text-2xl font-black text-cyan-400 font-mono">
-                  18.000đ<span className="text-xs text-slate-400 font-normal">/giờ</span>
+                <span className="text-xs px-2.5 py-1 rounded-full bg-emerald-500/20 text-emerald-400 font-mono font-bold border border-emerald-500/30">
+                  ONLINE
                 </span>
               </div>
 
-              {/* Danh sách linh kiện chi tiết */}
-              <div className="space-y-3 font-mono text-xs">
-                <div className="flex items-center justify-between p-2.5 rounded-lg bg-black/40 border border-slate-800">
+              {/* Thông số phần cứng chi tiết của máy */}
+              <div className="space-y-2.5 font-mono text-xs">
+                <div className="flex items-center justify-between p-2.5 rounded-xl bg-black/50 border border-white/5">
                   <span className="text-slate-400 flex items-center gap-2">
                     <span className="material-symbols-outlined text-cyan-400 text-[16px]">memory</span>Vi xử lý
                   </span>
-                  <span className="text-white font-bold">Intel Core i7 14700F</span>
+                  <span className="text-white font-bold">Intel Core i7 14700K</span>
                 </div>
-                <div className="flex items-center justify-between p-2.5 rounded-lg bg-black/40 border border-slate-800">
+                <div className="flex items-center justify-between p-2.5 rounded-xl bg-black/50 border border-white/5">
                   <span className="text-slate-400 flex items-center gap-2">
-                    <span className="material-symbols-outlined text-cyan-400 text-[16px]">view_in_ar</span>Card đồ họa
+                    <span className="material-symbols-outlined text-emerald-400 text-[16px]">view_in_ar</span>Card đồ họa
                   </span>
-                  <span className="text-emerald-400 font-bold">NVIDIA RTX 4070 12GB</span>
+                  <span className="text-emerald-400 font-bold">RTX 4070 Ti Super 16GB</span>
                 </div>
-                <div className="flex items-center justify-between p-2.5 rounded-lg bg-black/40 border border-slate-800">
+                <div className="flex items-center justify-between p-2.5 rounded-xl bg-black/50 border border-white/5">
                   <span className="text-slate-400 flex items-center gap-2">
                     <span className="material-symbols-outlined text-cyan-400 text-[16px]">desktop_windows</span>Màn hình
                   </span>
-                  <span className="text-white font-bold">ASUS ROG 24.5" 240Hz 0.5ms</span>
+                  <span className="text-white font-bold">ROG 27" 240Hz Fast-IPS</span>
                 </div>
-                <div className="flex items-center justify-between p-2.5 rounded-lg bg-black/40 border border-slate-800">
+                <div className="flex items-center justify-between p-2.5 rounded-xl bg-black/50 border border-white/5">
                   <span className="text-slate-400 flex items-center gap-2">
-                    <span className="material-symbols-outlined text-cyan-400 text-[16px]">keyboard</span>Gaming Gear
+                    <span className="material-symbols-outlined text-purple-400 text-[16px]">keyboard</span>Gaming Gear
                   </span>
                   <span className="text-white font-bold">Zowie EC2 + Phím Cơ Akko</span>
                 </div>
               </div>
 
-              <div className="mt-6 pt-4 border-t border-slate-800 flex items-center justify-between text-xs text-slate-400">
-                <span>Trạng thái khu vực:</span>
-                <span className="text-emerald-400 font-bold flex items-center gap-1.5 font-mono">
-                  <span className="w-2 h-2 rounded-full bg-emerald-400 inline-block animate-ping"></span> Còn 6 máy trống
+              <div className="mt-5 pt-3.5 border-t border-white/10 flex items-center justify-between text-xs text-slate-400 font-mono">
+                <span>Trạng thái phòng:</span>
+                <span className="text-emerald-400 font-bold flex items-center gap-1.5">
+                  <span className="w-2 h-2 rounded-full bg-emerald-400 inline-block animate-ping"></span>
+                  82/100 Máy Đang Hoạt Động
                 </span>
               </div>
             </div>
           </div>
         </div>
 
-        {/* KHO GAME MÁY TRẠM (16 TỰA GAME BẢN QUYỀN) */}
-        <div id="kho-game" className="py-12 border-t border-slate-800/80">
-          <div className="flex flex-col sm:flex-row justify-between items-start sm:items-end mb-8 gap-4">
+        {/* ══════════ 2. 4 KHỐI DỊCH VỤ 1-CHẠM (QUICK SERVICE LAUNCHER) ══════════ */}
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 mb-16">
+          {/* Card 1: Sơ đồ máy */}
+          <Link
+            href="/booking"
+            className="group p-5 rounded-2xl bg-[#070d1e]/80 border border-white/10 hover:border-emerald-500/50 transition-all shadow-xl hover:-translate-y-1 flex flex-col justify-between"
+          >
             <div>
-              <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-cyan-500/10 border border-cyan-500/30 text-cyan-400 text-xs font-semibold mb-2">
-                <span className="w-2 h-2 rounded-full bg-cyan-400 animate-ping"></span>
-                Hệ Thống Diskless 10Gbps • Không Cần Chờ Tải
+              <div className="w-10 h-10 rounded-xl bg-emerald-500/20 text-emerald-400 flex items-center justify-center mb-3">
+                <span className="material-symbols-outlined text-[22px]">desktop_windows</span>
               </div>
-              <h2 className="text-3xl font-black text-white uppercase tracking-wide font-gaming">
-                KHO GAME MÁY TRẠM (16 TỰA GAME)
+              <h3 className="font-gaming font-black text-lg text-white group-hover:text-emerald-400 transition-colors">
+                Sơ Đồ Máy &amp; Giữ Chỗ
+              </h3>
+              <p className="text-xs text-slate-400 mt-1.5 leading-relaxed">
+                Xem trực tiếp chỗ ngồi trống, máy đã đặt trước kèm tên khách hàng. Đặt giữ chỗ tức thì trong 30 phút.
+              </p>
+            </div>
+            <div className="mt-4 pt-3 border-t border-white/5 flex justify-between items-center text-xs font-mono text-emerald-400 font-bold">
+              <span>Mở Sơ Đồ Máy</span>
+              <span>&rarr;</span>
+            </div>
+          </Link>
+
+          {/* Card 2: Kho 16 Game */}
+          <Link
+            href="/games"
+            className="group p-5 rounded-2xl bg-[#070d1e]/80 border border-white/10 hover:border-cyan-500/50 transition-all shadow-xl hover:-translate-y-1 flex flex-col justify-between"
+          >
+            <div>
+              <div className="w-10 h-10 rounded-xl bg-cyan-500/20 text-cyan-400 flex items-center justify-center mb-3">
+                <span className="material-symbols-outlined text-[22px]">sports_esports</span>
+              </div>
+              <h3 className="font-gaming font-black text-lg text-white group-hover:text-cyan-400 transition-colors">
+                Kho Game (16 Tựa Game)
+              </h3>
+              <p className="text-xs text-slate-400 mt-1.5 leading-relaxed">
+                Launcher cài sẵn 100% bản quyền Steam, Riot, Garena. Nhấn F2 tìm nhanh, tích hợp nút giải phóng RAM.
+              </p>
+            </div>
+            <div className="mt-4 pt-3 border-t border-white/5 flex justify-between items-center text-xs font-mono text-cyan-400 font-bold">
+              <span>Mở Menu Game</span>
+              <span>&rarr;</span>
+            </div>
+          </Link>
+
+          {/* Card 3: Menu F&B */}
+          <Link
+            href="/menu"
+            className="group p-5 rounded-2xl bg-[#070d1e]/80 border border-white/10 hover:border-amber-500/50 transition-all shadow-xl hover:-translate-y-1 flex flex-col justify-between"
+          >
+            <div>
+              <div className="w-10 h-10 rounded-xl bg-amber-500/20 text-amber-400 flex items-center justify-center mb-3">
+                <span className="material-symbols-outlined text-[22px]">restaurant_menu</span>
+              </div>
+              <h3 className="font-gaming font-black text-lg text-white group-hover:text-amber-400 transition-colors">
+                Menu Gọi Món F&amp;B
+              </h3>
+              <p className="text-xs text-slate-400 mt-1.5 leading-relaxed">
+                Đặt món trực tiếp trên máy, tự động trừ ví tiền. Bếp tiếp nhận và nhân viên bưng tận bàn trong 5-8 phút.
+              </p>
+            </div>
+            <div className="mt-4 pt-3 border-t border-white/5 flex justify-between items-center text-xs font-mono text-amber-400 font-bold">
+              <span>Xem Thực Đơn</span>
+              <span>&rarr;</span>
+            </div>
+          </Link>
+
+          {/* Card 4: Nạp Ví Tiền */}
+          <Link
+            href="/auth"
+            className="group p-5 rounded-2xl bg-[#070d1e]/80 border border-white/10 hover:border-purple-500/50 transition-all shadow-xl hover:-translate-y-1 flex flex-col justify-between"
+          >
+            <div>
+              <div className="w-10 h-10 rounded-xl bg-purple-500/20 text-purple-400 flex items-center justify-center mb-3">
+                <span className="material-symbols-outlined text-[22px]">account_balance_wallet</span>
+              </div>
+              <h3 className="font-gaming font-black text-lg text-white group-hover:text-purple-400 transition-colors">
+                Nạp Ví Tiền Tự Động
+              </h3>
+              <p className="text-xs text-slate-400 mt-1.5 leading-relaxed">
+                Nạp tiền qua mã QR tài khoản, số dư được cộng ngay lập tức vào máy tính và đồng bộ toàn bộ hệ thống.
+              </p>
+            </div>
+            <div className="mt-4 pt-3 border-t border-white/5 flex justify-between items-center text-xs font-mono text-purple-400 font-bold">
+              <span>Nạp Tiền Ngay</span>
+              <span>&rarr;</span>
+            </div>
+          </Link>
+        </div>
+
+        {/* ══════════ 3. KHO GAME MÁY TRẠM (16 TỰA GAME BẢN QUYỀN) ══════════ */}
+        <div id="kho-game" className="py-10 border-t border-white/10">
+          <div className="flex flex-col sm:flex-row justify-between items-start sm:items-end mb-6 gap-4">
+            <div>
+              <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-cyan-500/10 border border-cyan-500/30 text-cyan-400 text-xs font-semibold mb-2 font-mono">
+                <span className="w-2 h-2 rounded-full bg-cyan-400 animate-ping"></span>
+                Hạ Tầng Diskless 10Gbps • Không Cần Chờ Tải
+              </div>
+              <h2 className="text-2xl sm:text-3xl font-black text-white uppercase tracking-wide font-gaming">
+                KHO GAME CÀI SẴN (16 TỰA GAME)
               </h2>
               <p className="text-xs text-slate-400 mt-1">
                 Tất cả 16 game bản quyền Steam, Riot Games, Garena, Battle.net đã được tối ưu 240Hz và cập nhật tự động.
@@ -141,7 +240,7 @@ export default function Home() {
 
             <Link
               href="/games"
-              className="px-5 py-2.5 rounded-xl bg-gradient-to-r from-cyan-500 to-purple-600 hover:brightness-110 text-white font-black text-xs font-mono shadow-[0_0_15px_rgba(0,240,255,0.4)] transition flex items-center gap-2 ring-1 ring-cyan-300"
+              className="px-5 py-2.5 rounded-xl bg-gradient-to-r from-cyan-500 to-blue-600 hover:brightness-110 text-white font-black text-xs font-mono shadow-[0_0_15px_rgba(0,240,255,0.3)] transition flex items-center gap-2 shrink-0"
             >
               <span className="material-symbols-outlined text-[18px]">sports_esports</span>
               <span>MỞ MENU GAME TOÀN MÀN HÌNH &rarr;</span>
@@ -201,7 +300,7 @@ export default function Home() {
               <Link
                 key={idx}
                 href="/games"
-                className="group relative flex flex-col bg-slate-900 rounded-xl overflow-hidden border border-slate-800 hover:border-cyan-400 transition-all shadow-md hover:-translate-y-1"
+                className="group relative flex flex-col bg-slate-900/90 rounded-2xl overflow-hidden border border-white/10 hover:border-cyan-400 transition-all shadow-md hover:-translate-y-1"
               >
                 <div className="relative aspect-[3/4] w-full overflow-hidden bg-slate-800">
                   <div
@@ -218,7 +317,7 @@ export default function Home() {
                     </span>
                   )}
                 </div>
-                <div className="p-2 text-center bg-slate-900 border-t border-slate-800">
+                <div className="p-2 text-center bg-slate-900 border-t border-white/5">
                   <h4 className="font-bold text-[11px] text-white truncate group-hover:text-cyan-400">
                     {g.name}
                   </h4>
@@ -231,73 +330,13 @@ export default function Home() {
           </div>
         </div>
 
-        {/* BẢNG GIÁ THEO KHU VỰC THẬT CỦA QUÁN NET (Từ bạn Thái) */}
-        <div id="bang-gia" className="py-12 border-t border-slate-800/80">
-          <div className="text-left mb-8">
-            <h2 className="text-2xl font-black text-white uppercase tracking-wide font-gaming">
-              BẢNG GIÁ DỊCH VỤ GIỜ CHƠI
-            </h2>
-            <p className="text-xs text-slate-400 mt-1">Phù hợp từ nhu cầu giải trí cơ bản đến thi đấu chuyên nghiệp</p>
-          </div>
-
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-            {/* Khu Thường */}
-            <div className="bg-slate-900 border border-slate-800 rounded-xl p-6 hover:border-slate-700 transition">
-              <span className="text-xs font-bold text-slate-400 uppercase font-mono">Khu Tiêu Chuẩn (Tầng 1)</span>
-              <div className="text-3xl font-black text-white my-3 font-mono">
-                9.000đ <span className="text-xs font-normal text-slate-500">/ giờ</span>
-              </div>
-              <p className="text-xs text-slate-400 mb-6">Cấu hình phổ thông cân mượt LOL, FIFA Online 4, Valorant, Đột Kích.</p>
-              <ul className="text-xs space-y-2.5 text-slate-300 border-t border-slate-800 pt-4 font-mono">
-                <li className="flex items-center gap-2"><span className="text-cyan-400">✓</span> Core i5 12400F + RAM 16GB</li>
-                <li className="flex items-center gap-2"><span className="text-cyan-400">✓</span> GTX 1660 Super 6GB</li>
-                <li className="flex items-center gap-2"><span className="text-cyan-400">✓</span> Màn hình 27" 144Hz cong</li>
-                <li className="flex items-center gap-2"><span className="text-cyan-400">✓</span> Ghế Gaming bọc da êm ái</li>
-              </ul>
-            </div>
-
-            {/* Khu VIP (Nổi bật) */}
-            <div className="bg-gradient-to-b from-slate-900 to-[#0e182e] border-2 border-cyan-500 rounded-xl p-6 shadow-xl relative">
-              <span className="absolute -top-3 right-4 px-3 py-0.5 rounded-full bg-cyan-500 text-black text-[10px] font-black uppercase font-mono">
-                Được chọn nhiều nhất
-              </span>
-              <span className="text-xs font-bold text-cyan-400 uppercase font-mono">Khu VIP Đấu Trường (Tầng 2)</span>
-              <div className="text-3xl font-black text-white my-3 font-mono">
-                14.000đ <span className="text-xs font-normal text-slate-500">/ giờ</span>
-              </div>
-              <p className="text-xs text-slate-400 mb-6">Trải nghiệm hoàn hảo cho PUBG, CS2, Naraka, Black Myth Wukong.</p>
-              <ul className="text-xs space-y-2.5 text-slate-300 border-t border-slate-800 pt-4 font-mono">
-                <li className="flex items-center gap-2"><span className="text-cyan-400">✓</span> Core i5 13400F + RAM 32GB</li>
-                <li className="flex items-center gap-2"><span className="text-cyan-400">✓</span> RTX 3060Ti 8GB</li>
-                <li className="flex items-center gap-2"><span className="text-cyan-400">✓</span> Màn hình 24.5" 240Hz IPS chuyên FPS</li>
-                <li className="flex items-center gap-2"><span className="text-cyan-400">✓</span> Chuột Logitech G102 + Phím Blue Switch</li>
-              </ul>
-            </div>
-
-            {/* Phòng Couple / Stream */}
-            <div className="bg-slate-900 border border-slate-800 rounded-xl p-6 hover:border-slate-700 transition">
-              <span className="text-xs font-bold text-purple-400 uppercase font-mono">Phòng Đôi (Couple) &amp; Stream</span>
-              <div className="text-3xl font-black text-white my-3 font-mono">
-                22.000đ <span className="text-xs font-normal text-slate-500">/ giờ</span>
-              </div>
-              <p className="text-xs text-slate-400 mb-6">Không gian riêng tư có cửa cách âm, sofa đôi, mic và webcam rời cho Streamer.</p>
-              <ul className="text-xs space-y-2.5 text-slate-300 border-t border-slate-800 pt-4 font-mono">
-                <li className="flex items-center gap-2"><span className="text-purple-400">✓</span> Core i7 13700K + RTX 4070</li>
-                <li className="flex items-center gap-2"><span className="text-purple-400">✓</span> Màn hình 2K 240Hz siêu sắc nét</li>
-                <li className="flex items-center gap-2"><span className="text-purple-400">✓</span> Ghế sofa da nằm ngả lưng 180°</li>
-                <li className="flex items-center gap-2"><span className="text-purple-400">✓</span> Cửa cách âm riêng biệt</li>
-              </ul>
-            </div>
-          </div>
-        </div>
-
-        {/* PHÂN HỆ F&B VÀ BẾP KDS (Của Bạn - Minh Nhật) */}
-        <div id="dich-vu" className="py-12 border-t border-slate-800/80">
-          <div className="flex flex-col sm:flex-row justify-between items-start sm:items-end mb-8 gap-4">
+        {/* ══════════ 4. ĐẶC SẢN BẾP F&B GỌI MÓN TẬN BÀN ══════════ */}
+        <div id="dich-vu" className="py-10 border-t border-white/10">
+          <div className="flex flex-col sm:flex-row justify-between items-start sm:items-end mb-6 gap-4">
             <div>
-              <span className="text-xs font-bold text-cyan-400 uppercase font-mono">DỊCH VỤ F&amp;B TẠI CHỖ</span>
-              <h2 className="text-3xl font-black text-white uppercase tracking-wide font-gaming mt-1">
-                MENU GỌI MÓN 
+              <span className="text-xs font-bold text-emerald-400 uppercase font-mono">DỊCH VỤ F&amp;B TẠI CHỖ</span>
+              <h2 className="text-2xl sm:text-3xl font-black text-white uppercase tracking-wide font-gaming mt-1">
+                MENU GỌI MÓN TẬN BÀN
               </h2>
               <p className="text-xs text-slate-400 mt-1">
                 Đặt món trực tiếp trên máy gaming, trừ tiền ví tự động, nhân viên bưng tận bàn trong 5-8 phút.
@@ -307,15 +346,15 @@ export default function Home() {
             <div className="flex gap-2">
               <Link
                 href="/menu"
-                className="px-4 py-2 rounded-lg bg-cyan-500 hover:bg-cyan-400 text-black font-bold text-xs font-mono shadow-[0_0_12px_rgba(0,240,255,0.3)] transition"
+                className="px-4 py-2.5 rounded-xl bg-gradient-to-r from-emerald-400 to-teal-400 hover:brightness-110 text-black font-extrabold text-xs font-mono shadow-md transition"
               >
                 Mở Menu Gọi Món &rarr;
               </Link>
               <Link
                 href="/kds"
-                className="px-4 py-2 rounded-lg bg-amber-500 hover:bg-amber-400 text-black font-bold text-xs font-mono shadow-[0_0_12px_rgba(245,158,11,0.3)] transition"
+                className="px-4 py-2.5 rounded-xl bg-amber-500 hover:bg-amber-400 text-black font-extrabold text-xs font-mono shadow-md transition"
               >
-                Mở Màn Hình Bếp KDS &rarr;
+                Màn Hình Bếp KDS &rarr;
               </Link>
             </div>
           </div>
@@ -323,50 +362,50 @@ export default function Home() {
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
             <Link
               href="/menu"
-              className="bg-slate-900 border border-slate-800 hover:border-cyan-400 rounded-xl p-4 transition group flex flex-col justify-between"
+              className="bg-slate-900/80 border border-white/10 hover:border-emerald-400 rounded-2xl p-4 transition group flex flex-col justify-between"
             >
               <div>
-                <span className="text-xs text-rose-400 font-bold uppercase font-mono">Bán Chạy Nhất</span>
-                <h4 className="text-base font-black text-white mt-1 group-hover:text-cyan-400 transition-colors">
+                <span className="text-[10px] text-rose-400 font-bold uppercase font-mono px-2 py-0.5 rounded bg-rose-500/10 border border-rose-500/30">Bán Chạy Nhất</span>
+                <h4 className="text-base font-black text-white mt-2 group-hover:text-emerald-400 transition-colors">
                   Mì Trộn Indomie Double Trứng
                 </h4>
                 <p className="text-xs text-slate-400 mt-1">Trứng lòng đào béo ngậy, hành phi giòn tan, dưa leo.</p>
               </div>
-              <div className="mt-4 pt-3 border-t border-slate-800 flex justify-between items-center">
-                <span className="font-mono text-base font-black text-cyan-400">38.000đ</span>
-                <span className="text-xs text-slate-400 group-hover:text-cyan-400 font-bold">+ Gọi Ngay</span>
+              <div className="mt-4 pt-3 border-t border-white/5 flex justify-between items-center">
+                <span className="font-mono text-base font-black text-emerald-400">38.000đ</span>
+                <span className="text-xs text-slate-400 group-hover:text-emerald-400 font-bold">+ Gọi Ngay</span>
               </div>
             </Link>
 
             <Link
               href="/menu"
-              className="bg-slate-900 border border-slate-800 hover:border-cyan-400 rounded-xl p-4 transition group flex flex-col justify-between"
+              className="bg-slate-900/80 border border-white/10 hover:border-emerald-400 rounded-2xl p-4 transition group flex flex-col justify-between"
             >
               <div>
-                <span className="text-xs text-amber-400 font-bold uppercase font-mono">Đặc Sản Cyber</span>
-                <h4 className="text-base font-black text-white mt-1 group-hover:text-cyan-400 transition-colors">
+                <span className="text-[10px] text-amber-400 font-bold uppercase font-mono px-2 py-0.5 rounded bg-amber-500/10 border border-amber-500/30">Đặc Sản Cyber</span>
+                <h4 className="text-base font-black text-white mt-2 group-hover:text-emerald-400 transition-colors">
                   Cơm Bò Lúc Lắc Phô Mai
                 </h4>
                 <p className="text-xs text-slate-400 mt-1">Bò mềm xào sốt tiêu đen phô mai kéo sợi, trứng ốp la.</p>
               </div>
-              <div className="mt-4 pt-3 border-t border-slate-800 flex justify-between items-center">
-                <span className="font-mono text-base font-black text-cyan-400">55.000đ</span>
-                <span className="text-xs text-slate-400 group-hover:text-cyan-400 font-bold">+ Gọi Ngay</span>
+              <div className="mt-4 pt-3 border-t border-white/5 flex justify-between items-center">
+                <span className="font-mono text-base font-black text-emerald-400">55.000đ</span>
+                <span className="text-xs text-slate-400 group-hover:text-emerald-400 font-bold">+ Gọi Ngay</span>
               </div>
             </Link>
 
             <Link
               href="/menu"
-              className="bg-slate-900 border border-slate-800 hover:border-cyan-400 rounded-xl p-4 transition group flex flex-col justify-between"
+              className="bg-slate-900/80 border border-white/10 hover:border-emerald-400 rounded-2xl p-4 transition group flex flex-col justify-between"
             >
               <div>
-                <span className="text-xs text-emerald-400 font-bold uppercase font-mono">Ưu Đãi Đêm</span>
-                <h4 className="text-base font-black text-white mt-1 group-hover:text-cyan-400 transition-colors">
+                <span className="text-[10px] text-emerald-400 font-bold uppercase font-mono px-2 py-0.5 rounded bg-emerald-500/10 border border-emerald-500/30">Ưu Đãi Đêm</span>
+                <h4 className="text-base font-black text-white mt-2 group-hover:text-emerald-400 transition-colors">
                   Combo Thức Đêm Chiến Game (-20%)
                 </h4>
                 <p className="text-xs text-slate-400 mt-1">1x Cơm Đùi Gà Da Giòn + 1x Sting Dâu + 1x Snack.</p>
               </div>
-              <div className="mt-4 pt-3 border-t border-slate-800 flex justify-between items-center">
+              <div className="mt-4 pt-3 border-t border-white/5 flex justify-between items-center">
                 <span className="font-mono text-base font-black text-emerald-400">69.000đ</span>
                 <span className="text-xs text-slate-400 group-hover:text-emerald-400 font-bold">+ Chọn Combo</span>
               </div>
@@ -374,33 +413,39 @@ export default function Home() {
 
             <Link
               href="/menu"
-              className="bg-slate-900 border border-slate-800 hover:border-cyan-400 rounded-xl p-4 transition group flex flex-col justify-between"
+              className="bg-slate-900/80 border border-white/10 hover:border-emerald-400 rounded-2xl p-4 transition group flex flex-col justify-between"
             >
               <div>
-                <span className="text-xs text-cyan-400 font-bold uppercase font-mono">Nạp Năng Lượng</span>
-                <h4 className="text-base font-black text-white mt-1 group-hover:text-cyan-400 transition-colors">
+                <span className="text-[10px] text-cyan-400 font-bold uppercase font-mono px-2 py-0.5 rounded bg-cyan-500/10 border border-cyan-500/30">Nạp Năng Lượng</span>
+                <h4 className="text-base font-black text-white mt-2 group-hover:text-cyan-400 transition-colors">
                   Monster Energy Ultra Lạnh
                 </h4>
                 <p className="text-xs text-slate-400 mt-1">Ướp lạnh âm độ C, phục vụ kèm ly đá riêng tận bàn.</p>
               </div>
-              <div className="mt-4 pt-3 border-t border-slate-800 flex justify-between items-center">
+              <div className="mt-4 pt-3 border-t border-white/5 flex justify-between items-center">
                 <span className="font-mono text-base font-black text-cyan-400">35.000đ</span>
                 <span className="text-xs text-slate-400 group-hover:text-cyan-400 font-bold">+ Thêm Nhanh</span>
               </div>
             </Link>
           </div>
         </div>
+
       </div>
 
-      {/* FOOTER CHUẨN THÔNG TIN PHÒNG MÁY (Từ bạn Thái) */}
-      <footer className="border-t border-slate-800/80 bg-black/40 py-8 px-4 text-xs text-slate-500">
+      {/* FOOTER ĐỒNG BỘ THƯƠNG HIỆU CYBER ZONE */}
+      <footer className="border-t border-white/10 bg-black/60 py-8 px-4 text-xs text-slate-400 font-mono">
         <div className="max-w-7xl mx-auto flex flex-col md:flex-row justify-between items-center gap-4">
-          <div>
-            <p className="font-bold text-slate-300">HỆ THỐNG PHÒNG MÁY CYBER ZONE eSPORTS</p>
-            <p className="mt-1">Địa chỉ: 182 Lê Duẩn, TP. Vinh (Gần ĐH Vinh) • Hotline: 0988.123.456 (24/7 có bảo vệ)</p>
+          <div className="flex items-center gap-3">
+            <div className="w-8 h-8 rounded-lg bg-gradient-to-br from-emerald-400 to-cyan-500 text-black font-black flex items-center justify-center font-bold">
+              CZ
+            </div>
+            <div>
+              <p className="font-bold text-white">CYBER ZONE ESPORTS &amp; ENTERTAINMENT COMPLEX</p>
+              <p className="text-[11px] text-slate-500 mt-0.5">Chi nhánh: TP.HCM • Đà Nẵng • Hà Nội • Hotline: 1900 8888 (24/7)</p>
+            </div>
           </div>
-          <div className="text-slate-400 font-mono">
-            Đồ án Web Quản Lý Quán Net Cyber • Phụ trách F&amp;B: Minh Nhật (feature/fnb)
+          <div className="text-slate-400">
+            Hệ thống quản lý máy trạm &amp; F&amp;B tự động • Nhóm đồ án Cyber Game
           </div>
         </div>
       </footer>

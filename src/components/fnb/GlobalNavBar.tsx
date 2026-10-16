@@ -101,37 +101,37 @@ export default function GlobalNavBar() {
   return (
     <header className="sticky top-0 z-50 flex flex-col shadow-2xl">
       {/* 24/7 Telemetry & Cyber Info Bar */}
-      <div className={`px-4 py-1 flex items-center justify-between text-[11px] font-mono border-b ${
-        isStaffPortal ? 'bg-[#0f140c] border-amber-900/60 text-amber-300' : 'bg-[#050912] border-slate-800 text-slate-400'
+      <div className={`px-4 py-1.5 flex items-center justify-between text-[11px] font-mono border-b ${
+        isStaffPortal ? 'bg-[#0f140c] border-amber-900/60 text-amber-300' : 'bg-black/80 border-white/10 text-slate-400'
       }`}>
         <div className="flex items-center gap-3">
           {isStaffPortal ? (
             <span className="flex items-center gap-1.5 text-amber-400 font-bold">
               <span className="w-2 h-2 rounded-full bg-amber-400 inline-block animate-pulse"></span>
-              CỔNG NHÂN VIÊN &amp; VẬN HÀNH BẾP (STAFF PORTAL)
+              CỔNG NHÂN VIÊN &amp; VẬN HÀNH BẾP (STAFF OPS)
             </span>
           ) : (
             <span className="flex items-center gap-1.5 text-emerald-400 font-bold">
               <span className="w-2 h-2 rounded-full bg-emerald-400 inline-block animate-ping"></span>
-              CỔNG NGƯỜI CHƠI • CYBER ZONE SERVER: ONLINE
+              CỔNG HỘI VIÊN • CYBER ZONE SERVER: 24/7 ONLINE
             </span>
           )}
           <span className="text-slate-700 hidden sm:inline">|</span>
-          <span className="hidden sm:inline">
+          <span className="hidden sm:inline text-slate-400">
             {isStaffPortal
               ? `Đơn bếp đang hoạt động: ${pendingOrdersCount} đơn • Khu vực pha chế & bếp nóng sẵn sàng`
-              : 'Tầng 1 & Tầng 2: 82/100 Máy Đang Hoạt Động'}
+              : 'Tầng 1 & Tầng 2: 82/100 Máy Đang Hoạt Động • Đặt Giữ Chỗ Tức Thì'}
           </span>
         </div>
 
         <div className="flex items-center gap-4">
           <span className="hidden md:inline">
-            Hỗ trợ 24/7: <strong className={isStaffPortal ? 'text-amber-400' : 'text-cyan-400'}>1900.8888</strong>
+            Hotline 24/7: <strong className={isStaffPortal ? 'text-amber-400' : 'text-emerald-400 font-bold'}>1900 8888</strong>
           </span>
-          <span className={`text-[10px] px-2 py-0.2 rounded font-bold font-mono border ${
+          <span className={`text-[10px] px-2 py-0.5 rounded font-bold font-mono border ${
             isStaffPortal
               ? 'bg-amber-950/80 border-amber-500/50 text-amber-300'
-              : 'bg-purple-950/60 border-purple-500/40 text-purple-300'
+              : 'bg-emerald-950/60 border-emerald-500/40 text-emerald-300'
           }`}>
             {isStaffPortal ? 'STAFF / KITCHEN MODE' : 'HỘI VIÊN VIP'}
           </span>
@@ -140,29 +140,29 @@ export default function GlobalNavBar() {
 
       {/* Main Navbar */}
       <nav className={`backdrop-blur-md border-b px-3 sm:px-4 py-2.5 flex items-center justify-between gap-2 sm:gap-4 relative transition-colors ${
-        isStaffPortal ? 'bg-[#0c1322]/98 border-amber-500/30' : 'bg-slate-900/95 border-slate-800'
+        isStaffPortal ? 'bg-[#0c1322]/98 border-amber-500/30' : 'bg-[#070d1e]/90 border-white/10'
       }`}>
-        {/* Brand Logo */}
-        <Link href={isStaffPortal ? '/kds' : '/'} className="flex items-center gap-2 group flex-shrink-0">
-          <div className={`w-9 h-9 rounded-xl p-0.5 flex items-center justify-center transition-transform group-hover:scale-105 shadow-md ${
+        {/* Brand Logo - Aligned with Thai's CZ Branding */}
+        <Link href={isStaffPortal ? '/kds' : '/'} className="flex items-center gap-2.5 group flex-shrink-0">
+          <div className={`w-9 h-9 rounded-xl flex items-center justify-center font-black text-lg transition-transform group-hover:scale-105 shadow-md ${
             isStaffPortal
-              ? 'bg-gradient-to-r from-amber-500 to-orange-600 shadow-[0_0_15px_rgba(245,158,11,0.4)]'
-              : 'bg-gradient-to-r from-cyan-500 to-purple-600 shadow-[0_0_15px_rgba(0,240,255,0.4)]'
+              ? 'bg-gradient-to-r from-amber-500 to-orange-600 text-black shadow-[0_0_15px_rgba(245,158,11,0.4)]'
+              : 'bg-gradient-to-br from-emerald-400 via-teal-400 to-cyan-500 text-black shadow-lg shadow-emerald-500/20'
           }`}>
-            <div className="w-full h-full bg-slate-950 rounded-[10px] flex items-center justify-center">
-              <span className={`material-symbols-outlined text-[20px] ${isStaffPortal ? 'text-amber-400' : 'text-cyan-400'}`}>
-                {isStaffPortal ? 'soup_kitchen' : 'sports_esports'}
-              </span>
-            </div>
+            {isStaffPortal ? 'OPS' : 'CZ'}
           </div>
           <div className="flex flex-col leading-none">
             <span className="font-gaming font-black text-base sm:text-lg tracking-wider text-white">
-              {isStaffPortal ? 'CYBER OPS' : 'CYBER ZONE'}
+              {isStaffPortal ? (
+                <>CYBER<span className="text-amber-400">OPS</span></>
+              ) : (
+                <>CYBER<span className="text-emerald-400">ZONE</span></>
+              )}
             </span>
             <span className={`text-[8px] sm:text-[9px] font-mono uppercase tracking-widest font-bold ${
               isStaffPortal ? 'text-amber-400' : 'text-cyan-400'
             }`}>
-              {isStaffPortal ? 'BẾP & VẬN HÀNH' : 'ESPORTS LOUNGE'}
+              {isStaffPortal ? 'BẾP & VẬN HÀNH' : 'eSports & Complex'}
             </span>
           </div>
         </Link>
@@ -202,8 +202,8 @@ export default function GlobalNavBar() {
                     isActive
                       ? isStaffPortal
                         ? 'bg-gradient-to-r from-amber-500 to-orange-600 text-black font-black shadow-[0_0_15px_rgba(245,158,11,0.4)]'
-                        : 'bg-gradient-to-r from-cyan-500 to-purple-600 text-white shadow-[0_0_15px_rgba(0,240,255,0.4)] ring-1 ring-cyan-300'
-                      : 'bg-slate-800/80 hover:bg-slate-800 text-slate-300 hover:text-white border border-slate-700/60 hover:border-cyan-500/40'
+                        : 'bg-gradient-to-r from-emerald-400 via-teal-400 to-cyan-500 text-black font-black shadow-[0_0_15px_rgba(16,185,129,0.4)]'
+                      : 'bg-slate-900/80 hover:bg-slate-800 text-slate-300 hover:text-white border border-white/10 hover:border-emerald-500/40'
                   }`}
                 >
                   <span className="material-symbols-outlined text-[16px]">{link.icon}</span>

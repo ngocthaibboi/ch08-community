@@ -361,7 +361,7 @@ export default function CyberMenuClient() {
   const formattedRemainingTime = calculateRemainingPlayTime(accountBalance, 20000);
 
   return (
-    <div className="min-h-screen bg-[#070e1d] text-slate-100 font-sans flex flex-col">
+    <div className="min-h-screen bg-[#030712] text-slate-100 font-sans flex flex-col">
       {/* Top Gaming Client HUD Bar */}
       <ClientHeader
         pcName={walletPcName}

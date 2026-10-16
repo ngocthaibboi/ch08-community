@@ -247,14 +247,14 @@ export default function GameMenuPage() {
   };
 
   return (
-    <div className="min-h-screen bg-[#070e1d] text-slate-100 font-sans flex flex-col select-none">
+    <div className="min-h-screen bg-[#030712] text-slate-100 font-sans flex flex-col select-none">
       {/* Sub-header Telemetry Bar - Synchronized with Cyber Zone Hardware */}
-      <div className="bg-[#0c1322] border-b border-slate-800 px-4 py-2 flex flex-wrap items-center justify-between gap-3 text-xs font-mono">
+      <div className="bg-[#070d1e]/90 border-b border-white/10 px-4 py-2 flex flex-wrap items-center justify-between gap-3 text-xs font-mono">
         <div className="flex items-center gap-3">
-          <div className="flex items-center gap-1.5 bg-slate-900 border border-cyan-500/40 px-3 py-1 rounded-lg">
-            <span className="w-2 h-2 rounded-full bg-cyan-400 animate-pulse"></span>
-            <span className="font-gaming font-black text-cyan-400">VỊ TRÍ: {wallet.pcName}</span>
-            <span className="text-slate-500">• TẦNG 2</span>
+          <div className="flex items-center gap-1.5 bg-slate-900 border border-emerald-500/40 px-3 py-1 rounded-lg">
+            <span className="w-2 h-2 rounded-full bg-emerald-400 animate-pulse"></span>
+            <span className="font-gaming font-black text-emerald-400">VỊ TRÍ: {wallet.pcName}</span>
+            <span className="text-slate-400">• TẦNG 2 VIP</span>
           </div>
 
           <div className="flex items-center gap-1 bg-slate-900 border border-slate-800 px-2.5 py-1 rounded-lg text-slate-300">
@@ -307,7 +307,7 @@ export default function GameMenuPage() {
 
           <button
             onClick={handleOptimizeRam}
-            className="flex items-center gap-1 bg-gradient-to-r from-cyan-500 to-purple-600 hover:brightness-110 text-white px-3 py-1.5 rounded-lg font-bold text-xs shadow-[0_0_12px_rgba(0,240,255,0.3)] transition active:scale-95 cursor-pointer font-mono"
+            className="flex items-center gap-1 bg-gradient-to-r from-emerald-400 to-cyan-500 hover:brightness-110 text-black px-3.5 py-1.5 rounded-lg font-black text-xs shadow-[0_0_12px_rgba(16,185,129,0.3)] transition active:scale-95 cursor-pointer font-mono"
           >
             <span className={`material-symbols-outlined text-[16px] ${ramOptimized ? 'animate-spin' : ''}`}>
               bolt
@@ -318,7 +318,7 @@ export default function GameMenuPage() {
       </div>
 
       {/* Search HUD & Platform Filter Bar */}
-      <div className="bg-slate-900/90 border-b border-slate-800 px-4 py-3">
+      <div className="bg-[#070d1e]/90 border-b border-white/10 px-4 py-3">
         <div className="max-w-7xl mx-auto space-y-3">
           <div className="flex flex-col md:flex-row items-center justify-between gap-3">
             {/* Search Input */}
@@ -378,8 +378,8 @@ export default function GameMenuPage() {
                 onClick={() => setSelectedCategory(cat.id)}
                 className={`px-3 py-1.5 rounded-lg text-xs font-bold font-mono whitespace-nowrap transition cursor-pointer ${
                   selectedCategory === cat.id
-                    ? 'bg-gradient-to-r from-cyan-500 to-purple-600 text-white shadow-[0_0_12px_rgba(0,240,255,0.3)]'
-                    : 'bg-slate-800/80 hover:bg-slate-800 text-slate-300 border border-slate-700'
+                    ? 'bg-gradient-to-r from-emerald-400 via-teal-400 to-cyan-500 text-black font-black shadow-[0_0_12px_rgba(16,185,129,0.35)]'
+                    : 'bg-slate-900/80 hover:bg-slate-800 text-slate-300 border border-white/10'
                 }`}
               >
                 {cat.label}

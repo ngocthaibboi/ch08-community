@@ -22,7 +22,7 @@ export default function RootLayout({
           rel="stylesheet"
         />
       </head>
-      <body className="bg-[#070e1d] text-slate-100 min-h-screen antialiased select-none flex flex-col">
+      <body className="bg-[#030712] text-slate-100 min-h-screen antialiased select-none flex flex-col font-sans">
         <GlobalNavBar />
         <div className="flex-1 flex flex-col">
           {children}
