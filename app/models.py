@@ -7,7 +7,7 @@ from . import db, login_manager
 def load_user(user_id):
     return User.query.get(int(user_id))
 
-# Bảng người dùng & phân quyền (Thành viên 1 - Chapter 6 & 7)
+# Bảng người dùng
 class User(db.Model, UserMixin):
     __tablename__ = 'users'
     id = db.Column(db.Integer, primary_key=True)
@@ -25,20 +25,55 @@ class User(db.Model, UserMixin):
     def check_password(self, password):
         return check_password_hash(self.password_hash, password)
 
-# Bảng Ví tiền (Thành viên 1)
+    # TỰ ĐỘNG TÍNH TOÁN HẠNG THÀNH VIÊN DỰA TRÊN TỔNG TIỀN ĐÃ NẠP
+    @property
+    def rank_info(self):
+        total = self.wallet.total_deposited if self.wallet else 0.0
+        if total >= 3000000:
+            return {
+                "name": "KIM CƯƠNG",
+                "badge_color": "bg-cyan-500/20 text-cyan-400 border-cyan-400",
+                "discount_pc": 20,
+                "discount_fnb": 10,
+                "icon": "fa-gem",
+                "next_tier": None,
+                "progress": 100
+            }
+        elif total >= 1000000:
+            return {
+                "name": "VÀNG (GOLD)",
+                "badge_color": "bg-amber-500/20 text-amber-400 border-amber-400",
+                "discount_pc": 10,
+                "discount_fnb": 5,
+                "icon": "fa-crown",
+                "next_tier": "KIM CƯƠNG (Cần nạp thêm {:,.0f}đ)".format(3000000 - total),
+                "progress": min(100, int((total / 3000000) * 100))
+            }
+        elif total >= 200000:
+            return {
+                "name": "BẠC (SILVER)",
+                "badge_color": "bg-slate-500/20 text-slate-300 border-slate-300",
+                "discount_pc": 5,
+                "discount_fnb": 0,
+                "icon": "fa-medal",
+                "next_tier": "VÀNG (Cần nạp thêm {:,.0f}đ)".format(1000000 - total),
+                "progress": min(100, int((total / 1000000) * 100))
+            }
+        else:
+            return {
+                "name": "ĐỒNG (TÂN THỦ)",
+                "badge_color": "bg-amber-900/30 text-amber-600 border-amber-800",
+                "discount_pc": 0,
+                "discount_fnb": 0,
+                "icon": "fa-shield",
+                "next_tier": "BẠC (Cần nạp thêm {:,.0f}đ)".format(200000 - total),
+                "progress": min(100, int((total / 200000) * 100))
+            }
+
+# Bảng Ví tiền
 class Wallet(db.Model):
     __tablename__ = 'wallets'
     id = db.Column(db.Integer, primary_key=True)
-    balance = db.Column(db.Float, default=0.0)
+    balance = db.Column(db.Float, default=0.0)             # Số dư khả dụng hiện tại
+    total_deposited = db.Column(db.Float, default=0.0)     # Tổng tích lũy nạp từ trước đến nay để xét hạng
     user_id = db.Column(db.Integer, db.ForeignKey('users.id'), unique=True, nullable=False)
-
-# Bảng Dàn máy Cyber (Thành viên 2)
-class Computer(db.Model):
-    __tablename__ = 'computers'
-    id = db.Column(db.Integer, primary_key=True)
-    name = db.Column(db.String(50), nullable=False)
-    zone = db.Column(db.String(50), nullable=False)  # VIP, Standard, Stream
-    cpu = db.Column(db.String(100))
-    vga = db.Column(db.String(100))
-    hourly_price = db.Column(db.Float, nullable=False)
-    status = db.Column(db.String(20), default='AVAILABLE')  # AVAILABLE, OCCUPIED, MAINTENANCE

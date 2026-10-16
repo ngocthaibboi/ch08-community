@@ -15,17 +15,17 @@ def register():
             flash('Tên đăng nhập đã tồn tại!', 'danger')
             return redirect(url_for('auth.register'))
 
-        # Tạo User và tự động tạo Ví tiền
         new_user = User(username=username)
         new_user.set_password(password)
         db.session.add(new_user)
         db.session.commit()
 
-        new_wallet = Wallet(user_id=new_user.id, balance=0.0)
+        # Tạo ví tiền với số dư 0đ và tích lũy nạp 0đ
+        new_wallet = Wallet(user_id=new_user.id, balance=0.0, total_deposited=0.0)
         db.session.add(new_wallet)
         db.session.commit()
 
-        flash('Đăng ký thành công! Hãy đăng nhập.', 'success')
+        flash('Đăng ký thành công! Hãy đăng nhập để nhận ưu đãi tân thủ.', 'success')
         return redirect(url_for('auth.login'))
 
     return render_template('auth/register.html')
@@ -39,14 +39,48 @@ def login():
 
         if user and user.check_password(password):
             login_user(user)
-            return f"<h1>Đăng nhập thành công! Chào mừng {user.username} (Số dư ví: {user.wallet.balance}đ)</h1>"
+            flash(f'Chào mừng {user.username} trở lại Cyber Zone!', 'success')
+            return redirect(url_for('auth.profile'))
         else:
             flash('Sai tài khoản hoặc mật khẩu!', 'danger')
 
     return render_template('auth/login.html')
 
+# TRANG HỒ SƠ & NẠP TIỀN NÂNG HẠNG (THÀNH VIÊN 1)
+@auth_bp.route('/profile')
+@login_required
+def profile():
+    return render_template('auth/profile.html', user=current_user)
+
+# XỬ LÝ NẠP TIỀN VÀ TỰ ĐỘNG NÂNG HẠNG
+@auth_bp.route('/topup', methods=['POST'])
+@login_required
+def topup():
+    amount = float(request.form.get('amount', 0))
+    if amount <= 0:
+        flash('Số tiền nạp không hợp lệ!', 'danger')
+        return redirect(url_for('auth.profile'))
+
+    # Khuyến mãi nạp giờ vàng
+    bonus = 0
+    if amount >= 1000000:
+        bonus = 600000
+    elif amount >= 500000:
+        bonus = 200000
+    elif amount >= 200000:
+        bonus = 50000
+
+    wallet = current_user.wallet
+    wallet.balance += (amount + bonus)
+    wallet.total_deposited += amount
+    db.session.commit()
+
+    flash(f'Nạp thành công {amount:,.0f}đ! (Được thưởng thêm {bonus:,.0f}đ). Số dư ví hiện tại: {wallet.balance:,.0f}đ', 'success')
+    return redirect(url_for('auth.profile'))
+
 @auth_bp.route('/logout')
 @login_required
 def logout():
     logout_user()
+    flash('Đã đăng xuất an toàn.', 'info')
     return redirect(url_for('auth.login'))
