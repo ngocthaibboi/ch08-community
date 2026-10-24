@@ -14,6 +14,12 @@ import {
   WALLET_EVENT_NAME,
   WalletTransaction,
 } from '@/lib/walletStore';
+import {
+  getStoredStaffRequests,
+  resolveStaffRequest,
+  STAFF_REQUEST_EVENT,
+  StaffRequest,
+} from '@/lib/staffRequestStore';
 import { Order } from '@/types/fnb';
 
 export default function DashboardFnb() {
@@ -25,14 +31,15 @@ export default function DashboardFnb() {
     recentTopups: [],
   });
   const [lastNotice, setLastNotice] = useState<string | null>(null);
+  const [staffRequests, setStaffRequests] = useState<StaffRequest[]>([]);
 
-  // Sync real-time data from kitchen orders & wallet store
   useEffect(() => {
     const updateDashboard = () => {
       const storedOrders = getStoredOrders();
       setOrders(storedOrders);
       setFnbStats(calculateLiveDashboardStats(storedOrders));
       setTopupStats(calculateTotalTopupRevenue());
+      setStaffRequests(getStoredStaffRequests());
     };
 
     updateDashboard();
@@ -43,16 +50,17 @@ export default function DashboardFnb() {
 
     window.addEventListener(STORAGE_EVENT_NAME, handleSync);
     window.addEventListener(WALLET_EVENT_NAME, handleSync);
+    window.addEventListener(STAFF_REQUEST_EVENT, handleSync);
     window.addEventListener('storage', handleSync);
 
     return () => {
       window.removeEventListener(STORAGE_EVENT_NAME, handleSync);
       window.removeEventListener(WALLET_EVENT_NAME, handleSync);
+      window.removeEventListener(STAFF_REQUEST_EVENT, handleSync);
       window.removeEventListener('storage', handleSync);
     };
   }, []);
 
-  // Track latest kitchen order completions
   useEffect(() => {
     const readyOrDelivered = orders.filter((o) => o.status === 'READY' || o.status === 'DELIVERED');
     if (readyOrDelivered.length > 0) {
@@ -63,46 +71,11 @@ export default function DashboardFnb() {
     }
   }, [orders]);
 
-  // Support calls simulation
-  const [supportCalls, setSupportCalls] = useState([
-    {
-      id: 'call-1',
-      pc: 'VIP-08',
-      zone: 'Zone VIP A • Tầng 2',
-      content: 'Khách gọi nhân viên lấy thêm ly đá & kiểm tra mic tai nghe',
-      time: '1 phút trước',
-      status: 'RECEIVING',
-      statusText: 'Đang tiếp nhận',
-    },
-    {
-      id: 'call-2',
-      pc: 'REG-14',
-      zone: 'Zone Regular • Tầng 1',
-      content: 'Yêu cầu nạp tiền mặt 100.000đ tại máy',
-      time: '4 phút trước',
-      status: 'HANDLED',
-      statusText: 'Đã hoàn tất',
-    },
-    {
-      id: 'call-3',
-      pc: 'ARENA-02',
-      zone: 'Sân Khấu Arena Thi Đấu',
-      content: 'Hỗ trợ đổi bàn phím cơ sang Switch Linear',
-      time: '9 phút trước',
-      status: 'HANDLED',
-      statusText: 'Đã hoàn tất',
-    },
-  ]);
-
   const handleResolveCall = (id: string) => {
-    setSupportCalls((prev) =>
-      prev.map((c) =>
-        c.id === id ? { ...c, status: 'HANDLED', statusText: 'Đã hoàn tất' } : c
-      )
-    );
+    const updated = resolveStaffRequest(id);
+    setStaffRequests(updated);
   };
 
-  // Quick simulation: add order from client
   const handleQuickAddOrder = () => {
     const num = Math.floor(1060 + Math.random() * 40);
     const mock: Order = {
@@ -122,12 +95,10 @@ export default function DashboardFnb() {
     addOrder(mock);
   };
 
-  // Total Business Revenue (F&B + Top-up Hours)
   const totalCombinedRevenue = fnbStats.totalRevenue + topupStats.totalTopup;
 
   return (
     <div className="min-h-screen bg-[#070e1d] text-slate-100 p-4 lg:p-6 font-sans select-none">
-      {/* Top Header Operations Dashboard */}
       <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center bg-[#0c1322] border border-amber-500/30 p-4 rounded-xl mb-6 shadow-xl gap-4">
         <div>
           <div className="flex items-center gap-2">
@@ -144,7 +115,6 @@ export default function DashboardFnb() {
           </p>
         </div>
 
-        {/* Quick Date Filters & Navigation */}
         <div className="flex flex-wrap items-center gap-2">
           <div className="bg-[#141b2b] border border-slate-700 p-1 rounded-lg flex text-xs font-mono">
             <button
@@ -183,7 +153,6 @@ export default function DashboardFnb() {
         </div>
       </div>
 
-      {/* Live Notice Banner */}
       {lastNotice && (
         <div className="bg-emerald-950/70 border border-emerald-500/50 text-emerald-200 px-4 py-2.5 rounded-xl mb-6 flex items-center justify-between text-xs shadow-lg">
           <div className="flex items-center gap-2">
@@ -196,9 +165,7 @@ export default function DashboardFnb() {
         </div>
       )}
 
-      {/* 4 Stat Cards - Using REAL DATA from kitchen orders and player wallet topups */}
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 mb-6">
-        {/* Card 1: Doanh Thu F&B Bếp */}
         <div className="bg-[#0c1322] border border-cyan-500/30 rounded-xl p-4 flex flex-col justify-between shadow-lg relative overflow-hidden">
           <div className="absolute top-0 right-0 w-24 h-24 bg-cyan-500/5 rounded-full blur-2xl"></div>
           <div className="flex justify-between items-start mb-2">
@@ -220,7 +187,6 @@ export default function DashboardFnb() {
           </div>
         </div>
 
-        {/* Card 2: Doanh Thu Nạp Ví Giờ Chơi */}
         <div className="bg-[#0c1322] border border-emerald-500/30 rounded-xl p-4 flex flex-col justify-between shadow-lg relative overflow-hidden">
           <div className="absolute top-0 right-0 w-24 h-24 bg-emerald-500/5 rounded-full blur-2xl"></div>
           <div className="flex justify-between items-start mb-2">
@@ -240,7 +206,6 @@ export default function DashboardFnb() {
           </div>
         </div>
 
-        {/* Card 3: Tổng Doanh Thu Toàn Quán */}
         <div className="bg-[#0c1322] border border-amber-500/40 rounded-xl p-4 flex flex-col justify-between shadow-lg relative overflow-hidden">
           <div className="absolute top-0 right-0 w-24 h-24 bg-amber-500/10 rounded-full blur-2xl"></div>
           <div className="flex justify-between items-start mb-2">
@@ -260,7 +225,6 @@ export default function DashboardFnb() {
           </div>
         </div>
 
-        {/* Card 4: Tình Trạng Đơn Bếp */}
         <div className="bg-[#0c1322] border border-slate-800 hover:border-amber-500/40 rounded-xl p-4 flex flex-col justify-between shadow-lg transition">
           <div className="flex justify-between items-start mb-2">
             <span className="text-xs text-slate-400 font-semibold">Tình Trạng Đơn Bếp (KDS)</span>
@@ -284,9 +248,7 @@ export default function DashboardFnb() {
         </div>
       </div>
 
-      {/* Main Grid: Best Sellers & Operations Live Stream */}
       <div className="grid grid-cols-1 lg:grid-cols-12 gap-6">
-        {/* Left: Top Best Selling Items & Completed Kitchen Orders (7 cols) */}
         <div className="lg:col-span-7 bg-[#0c1322] border border-slate-800 rounded-xl p-5 shadow-xl flex flex-col justify-between">
           <div>
             <div className="flex justify-between items-center pb-3 border-b border-slate-800 mb-4">
@@ -336,7 +298,6 @@ export default function DashboardFnb() {
             </div>
           </div>
 
-          {/* Bottom Live Completed Orders Stream */}
           <div className="mt-6 pt-4 border-t border-slate-800">
             <div className="flex justify-between items-center mb-3">
               <div className="flex items-center gap-2">
@@ -384,9 +345,7 @@ export default function DashboardFnb() {
           </div>
         </div>
 
-        {/* Right: Live Topups from Player Portal & Support Calls (5 cols) */}
         <div className="lg:col-span-5 space-y-6">
-          {/* Live Topup Feed from Player Portal */}
           <div className="bg-[#0c1322] border border-slate-800 rounded-xl p-5 shadow-xl">
             <div className="flex justify-between items-center pb-3 border-b border-slate-800 mb-3">
               <div className="flex items-center gap-2">
@@ -425,7 +384,6 @@ export default function DashboardFnb() {
             </div>
           </div>
 
-          {/* Live Support Calls Feed */}
           <div className="bg-[#0c1322] border border-slate-800 rounded-xl p-5 shadow-xl">
             <div className="flex justify-between items-center pb-3 border-b border-slate-800 mb-4">
               <div className="flex items-center gap-2">
@@ -440,52 +398,59 @@ export default function DashboardFnb() {
             </div>
 
             <div className="space-y-3">
-              {supportCalls.map((call) => {
-                const isReceiving = call.status === 'RECEIVING';
+              {staffRequests.length === 0 ? (
+                <div className="text-xs text-slate-500 text-center py-4">
+                  Không có yêu cầu gọi nhân viên nào.
+                </div>
+              ) : (
+                staffRequests.map((call) => {
+                  const isPending = call.status === 'PENDING';
 
-                return (
-                  <div
-                    key={call.id}
-                    className={`p-3 rounded-lg border transition-all ${
-                      isReceiving
-                        ? 'bg-[#1a1525] border-rose-500/60 shadow-[0_0_12px_rgba(255,42,85,0.2)]'
-                        : 'bg-[#141b2b] border-slate-800 opacity-70'
-                    }`}
-                  >
-                    <div className="flex justify-between items-start mb-1">
-                      <div className="flex items-center gap-2">
-                        <span className="font-mono font-black text-cyan-400 text-sm">{call.pc}</span>
-                        <span className="text-[11px] text-slate-400">{call.zone}</span>
+                  return (
+                    <div
+                      key={call.id}
+                      className={`p-3 rounded-lg border transition-all ${
+                        isPending
+                          ? 'bg-[#1a1525] border-rose-500/60 shadow-[0_0_12px_rgba(255,42,85,0.2)]'
+                          : 'bg-[#141b2b] border-slate-800 opacity-70'
+                      }`}
+                    >
+                      <div className="flex justify-between items-start mb-1">
+                        <div className="flex items-center gap-2">
+                          <span className="font-mono font-black text-cyan-400 text-sm">{call.pcName}</span>
+                          <span className="text-[11px] text-amber-300 font-bold">{call.title}</span>
+                        </div>
+                        <span className="text-[10px] text-slate-500 font-mono">
+                          {new Date(call.createdAt).toLocaleTimeString('vi-VN')}
+                        </span>
                       </div>
-                      <span className="text-[10px] text-slate-500 font-mono">{call.time}</span>
-                    </div>
 
-                    <p className="text-xs text-slate-300 mb-2 leading-relaxed">{call.content}</p>
+                      <p className="text-xs text-slate-300 mb-2 leading-relaxed">{call.details}</p>
 
-                    <div className="flex justify-between items-center pt-2 border-t border-slate-800/80">
-                      <span
-                        className={`text-[10px] font-bold font-mono px-2 py-0.5 rounded ${
-                          isReceiving ? 'bg-rose-500/20 text-rose-400' : 'bg-emerald-500/20 text-emerald-400'
-                        }`}
-                      >
-                        {call.statusText}
-                      </span>
-
-                      {isReceiving && (
-                        <button
-                          onClick={() => handleResolveCall(call.id)}
-                          className="bg-emerald-500 hover:bg-emerald-400 text-black font-bold text-xs px-3 py-1 rounded transition font-mono"
+                      <div className="flex justify-between items-center pt-2 border-t border-slate-800/80">
+                        <span
+                          className={`text-[10px] font-bold font-mono px-2 py-0.5 rounded ${
+                            isPending ? 'bg-rose-500/20 text-rose-400' : 'bg-emerald-500/20 text-emerald-400'
+                          }`}
                         >
-                          Xác Nhận Đã Xử Lý
-                        </button>
-                      )}
+                          {isPending ? 'Chờ phục vụ' : 'Đã xử lý xong'}
+                        </span>
+
+                        {isPending && (
+                          <button
+                            onClick={() => handleResolveCall(call.id)}
+                            className="bg-emerald-500 hover:bg-emerald-400 text-black font-bold text-xs px-3 py-1 rounded transition font-mono cursor-pointer"
+                          >
+                            Xác Nhận Đã Xử Lý
+                          </button>
+                        )}
+                      </div>
                     </div>
-                  </div>
-                );
-              })}
+                  );
+                })
+              )}
             </div>
 
-            {/* Quick Test simulator */}
             <div className="mt-4 pt-3 border-t border-slate-800 space-y-2">
               <button
                 onClick={handleQuickAddOrder}

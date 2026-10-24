@@ -678,7 +678,7 @@ export default function BookingSeatMap() {
             {activeBooking ? (
               <div className="space-y-2">
                 <Link
-                  href={`/menu`}
+                  href={`/menu?seat=${currentSeatObj.id}`}
                   className="w-full bg-emerald-400 hover:bg-emerald-300 text-black font-extrabold py-3 rounded-xl text-xs uppercase flex items-center justify-center gap-2 shadow-lg shadow-emerald-500/20 transition cursor-pointer"
                 >
                   <span className="material-symbols-outlined text-[18px]">restaurant_menu</span>
@@ -701,7 +701,7 @@ export default function BookingSeatMap() {
                   <span>ĐẶT GIỮ CHỖ MÁY {currentSeatObj.id} NGAY</span>
                 </button>
                 <Link
-                  href={`/menu`}
+                  href={`/menu?seat=${currentSeatObj.id}`}
                   className="w-full bg-slate-900 hover:bg-slate-800 text-slate-200 border border-white/10 font-bold py-2.5 rounded-xl text-xs uppercase flex items-center justify-center gap-2 transition"
                 >
                   <span className="material-symbols-outlined text-[16px] text-cyan-400">restaurant_menu</span>
@@ -710,7 +710,7 @@ export default function BookingSeatMap() {
               </div>
             ) : (
               <Link
-                href="/menu"
+                href={`/menu?seat=${currentSeatObj.id}`}
                 className="w-full bg-cyan-500 hover:bg-cyan-400 text-black font-extrabold py-3.5 rounded-xl text-xs uppercase flex items-center justify-center gap-2 shadow-lg shadow-cyan-500/20 transition"
               >
                 <span className="material-symbols-outlined text-[18px]">restaurant_menu</span>

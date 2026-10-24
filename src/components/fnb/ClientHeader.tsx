@@ -1,6 +1,7 @@
 'use client';
 
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
+import { createStaffRequest } from '@/lib/staffRequestStore';
 
 interface ClientHeaderProps {
   pcName?: string;
@@ -35,25 +36,62 @@ export default function ClientHeader({
     progressPercent: 65,
   },
 }: ClientHeaderProps) {
+  const [showCallModal, setShowCallModal] = useState(false);
   const [callAlertActive, setCallAlertActive] = useState(false);
+  const [requestType, setRequestType] = useState<'TOPUP_CASH' | 'HARDWARE_ISSUE' | 'CLEAN_DESK' | 'EXTRA_SERVICE' | 'OTHER'>('TOPUP_CASH');
+  const [requestNote, setRequestNote] = useState('');
+  const [displayTime, setDisplayTime] = useState(remainingTime);
 
-  const handleCallStaffClick = () => {
-    setCallAlertActive(true);
-    if (onCallStaff) {
-      onCallStaff();
-    } else {
-      setTimeout(() => {
-        setCallAlertActive(false);
-      }, 4000);
+  useEffect(() => {
+    const parts = remainingTime.split(':').map(Number);
+    if (parts.length !== 3 || parts.some(isNaN)) {
+      setDisplayTime(remainingTime);
+      return;
     }
+    let totalSecs = parts[0] * 3600 + parts[1] * 60 + parts[2];
+
+    const interval = setInterval(() => {
+      totalSecs = Math.max(0, totalSecs - 1);
+      const h = String(Math.floor(totalSecs / 3600)).padStart(2, '0');
+      const m = String(Math.floor((totalSecs % 3600) / 60)).padStart(2, '0');
+      const s = String(totalSecs % 60).padStart(2, '0');
+      setDisplayTime(`${h}:${m}:${s}`);
+    }, 1000);
+
+    return () => clearInterval(interval);
+  }, [remainingTime]);
+
+  const handleSubmitStaffRequest = (e: React.FormEvent) => {
+    e.preventDefault();
+    const typeTitles: Record<string, string> = {
+      TOPUP_CASH: 'Nạp tiền mặt tại máy',
+      HARDWARE_ISSUE: 'Báo lỗi chuột/phím/tai nghe',
+      CLEAN_DESK: 'Dọn dẹp bàn & gạt tàn',
+      EXTRA_SERVICE: 'Thêm đá lạnh & nước lọc',
+      OTHER: 'Yêu cầu hỗ trợ khác',
+    };
+
+    createStaffRequest({
+      pcName,
+      type: requestType,
+      title: typeTitles[requestType] || 'Yêu cầu phục vụ',
+      details: requestNote.trim() || `Khách tại máy ${pcName} gọi nhân viên hỗ trợ: ${typeTitles[requestType]}`,
+    });
+
+    setShowCallModal(false);
+    setRequestNote('');
+    setCallAlertActive(true);
+    if (onCallStaff) onCallStaff();
+
+    setTimeout(() => {
+      setCallAlertActive(false);
+    }, 5000);
   };
 
   return (
     <>
-      {/* TOP GAMING CLIENT HUD BAR */}
       <header className="sticky top-0 z-40 bg-[#060b14]/95 backdrop-blur-md border-b border-primary/20 shadow-[0_4px_20px_rgba(0,0,0,0.8)]">
         <div className="w-full px-4 py-2 flex items-center justify-between gap-3">
-          {/* Left: Cyber Brand & Station Badge */}
           <div className="flex items-center gap-3">
             <div className="flex items-center gap-2 pr-3 border-r border-[#26354f]">
               <div className="w-9 h-9 rounded bg-primary/10 border border-primary/40 flex items-center justify-center shadow-[0_0_12px_rgba(0,240,255,0.25)]">
@@ -73,7 +111,6 @@ export default function ClientHeader({
               </div>
             </div>
 
-            {/* Station ID */}
             <div className="flex items-center gap-2 bg-[#0c1626] border border-primary/40 px-3 py-1.5 rounded shadow-[inset_0_0_10px_rgba(0,240,255,0.1)]">
               <span className="material-symbols-outlined text-primary text-[18px]">desktop_windows</span>
               <div className="flex flex-col leading-none">
@@ -85,9 +122,7 @@ export default function ClientHeader({
             </div>
           </div>
 
-          {/* Center: Time & Balance Stats */}
           <div className="hidden md:flex items-center gap-3">
-            {/* Account Balance */}
             <div className="flex items-center gap-2.5 bg-[#0a1220] border border-secondary/30 px-3 py-1.5 rounded">
               <div className="w-7 h-7 rounded bg-secondary/15 flex items-center justify-center text-secondary">
                 <span className="material-symbols-outlined text-[18px]">account_balance_wallet</span>
@@ -106,25 +141,23 @@ export default function ClientHeader({
               </button>
             </div>
 
-            {/* Remaining Play Time */}
             <div className="flex items-center gap-2.5 bg-[#0a1220] border border-[#26354f] px-3 py-1.5 rounded">
               <div className="w-7 h-7 rounded bg-[#24324a] flex items-center justify-center text-cyber-yellow">
                 <span className="material-symbols-outlined text-[18px]">timelapse</span>
               </div>
               <div className="flex flex-col leading-none">
                 <span className="text-[10px] text-slate-400 font-semibold uppercase">Thời gian chơi</span>
-                <span className="font-gaming text-[14px] font-bold text-cyber-yellow tracking-wider">
-                  {remainingTime}
+                <span className="font-gaming text-[14px] font-bold text-cyber-yellow tracking-wider flex items-center gap-1.5">
+                  <span className="w-2 h-2 rounded-full bg-emerald-400 animate-pulse"></span>
+                  {displayTime}
                 </span>
               </div>
             </div>
           </div>
 
-          {/* Right: Service Call & User Profile HUD */}
           <div className="flex items-center gap-2">
-            {/* Call Staff Button (Emergency Red Gaming Style) */}
             <button
-              onClick={handleCallStaffClick}
+              onClick={() => setShowCallModal(true)}
               className={`flex items-center gap-1.5 px-3.5 py-1.5 rounded border transition-all font-headline-sm font-bold text-[13px] uppercase tracking-wider active:scale-95 ${
                 callAlertActive
                   ? 'bg-emerald-600 text-white border-emerald-400 shadow-[0_0_15px_rgba(16,185,129,0.5)]'
@@ -138,7 +171,6 @@ export default function ClientHeader({
               <span>{callAlertActive ? 'ĐÃ GỌI XONG' : 'GỌI NHÂN VIÊN'}</span>
             </button>
 
-            {/* Player Profile Badge */}
             <div className="flex items-center gap-2 bg-[#0c1626] border border-[#26354f] pl-2 pr-3 py-1 rounded">
               <div className="w-7 h-7 rounded-full bg-gradient-to-tr from-primary to-secondary p-0.5 flex items-center justify-center">
                 <div className="w-full h-full bg-[#0a1220] rounded-full flex items-center justify-center">
@@ -154,7 +186,6 @@ export default function ClientHeader({
         </div>
       </header>
 
-      {/* SECONDARY BAR: KDS PROGRESS TICKER (Minified) */}
       {currentOrderTicker && (
         <div className="bg-[#0b1320] border-b border-[#26354f] px-4 py-1.5 flex items-center justify-between text-[12px] gap-2">
           <div className="flex items-center gap-2 overflow-hidden">
@@ -183,13 +214,97 @@ export default function ClientHeader({
         </div>
       )}
 
-      {/* Call Alert notification toast */}
       {callAlertActive && (
         <div className="fixed top-14 right-6 z-50 bg-[#0f1d33] border-2 border-emerald-400 text-emerald-300 px-4 py-3 rounded-lg shadow-2xl flex items-center gap-3 animate-fade-in">
           <span className="material-symbols-outlined text-2xl text-emerald-400">support_agent</span>
           <div>
-            <div className="font-bold text-sm">ĐÃ GỌI NHÂN VIÊN TẠI BÀN {pcName}</div>
-            <div className="text-xs text-slate-300">Nhân viên trực tầng 2 đang di chuyển tới máy của bạn trong giây lát.</div>
+            <div className="font-bold text-sm">ĐÃ GỌI NHÂN VIÊN TẠI MÁY {pcName}</div>
+            <div className="text-xs text-slate-300">Yêu cầu đã được chuyển tới bếp &amp; quầy thu ngân. Nhân viên sẽ đến ngay!</div>
+          </div>
+        </div>
+      )}
+
+      {showCallModal && (
+        <div className="fixed inset-0 z-50 bg-black/80 backdrop-blur-sm flex items-center justify-center p-4">
+          <div className="bg-[#0b1320] border-2 border-rose-500/70 rounded-2xl w-full max-w-md p-6 shadow-[0_0_40px_rgba(255,42,85,0.3)] animate-scale-in">
+            <div className="flex justify-between items-center pb-3 border-b border-white/10 mb-4">
+              <div className="flex items-center gap-2">
+                <span className="material-symbols-outlined text-rose-500 text-2xl">notifications_active</span>
+                <h3 className="font-gaming text-lg font-black text-white">GỌI NHÂN VIÊN TẠI MÁY {pcName}</h3>
+              </div>
+              <button
+                onClick={() => setShowCallModal(false)}
+                className="text-slate-400 hover:text-white text-xl"
+              >
+                ✕
+              </button>
+            </div>
+
+            <form onSubmit={handleSubmitStaffRequest} className="space-y-4">
+              <div>
+                <label className="block text-xs font-bold text-slate-300 mb-2 uppercase tracking-wider">
+                  Chọn Loại Yêu Cầu Nhanh
+                </label>
+                <div className="grid grid-cols-1 gap-2">
+                  {[
+                    { id: 'TOPUP_CASH', label: '💵 Nạp tiền mặt tại máy', icon: 'payments' },
+                    { id: 'HARDWARE_ISSUE', label: '🎧 Báo lỗi Chuột / Phím / Tai nghe', icon: 'headset_mic' },
+                    { id: 'CLEAN_DESK', label: '🧹 Dọn dẹp bàn / Gạt tàn thuốc', icon: 'cleaning_services' },
+                    { id: 'EXTRA_SERVICE', label: '🧊 Thêm đá lạnh / Nước lọc', icon: 'local_drink' },
+                    { id: 'OTHER', label: '💬 Yêu cầu hỗ trợ khác', icon: 'help' },
+                  ].map((item) => (
+                    <button
+                      key={item.id}
+                      type="button"
+                      onClick={() => setRequestType(item.id as any)}
+                      className={`text-left px-3 py-2.5 rounded-xl border text-xs font-bold flex items-center justify-between transition ${
+                        requestType === item.id
+                          ? 'bg-rose-500/20 border-rose-500 text-rose-300'
+                          : 'bg-[#121c2e] border-slate-700/60 text-slate-300 hover:border-slate-500'
+                      }`}
+                    >
+                      <span className="flex items-center gap-2">
+                        <span className="material-symbols-outlined text-[18px] text-rose-400">{item.icon}</span>
+                        <span>{item.label}</span>
+                      </span>
+                      {requestType === item.id && (
+                        <span className="material-symbols-outlined text-rose-400 text-[18px]">check_circle</span>
+                      )}
+                    </button>
+                  ))}
+                </div>
+              </div>
+
+              <div>
+                <label className="block text-xs font-bold text-slate-300 mb-1.5 uppercase tracking-wider">
+                  Ghi chú chi tiết (nếu có)
+                </label>
+                <input
+                  type="text"
+                  value={requestNote}
+                  onChange={(e) => setRequestNote(e.target.value)}
+                  placeholder="Ví dụ: Nạp 50k tiền mặt, đổi tai nghe bên trái bị rè..."
+                  className="w-full bg-[#121c2e] border border-slate-700 rounded-xl px-3 py-2 text-xs text-white focus:outline-none focus:border-rose-500 placeholder-slate-500"
+                />
+              </div>
+
+              <div className="flex gap-2 pt-2">
+                <button
+                  type="button"
+                  onClick={() => setShowCallModal(false)}
+                  className="w-1/3 py-2.5 bg-slate-800 hover:bg-slate-700 text-slate-300 rounded-xl text-xs font-bold uppercase transition"
+                >
+                  HỦY
+                </button>
+                <button
+                  type="submit"
+                  className="w-2/3 py-2.5 bg-rose-600 hover:bg-rose-500 text-white rounded-xl text-xs font-extrabold uppercase shadow-lg shadow-rose-600/30 transition flex items-center justify-center gap-1.5"
+                >
+                  <span className="material-symbols-outlined text-[18px]">send</span>
+                  <span>GỬI YÊU CẦU NGAY</span>
+                </button>
+              </div>
+            </form>
           </div>
         </div>
       )}

@@ -1,6 +1,7 @@
 'use client';
 
-import React, { useState, useMemo } from 'react';
+import React, { useState, useMemo, useEffect, Suspense } from 'react';
+import { useSearchParams } from 'next/navigation';
 import ClientHeader from '@/components/fnb/ClientHeader';
 import FoodCard from '@/components/fnb/FoodCard';
 import CartSidebar from '@/components/fnb/CartSidebar';
@@ -130,25 +131,33 @@ const INITIAL_MENU_ITEMS: MenuItem[] = [
   },
 ];
 
-export default function CyberMenuClient() {
+function CyberMenuClientContent() {
+  const searchParams = useSearchParams();
+  const seatParam = searchParams.get('seat');
+
   const [selectedCategory, setSelectedCategory] = useState<string>('all');
   const [searchQuery, setSearchQuery] = useState('');
   const [filterHotOnly, setFilterHotOnly] = useState(false);
   const [filterAvailableOnly, setFilterAvailableOnly] = useState(false);
 
   const [accountBalance, setAccountBalance] = useState(250000);
-  const [walletPcName, setWalletPcName] = useState('VIP-08');
+  const [walletPcName, setWalletPcName] = useState(seatParam || 'VIP-08');
 
-  // Synchronize account balance with shared wallet store
-  React.useEffect(() => {
+  useEffect(() => {
+    if (seatParam) {
+      setWalletPcName(seatParam);
+    }
+  }, [seatParam]);
+
+  useEffect(() => {
     const updateWallet = () => {
       try {
         const w = getStoredWallet();
         setAccountBalance(w.balance);
-        setWalletPcName(w.pcName);
-      } catch {
-        // Fallback
-      }
+        if (!seatParam) {
+          setWalletPcName(w.pcName);
+        }
+      } catch {}
     };
     updateWallet();
     window.addEventListener(WALLET_EVENT_NAME, updateWallet);
@@ -157,7 +166,7 @@ export default function CyberMenuClient() {
       window.removeEventListener(WALLET_EVENT_NAME, updateWallet);
       window.removeEventListener('storage', updateWallet);
     };
-  }, []);
+  }, [seatParam]);
 
   const [orderSuccessModal, setOrderSuccessModal] = useState<{
     orderNumber: number;
@@ -166,7 +175,6 @@ export default function CyberMenuClient() {
     itemsCount: number;
   } | null>(null);
 
-  // Active KDS ticker tracking
   const [currentTicker, setCurrentTicker] = useState<{
     orderCode: string;
     description: string;
@@ -179,7 +187,6 @@ export default function CyberMenuClient() {
     progressPercent: 65,
   });
 
-  // Cart state initialized with default items from Stitch UI
   const [cart, setCart] = useState<CartItem[]>([
     {
       id: 'cart-init-1',
@@ -201,7 +208,6 @@ export default function CyberMenuClient() {
     },
   ]);
 
-  // Categories list
   const categories = [
     { id: 'all', name: 'TẤT CẢ', count: 28, icon: 'grid_view' },
     { id: 'mi-tron', name: 'Mì Trộn / Nước', count: 8, icon: 'ramen_dining' },
@@ -211,12 +217,10 @@ export default function CyberMenuClient() {
     { id: 'combo', name: 'Combo Cày Đêm', count: 'HOT', icon: 'military_tech' },
   ];
 
-  // Filter menu items
   const filteredItems = useMemo(() => {
     return INITIAL_MENU_ITEMS.filter((item) => {
       if (selectedCategory !== 'all') {
         if (selectedCategory === 'combo') {
-          // Show hot combo items
           if (!item.isHot && !item.isBestSeller) return false;
         } else if (item.categoryId !== selectedCategory) {
           return false;
@@ -237,7 +241,6 @@ export default function CyberMenuClient() {
     });
   }, [selectedCategory, searchQuery, filterHotOnly, filterAvailableOnly]);
 
-  // Add item to cart
   const handleAddToCart = (item: MenuItem, selectedOption?: string) => {
     setCart((prev) => {
       const existing = prev.find(
@@ -263,7 +266,6 @@ export default function CyberMenuClient() {
     });
   };
 
-  // Add Night Owls Combo
   const handleAddNightCombo = () => {
     const comboItem: CartItem = {
       id: `cart-combo-${Date.now()}`,
@@ -277,7 +279,6 @@ export default function CyberMenuClient() {
     setCart((prev) => [...prev, comboItem]);
   };
 
-  // Update item quantity
   const handleUpdateQty = (id: string, delta: number) => {
     setCart((prev) =>
       prev
@@ -292,19 +293,16 @@ export default function CyberMenuClient() {
     );
   };
 
-  // Remove single item
   const handleRemoveItem = (id: string) => {
     setCart((prev) => prev.filter((item) => item.id !== id));
   };
 
-  // Clear cart
   const handleClearCart = () => {
     if (confirm('Bạn có chắc chắn muốn xóa toàn bộ giỏ hàng?')) {
       setCart([]);
     }
   };
 
-  // Checkout order
   const handleCheckout = (note: string, paymentMethod: PaymentMethod, total: number) => {
     const newOrderNumber = Math.floor(1000 + Math.random() * 9000);
 
@@ -319,7 +317,6 @@ export default function CyberMenuClient() {
       setAccountBalance(deductRes.wallet.balance);
     }
 
-    // Create synchronized order for KDS screen
     const newKdsOrder = {
       id: `ord-${newOrderNumber}`,
       orderNumber: newOrderNumber,
@@ -336,10 +333,8 @@ export default function CyberMenuClient() {
       ),
     };
 
-    // Save to localStorage and notify KDS & Dashboard
     addOrder(newKdsOrder);
 
-    // Set active KDS ticker
     const firstItem = cart[0];
     setCurrentTicker({
       orderCode: `#KDS-${newOrderNumber}`,
@@ -362,7 +357,6 @@ export default function CyberMenuClient() {
 
   return (
     <div className="min-h-screen bg-[#030712] text-slate-100 font-sans flex flex-col">
-      {/* Top Gaming Client HUD Bar */}
       <ClientHeader
         pcName={walletPcName}
         zoneName="Tầng 2 (Màn 240Hz)"
@@ -374,11 +368,8 @@ export default function CyberMenuClient() {
         currentOrderTicker={currentTicker}
       />
 
-      {/* Main Gaming App Layout */}
       <main className="flex-1 w-full p-3 lg:p-4 grid grid-cols-12 gap-3 max-w-[1920px] mx-auto">
-        {/* Left & Center: Search, Categories & Food Matrix */}
         <div className="col-span-12 lg:col-span-8 xl:col-span-9 flex flex-col gap-3">
-          {/* Quick Search & Filter Bar */}
           <div className="flex items-center gap-2 bg-slate-900 border border-slate-800 p-2.5 rounded-xl">
             <div className="relative flex-1">
               <span className="material-symbols-outlined absolute left-3 top-1/2 -translate-y-1/2 text-cyan-400 text-[18px]">
@@ -396,7 +387,6 @@ export default function CyberMenuClient() {
               </span>
             </div>
 
-            {/* Quick Filter Badges */}
             <div className="hidden sm:flex items-center gap-2 flex-shrink-0">
               <button
                 type="button"
@@ -424,7 +414,6 @@ export default function CyberMenuClient() {
             </div>
           </div>
 
-          {/* Gaming Mechanical Category Tabs */}
           <div className="flex items-center gap-2 overflow-x-auto pb-1 no-scrollbar">
             {categories.map((cat) => {
               const isActive = selectedCategory === cat.id;
@@ -453,7 +442,6 @@ export default function CyberMenuClient() {
             })}
           </div>
 
-          {/* Hero Promo Banner: Combo Chiến Game Xuyên Đêm */}
           <div className="bg-slate-900 border border-slate-800 rounded-xl p-5 relative overflow-hidden flex flex-col md:flex-row items-center justify-between gap-4 shadow-xl">
             <div className="flex items-center gap-4 w-full md:w-auto">
               <div className="relative w-28 h-20 rounded-lg overflow-hidden flex-shrink-0 border border-slate-700 bg-black">
@@ -498,7 +486,6 @@ export default function CyberMenuClient() {
             </button>
           </div>
 
-          {/* Streamlined Food Cards Grid */}
           {filteredItems.length === 0 ? (
             <div className="py-16 text-center text-slate-500 bg-[#0c1424] rounded border border-[#26354f]">
               <span className="material-symbols-outlined text-4xl mb-2 text-slate-600">search_off</span>
@@ -514,11 +501,10 @@ export default function CyberMenuClient() {
           )}
         </div>
 
-        {/* Right: Order Sidebar / Cart */}
         <div className="col-span-12 lg:col-span-4 xl:col-span-3">
           <CartSidebar
             cart={cart}
-            pcName="MÁY VIP-08"
+            pcName={`MÁY ${walletPcName}`}
             accountBalance={accountBalance}
             onUpdateQty={handleUpdateQty}
             onRemoveItem={handleRemoveItem}
@@ -528,7 +514,6 @@ export default function CyberMenuClient() {
         </div>
       </main>
 
-      {/* Bottom Gaming Footer Status */}
       <footer className="w-full bg-[#050912] border-t border-[#26354f]/60 py-2 px-4 mt-auto">
         <div className="w-full flex flex-col sm:flex-row items-center justify-between gap-2 text-[11px] text-slate-400">
           <div className="flex items-center gap-3">
@@ -548,7 +533,6 @@ export default function CyberMenuClient() {
         </div>
       </footer>
 
-      {/* Success Order Modal */}
       {orderSuccessModal && (
         <div className="fixed inset-0 z-50 bg-black/80 backdrop-blur-sm flex items-center justify-center p-4">
           <div className="bg-[#0c1424] border-2 border-primary rounded-xl max-w-md w-full p-6 shadow-[0_0_30px_rgba(0,240,255,0.3)] flex flex-col items-center text-center">
@@ -570,7 +554,7 @@ export default function CyberMenuClient() {
               </div>
               <div className="flex justify-between">
                 <span className="text-slate-400">Vị trí giao:</span>
-                <span className="font-mono font-bold text-slate-200">VIP-08 (Tầng 2)</span>
+                <span className="font-mono font-bold text-slate-200">{walletPcName} (Tầng 2)</span>
               </div>
               <div className="flex justify-between">
                 <span className="text-slate-400">Phương thức:</span>
@@ -596,5 +580,13 @@ export default function CyberMenuClient() {
         </div>
       )}
     </div>
+  );
+}
+
+export default function CyberMenuClient() {
+  return (
+    <Suspense fallback={<div className="min-h-screen bg-[#030712] text-white flex items-center justify-center font-mono">Đang tải Menu...</div>}>
+      <CyberMenuClientContent />
+    </Suspense>
   );
 }
