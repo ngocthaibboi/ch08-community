@@ -28,8 +28,150 @@ import {
   calculateTotalTopupRevenue,
   resetWalletToDefault,
   topupWallet,
+  updateStationAndRate,
   WALLET_EVENT_NAME,
 } from '@/lib/walletStore';
+
+// Cấu hình 6 phân khu chuẩn xác theo trang chủ
+interface ZoneCategory {
+  id: 'ALL' | 'STANDARD' | 'PRO' | 'VIP' | 'ARENA' | 'COUPLE_STREAM' | 'CONSOLE_BIDA';
+  name: string;
+  badge: string;
+  colorName: string;
+  accentBg: string;
+  accentBorder: string;
+  accentText: string;
+  icon: string;
+  description: string;
+  standardSpec: {
+    cpu: string;
+    gpu: string;
+    screen: string;
+    defaultRate: string;
+  };
+}
+
+const SIX_ZONES_CONFIG: ZoneCategory[] = [
+  {
+    id: 'STANDARD',
+    name: 'Standard Zone Tiêu Chuẩn',
+    badge: '10 MÁY • STD-01..10',
+    colorName: 'sky',
+    accentBg: 'bg-sky-500/10',
+    accentBorder: 'border-sky-500/40',
+    accentText: 'text-sky-400',
+    icon: 'desktop_windows',
+    description: 'Khu máy công cộng tiêu chuẩn, tối ưu eSports đối kháng CS2, Valorant, LMHT, FO4.',
+    standardSpec: {
+      cpu: 'Core i5 13400F (10 Cores)',
+      gpu: 'RTX 4060 Ti 8GB OC',
+      screen: 'ASUS TUF 24.5" Fast-IPS 280Hz',
+      defaultRate: '12.000đ/h',
+    },
+  },
+  {
+    id: 'PRO',
+    name: 'Cyber Pro 540Hz Try-Hard',
+    badge: '4 MÁY • PRO-01..04',
+    colorName: 'emerald',
+    accentBg: 'bg-emerald-500/10',
+    accentBorder: 'border-emerald-500/40',
+    accentText: 'text-emerald-400',
+    icon: 'bolt',
+    description: 'Khu vực thi đấu FPS cao cấp, BenQ Zowie 540Hz DyAc+, phím cơ Wooting 60HE Rapid Trigger, ghế Herman Miller.',
+    standardSpec: {
+      cpu: 'AMD Ryzen 7 7800X3D Gaming King',
+      gpu: 'RTX 4080 Super 16GB',
+      screen: 'BenQ Zowie XL2566K 540Hz DyAc+',
+      defaultRate: '18.000đ/h',
+    },
+  },
+  {
+    id: 'VIP',
+    name: 'Phòng Riêng Ultra VIP Tầng 2',
+    badge: '8 MÁY • VIP-01..08',
+    colorName: 'amber',
+    accentBg: 'bg-amber-500/10',
+    accentBorder: 'border-amber-500/40',
+    accentText: 'text-amber-400',
+    icon: 'workspace_premium',
+    description: 'Dãy phòng VIP riêng biệt cách âm 45dB, ghế da Nappa ngả 160°, chuột Zowie EC2-CW không dây, bàn phím Akko Lube.',
+    standardSpec: {
+      cpu: 'Core i7 14700K 20 Cores',
+      gpu: 'RTX 4070 Ti Super 16GB',
+      screen: 'ASUS ROG Swift 27" 240Hz Fast-IPS',
+      defaultRate: '22.000đ/h',
+    },
+  },
+  {
+    id: 'ARENA',
+    name: 'Đấu Trường 5vs5 Chuẩn IESF',
+    badge: '10 MÁY • ARENA-A & B',
+    colorName: 'rose',
+    accentBg: 'bg-rose-500/10',
+    accentBorder: 'border-rose-500/40',
+    accentText: 'text-rose-400',
+    icon: 'swords',
+    description: 'Sàn đấu đối kháng 5vs5 chuyên nghiệp (Đội Xanh A1..A5 vs Đội Đỏ B1..B5), đường truyền cáp quang riêng biệt 1ms.',
+    standardSpec: {
+      cpu: 'Core i9 14900K Flagship',
+      gpu: 'RTX 4090 24GB OC Gaming',
+      screen: 'ROG Swift Pro OLED 540Hz Kỷ Lục',
+      defaultRate: '25.000đ/h',
+    },
+  },
+  {
+    id: 'COUPLE_STREAM',
+    name: 'Couple Suite & Phòng Stream 4K',
+    badge: '4 PHÒNG • COUPLE & STREAM',
+    colorName: 'purple',
+    accentBg: 'bg-purple-500/10',
+    accentBorder: 'border-purple-500/40',
+    accentText: 'text-purple-300',
+    icon: 'favorite',
+    description: 'Phòng đôi hẹn hò Sofa Nappa ngả 180° riêng tư + Phòng Stream Studio cách âm tuyệt đối Shure SM7B & Cam 4K.',
+    standardSpec: {
+      cpu: 'Core i7 14700K Dual System',
+      gpu: 'RTX 4070 Super x2 / Card 4K60 Pro',
+      screen: 'Dual Samsung Odyssey G7 240Hz Cong',
+      defaultRate: '35.000đ - 45.000đ/h',
+    },
+  },
+  {
+    id: 'CONSOLE_BIDA',
+    name: 'Console Lounge PS5 & Bida Club',
+    badge: '6 BÀN/PHÒNG • PS5 & BIDA',
+    colorName: 'blue',
+    accentBg: 'bg-blue-500/10',
+    accentBorder: 'border-blue-500/40',
+    accentText: 'text-blue-400',
+    icon: 'sports_esports',
+    description: 'Phòng PS5 Pro OLED 75" 4K 120Hz Dolby Atmos + Billiards Club 4 bàn Aileex King 9020 Pool & Carom 3 băng.',
+    standardSpec: {
+      cpu: 'PS5 Pro + Bàn Aileex King 9020',
+      gpu: 'Custom RDNA 3 Pro / Đá 3 tấm Bỉ',
+      screen: 'LG OLED 75" 4K / Bi Aramith Pro',
+      defaultRate: '79.000đ/h',
+    },
+  },
+];
+
+function getZoneIdForSeat(seat: BaseSeat): ZoneCategory['id'] {
+  const id = seat.id.toUpperCase();
+  if (id.startsWith('STD-')) return 'STANDARD';
+  if (id.startsWith('PRO-')) return 'PRO';
+  if (id.startsWith('VIP-')) return 'VIP';
+  if (id.startsWith('ARENA-')) return 'ARENA';
+  if (id.startsWith('COUPLE-') || id.startsWith('STREAM-')) return 'COUPLE_STREAM';
+  if (id.startsWith('CONSOLE-') || id.startsWith('BIDA-')) return 'CONSOLE_BIDA';
+  return 'STANDARD';
+}
+
+function parseDefaultRate(priceStr: string): number {
+  const digits = priceStr.replace(/\D/g, '');
+  const parsed = parseInt(digits, 10);
+  return isNaN(parsed) || parsed <= 0 ? 15000 : parsed;
+}
 
 export default function MainServerPage() {
   const [bookings, setBookings] = useState<SeatBooking[]>([]);
@@ -39,13 +181,21 @@ export default function MainServerPage() {
   const [topupRev, setTopupRev] = useState(0);
   const [fnbRev, setFnbRev] = useState(0);
 
-  // Bộ lọc tầng & bộ lọc trạng thái máy
-  const [activeFloor, setActiveFloor] = useState<number | 'ALL'>('ALL');
+  // Bộ lọc theo 6 Phân Khu
+  const [selectedZone, setSelectedZone] = useState<ZoneCategory['id']>('ALL');
+  // Bộ lọc trạng thái máy
   const [statusFilter, setStatusFilter] = useState<'ALL' | 'AVAILABLE' | 'ONLINE' | 'BOOKED' | 'BIDA'>('ALL');
 
-  // Máy trạm đang được chọn để quản trị từ xa
+  // Máy trạm đang được chọn để quản trị & xem chi tiết
   const [selectedSeat, setSelectedSeat] = useState<BaseSeat | null>(null);
   const [notificationMsg, setNotificationMsg] = useState<string | null>(null);
+
+  // Đơn giá tùy chỉnh cho từng máy (lưu localStorage)
+  const [customSeatRates, setCustomSeatRates] = useState<Record<string, number>>({});
+  const [customRateInput, setCustomRateInput] = useState('');
+
+  // Nạp tiền tùy chỉnh cho máy được chọn
+  const [customTopupInput, setCustomTopupInput] = useState('');
 
   // Âm thanh chuông cảnh báo quầy lễ tân
   const [soundEnabled, setSoundEnabled] = useState(true);
@@ -57,11 +207,11 @@ export default function MainServerPage() {
   const [broadcastText, setBroadcastText] = useState('');
   const [activeBroadcast, setActiveBroadcast] = useState<string | null>(null);
 
-  // Quản trị điều khiển máy trạm từ xa: tin nhắn riêng & nạp tiền
+  // Tin nhắn riêng gửi trực tiếp xuống màn hình máy
   const [directMessageText, setDirectMessageText] = useState('');
   const [sentMessageToast, setSentMessageToast] = useState<string | null>(null);
 
-  // Hàm phát chuông đôi Ding-Dong bằng Web Audio API thuần (Không cần file mp3 ngoài)
+  // Hàm phát chuông đôi Ding-Dong bằng Web Audio API thuần
   const playServerChime = () => {
     if (!soundEnabled || typeof window === 'undefined') return;
     try {
@@ -84,7 +234,7 @@ export default function MainServerPage() {
       osc.start();
       osc.stop(ctx.currentTime + 0.6);
     } catch {
-      // Bỏ qua nếu trình duyệt chưa kích hoạt audio
+      // Audio autoplay check
     }
   };
 
@@ -113,8 +263,15 @@ export default function MainServerPage() {
     setFnbRev(fnbTotal);
     setRevenue(topups + fnbTotal);
 
-    // Kiểm tra tin phát loa đang hoạt động
+    // Lấy bảng giá tùy chỉnh từ localStorage
     if (typeof window !== 'undefined') {
+      try {
+        const rawRates = localStorage.getItem('CYBER_CUSTOM_SEAT_RATES');
+        if (rawRates) setCustomSeatRates(JSON.parse(rawRates));
+      } catch {
+        // ignore
+      }
+
       const bCast = localStorage.getItem('CYBER_ACTIVE_BROADCAST');
       if (bCast) setActiveBroadcast(bCast);
     }
@@ -137,6 +294,16 @@ export default function MainServerPage() {
     };
   }, [soundEnabled]);
 
+  // Cập nhật giá nhập vào khi chọn máy khác
+  useEffect(() => {
+    if (selectedSeat) {
+      const currentRate = customSeatRates[selectedSeat.id] || parseDefaultRate(selectedSeat.price);
+      setCustomRateInput(String(currentRate));
+      setCustomTopupInput('');
+      setSentMessageToast(null);
+    }
+  }, [selectedSeat, customSeatRates]);
+
   // Xử lý hủy đặt chỗ từ quầy máy chủ
   const handleCancelBooking = (seatId: string) => {
     cancelBooking(seatId);
@@ -151,7 +318,7 @@ export default function MainServerPage() {
     setTimeout(() => setNotificationMsg(null), 3000);
   };
 
-  // NÚT RESET TOÀN BỘ VỀ 0 (Chu trình trải nghiệm mới)
+  // NÚT RESET TOÀN BỘ VỀ 0
   const handleResetAllToZero = () => {
     if (
       confirm(
@@ -165,8 +332,10 @@ export default function MainServerPage() {
       if (typeof window !== 'undefined') {
         localStorage.removeItem('cyber_base_revenue');
         localStorage.removeItem('CYBER_ACTIVE_BROADCAST');
+        localStorage.removeItem('CYBER_CUSTOM_SEAT_RATES');
       }
       setActiveBroadcast(null);
+      setCustomSeatRates({});
       syncAllData();
       setNotificationMsg(
         '✅ Đã RESET toàn bộ hệ thống về 0! Bây giờ bạn có thể thử đặt máy, gọi món và nạp thẻ từng bước.'
@@ -175,7 +344,47 @@ export default function MainServerPage() {
     }
   };
 
-  // Xử lý phát loa toàn quán (Central PA Broadcast)
+  // Xử lý cập nhật giá giờ cho máy (mốc sẵn hoặc tự gõ)
+  const handleUpdateSeatRate = (seatId: string, newRate: number) => {
+    if (isNaN(newRate) || newRate <= 0) {
+      alert('Vui lòng chọn hoặc nhập đơn giá giờ hợp lệ!');
+      return;
+    }
+    const updatedRates = { ...customSeatRates, [seatId]: newRate };
+    setCustomSeatRates(updatedRates);
+    setCustomRateInput(String(newRate));
+
+    if (typeof window !== 'undefined') {
+      localStorage.setItem('CYBER_CUSTOM_SEAT_RATES', JSON.stringify(updatedRates));
+    }
+
+    // Nếu đây là máy mà khách đang ngồi (VIP-08), cập nhật walletStore và phát event
+    const currentW = getStoredWallet();
+    if (currentW.pcName === seatId) {
+      updateStationAndRate(seatId, selectedSeat?.zoneName || currentW.zoneName, newRate);
+    }
+
+    setNotificationMsg(`✅ Đã thiết lập đơn giá máy ${seatId} thành ${newRate.toLocaleString('vi-VN')}đ/h!`);
+    setTimeout(() => setNotificationMsg(null), 4000);
+  };
+
+  // Xử lý nạp tiền cho khách tại máy (mốc sẵn hoặc tự gõ)
+  const handleTopupForSeat = (seatId: string, amount: number) => {
+    if (isNaN(amount) || amount <= 0) {
+      alert('Vui lòng chọn hoặc nhập số tiền nạp hợp lệ!');
+      return;
+    }
+    topupWallet(amount, `Quầy Lễ Tân Nạp Cho Máy ${seatId}`);
+    playServerChime();
+    syncAllData();
+    setNotificationMsg(
+      `🎉 Nạp thành công +${amount.toLocaleString('vi-VN')}đ cho máy ${seatId}! Đã đồng bộ tức thì vào ví và giờ chơi.`
+    );
+    setCustomTopupInput('');
+    setTimeout(() => setNotificationMsg(null), 5000);
+  };
+
+  // Xử lý phát loa toàn quán (PA Broadcast)
   const handleDispatchBroadcast = (msg: string) => {
     if (!msg.trim()) return;
     playServerChime();
@@ -202,16 +411,9 @@ export default function MainServerPage() {
         })
       );
     }
-    setSentMessageToast(`Đã gửi cảnh báo tới máy ${seatId}: "${msg}"`);
+    setSentMessageToast(`Đã gửi tin nhắn riêng tới máy ${seatId}: "${msg}"`);
     setDirectMessageText('');
     setTimeout(() => setSentMessageToast(null), 4000);
-  };
-
-  // Xử lý nạp tiền trực tiếp từ quầy cho máy
-  const handleRemoteTopupForSeat = (seatId: string, amt: number) => {
-    topupWallet(amt, `Quầy Lễ Tân Nạp Cho Máy ${seatId}`);
-    setNotificationMsg(`Đã nạp +${amt.toLocaleString('vi-VN')}đ thành công cho máy ${seatId}!`);
-    setTimeout(() => setNotificationMsg(null), 4000);
   };
 
   // Xử lý khóa máy từ xa
@@ -236,17 +438,20 @@ export default function MainServerPage() {
     }
   };
 
-  // Lọc danh sách máy theo tầng & trạng thái
+  // Lọc danh sách máy theo 6 Phân Khu & Trạng Thái
   const filteredSeats = ALL_SEATS_CONFIG.filter((seat) => {
-    // 1. Lọc theo tầng
-    if (activeFloor !== 'ALL' && seat.floor !== activeFloor) return false;
+    // 1. Lọc theo Phân Khu
+    if (selectedZone !== 'ALL') {
+      const seatZone = getZoneIdForSeat(seat);
+      if (seatZone !== selectedZone) return false;
+    }
 
     const booking = bookings.find((b) => b.seatId === seat.id);
     const isBooked = !!booking;
     const isCurrent = seat.id === 'VIP-08';
     const isBida = seat.id.startsWith('BIDA');
 
-    // 2. Lọc theo trạng thái
+    // 2. Lọc theo Trạng Thái
     if (statusFilter === 'AVAILABLE') return !isBooked && !isCurrent;
     if (statusFilter === 'ONLINE') return isCurrent;
     if (statusFilter === 'BOOKED') return isBooked;
@@ -255,10 +460,10 @@ export default function MainServerPage() {
     return true;
   });
 
-  // Tính số lượng máy đang hoạt động (Đang ngồi + Đã đặt)
   const activeSeatsCount = bookings.length + 1; // 1 máy VIP-08 đang online
   const occupancyPercent = Math.min(100, Math.round((activeSeatsCount / ALL_SEATS_CONFIG.length) * 100));
   const pendingStaffCount = staffRequests.filter((r) => r.status === 'PENDING').length;
+  const currentSelectedZoneInfo = SIX_ZONES_CONFIG.find((z) => z.id === selectedZone);
 
   return (
     <div className="min-h-screen bg-[#020617] text-slate-100 font-sans selection:bg-emerald-400 selection:text-black pb-20">
@@ -282,7 +487,7 @@ export default function MainServerPage() {
                 </span>
               </div>
               <span className="text-xs text-slate-400 font-mono">
-                Điều phối toàn bộ 42 máy/bàn • Nhận tin nhắn đặt chỗ realtime • Xử lý gọi phục vụ • Phát loa toàn quán
+                Điều phối 6 phân khu • Tự chỉnh giá máy • Nạp tiền ví khách tại quầy • Phát loa toàn quán
               </span>
             </div>
           </div>
@@ -473,70 +678,132 @@ export default function MainServerPage() {
         </div>
       </div>
 
-      {/* ══════════ 4. BỐ CỤC 2 CỘT: SƠ ĐỒ PHÒNG MÁY (TRÁI) & TIN NHẮN ĐẶT CHỖ (PHẢI) ══════════ */}
+      {/* ══════════ 4. BỐ CỤC 2 CỘT: 6 PHÂN KHU & SƠ ĐỒ MÁY (TRÁI) & TIN NHẮN (PHẢI) ══════════ */}
       <div className="max-w-7xl mx-auto px-4 pt-6 grid grid-cols-1 lg:grid-cols-12 gap-8">
         
-        {/* CỘT TRÁI (8 CỘT): TỔNG HỢP SƠ ĐỒ MÁY TRẠM & BÀN BIDA */}
+        {/* CỘT TRÁI (8 CỘT): TÍCH HỢP 6 PHÂN KHU VÀ SƠ ĐỒ MÁY CHI TIẾT */}
         <div className="lg:col-span-8 space-y-6">
           
           <div className="bg-[#070e22]/90 border border-white/10 rounded-3xl p-6 space-y-6 shadow-2xl">
             
-            {/* Header thanh lọc phân khu */}
-            <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 border-b border-white/10 pb-4">
-              <div>
-                <span className="text-xs font-mono text-cyan-400 font-bold uppercase tracking-wider flex items-center gap-1.5">
-                  <span className="material-symbols-outlined text-[16px]">grid_view</span>
-                  SƠ ĐỒ TỔNG THỂ TẤT CẢ PHÂN KHU
+            {/* Header: Tích hợp 6 Phân Khu Trực Quan */}
+            <div className="border-b border-white/10 pb-4 space-y-3">
+              <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-2">
+                <div>
+                  <span className="text-xs font-mono text-cyan-400 font-bold uppercase tracking-wider flex items-center gap-1.5">
+                    <span className="material-symbols-outlined text-[16px]">domain</span>
+                    HỆ THỐNG 6 PHÂN KHU PHÒNG MÁY CYBER ZONE
+                  </span>
+                  <h2 className="text-xl font-black text-white font-gaming mt-0.5">
+                    Sơ Đồ Máy Theo Phân Khu &amp; Quản Trị Từ Xa
+                  </h2>
+                </div>
+                <span className="text-xs font-mono text-slate-400">
+                  Bấm vào phân khu để lọc máy • Bấm vào máy để điều khiển
                 </span>
-                <h2 className="text-xl font-black text-white font-gaming mt-0.5">
-                  Quản Lý Trạng Thái Máy &amp; Bàn Bi-a Realtime
-                </h2>
               </div>
 
-              {/* Tabs chọn tầng */}
-              <div className="flex items-center gap-1.5 p-1 rounded-xl bg-black/60 border border-white/10 font-mono text-xs">
+              {/* LƯỚI 6 PHÂN KHU CHỌN NHANH */}
+              <div className="grid grid-cols-2 sm:grid-cols-3 gap-2.5 pt-1 font-mono text-xs">
+                {/* Nút Xem Tất Cả */}
                 <button
-                  onClick={() => setActiveFloor('ALL')}
-                  className={`px-3 py-1.5 rounded-lg font-bold transition cursor-pointer ${
-                    activeFloor === 'ALL'
-                      ? 'bg-cyan-400 text-slate-950 font-black shadow-md'
-                      : 'text-slate-400 hover:text-white'
+                  type="button"
+                  onClick={() => setSelectedZone('ALL')}
+                  className={`p-3 rounded-2xl border text-left transition cursor-pointer col-span-2 sm:col-span-3 flex items-center justify-between ${
+                    selectedZone === 'ALL'
+                      ? 'bg-gradient-to-r from-cyan-500/20 via-blue-500/20 to-purple-500/20 border-cyan-400 text-white shadow-lg'
+                      : 'bg-black/40 border-white/10 text-slate-400 hover:text-white hover:border-white/20'
                   }`}
                 >
-                  Tất Cả ({ALL_SEATS_CONFIG.length})
+                  <div className="flex items-center gap-2.5">
+                    <span className="material-symbols-outlined text-cyan-400 text-xl">apps</span>
+                    <div>
+                      <span className="font-bold text-white block">TẤT CẢ 6 PHÂN KHU (42 MÁY/BÀN)</span>
+                      <span className="text-[10px] text-slate-400">Hiển thị đầy đủ sơ đồ toàn bộ hệ thống</span>
+                    </div>
+                  </div>
+                  <span className="text-cyan-300 font-bold text-xs">42 Vị trí &rarr;</span>
                 </button>
-                <button
-                  onClick={() => setActiveFloor(1)}
-                  className={`px-3 py-1.5 rounded-lg font-bold transition cursor-pointer ${
-                    activeFloor === 1
-                      ? 'bg-cyan-400 text-slate-950 font-black shadow-md'
-                      : 'text-slate-400 hover:text-white'
-                  }`}
-                >
-                  Tầng 1 (Arena &amp; Bida)
-                </button>
-                <button
-                  onClick={() => setActiveFloor(2)}
-                  className={`px-3 py-1.5 rounded-lg font-bold transition cursor-pointer ${
-                    activeFloor === 2
-                      ? 'bg-cyan-400 text-slate-950 font-black shadow-md'
-                      : 'text-slate-400 hover:text-white'
-                  }`}
-                >
-                  Tầng 2 (VIP &amp; Pro 540Hz)
-                </button>
+
+                {SIX_ZONES_CONFIG.map((zone) => {
+                  const isSelected = selectedZone === zone.id;
+                  const zoneSeats = ALL_SEATS_CONFIG.filter((s) => getZoneIdForSeat(s) === zone.id);
+                  const bookedInZone = zoneSeats.filter((s) => bookings.some((b) => b.seatId === s.id)).length;
+                  const onlineInZone = zoneSeats.filter((s) => s.id === 'VIP-08').length;
+                  const busyCount = bookedInZone + onlineInZone;
+
+                  return (
+                    <button
+                      key={zone.id}
+                      type="button"
+                      onClick={() => setSelectedZone(zone.id)}
+                      className={`p-3 rounded-2xl border text-left transition cursor-pointer flex flex-col justify-between ${
+                        isSelected
+                          ? `${zone.accentBg} ${zone.accentBorder} ring-2 ring-cyan-400/50 shadow-lg`
+                          : 'bg-black/40 border-white/10 hover:border-white/20 hover:bg-slate-900/60'
+                      }`}
+                    >
+                      <div className="flex justify-between items-start mb-2">
+                        <span className={`material-symbols-outlined text-lg ${zone.accentText}`}>
+                          {zone.icon}
+                        </span>
+                        <span className={`text-[9px] px-1.5 py-0.2 rounded font-bold border ${zone.accentBorder} ${zone.accentText}`}>
+                          {zone.badge}
+                        </span>
+                      </div>
+                      <div className="font-bold text-white text-xs truncate">{zone.name}</div>
+                      <div className="text-[10px] text-slate-400 mt-1 flex justify-between">
+                        <span>Giá: <strong className="text-emerald-400">{zone.standardSpec.defaultRate}</strong></span>
+                        <span className={busyCount > 0 ? 'text-amber-400 font-bold' : 'text-slate-500'}>
+                          {busyCount > 0 ? `${busyCount} máy bận` : '100% trống'}
+                        </span>
+                      </div>
+                    </button>
+                  );
+                })}
               </div>
+
+              {/* Banner thông tin chi tiết của phân khu đang chọn */}
+              {currentSelectedZoneInfo && (
+                <div className={`p-4 rounded-2xl ${currentSelectedZoneInfo.accentBg} border ${currentSelectedZoneInfo.accentBorder} flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3 text-xs font-mono animate-fadeIn`}>
+                  <div className="space-y-1">
+                    <div className="flex items-center gap-2">
+                      <span className={`font-black text-white uppercase text-sm ${currentSelectedZoneInfo.accentText}`}>
+                        {currentSelectedZoneInfo.name}
+                      </span>
+                      <span className="text-[10px] text-slate-400 font-bold">({currentSelectedZoneInfo.badge})</span>
+                    </div>
+                    <p className="text-slate-300 text-[11px] leading-relaxed">
+                      {currentSelectedZoneInfo.description}
+                    </p>
+                    <div className="text-[10px] text-slate-400 pt-1 flex flex-wrap gap-x-3 gap-y-0.5">
+                      <span>CPU: <strong className="text-white">{currentSelectedZoneInfo.standardSpec.cpu}</strong></span>
+                      <span>GPU: <strong className="text-cyan-300">{currentSelectedZoneInfo.standardSpec.gpu}</strong></span>
+                      <span>Màn hình: <strong className="text-white">{currentSelectedZoneInfo.standardSpec.screen}</strong></span>
+                      <span>Đơn giá chuẩn: <strong className="text-emerald-400">{currentSelectedZoneInfo.standardSpec.defaultRate}</strong></span>
+                    </div>
+                  </div>
+
+                  <button
+                    type="button"
+                    onClick={() => setSelectedZone('ALL')}
+                    className="px-3 py-1.5 rounded-xl bg-white/10 hover:bg-white/20 text-white font-bold text-[11px] transition shrink-0 cursor-pointer"
+                  >
+                    Xem tất cả phân khu &rarr;
+                  </button>
+                </div>
+              )}
             </div>
 
             {/* Bộ lọc trạng thái máy nhanh (Status Filter Pills) */}
             <div className="flex flex-wrap items-center gap-2 font-mono text-xs">
-              <span className="text-slate-500 text-[11px]">Lọc theo trạng thái:</span>
+              <span className="text-slate-500 text-[11px]">Trạng thái máy:</span>
               {[
-                { id: 'ALL', label: `Tất cả (${ALL_SEATS_CONFIG.length})` },
-                { id: 'AVAILABLE', label: `🟢 Trống (${ALL_SEATS_CONFIG.length - activeSeatsCount})` },
-                { id: 'ONLINE', label: '🔵 Đang online (1)' },
-                { id: 'BOOKED', label: `🟡 Đã đặt trước (${bookings.length})` },
-                { id: 'BIDA', label: '🎱 Bàn Bi-a (2)' },
+                { id: 'ALL', label: `Tất cả (${filteredSeats.length})` },
+                { id: 'AVAILABLE', label: '🟢 Máy trống' },
+                { id: 'ONLINE', label: '🔵 Đang online' },
+                { id: 'BOOKED', label: '🟡 Đã đặt trước' },
+                { id: 'BIDA', label: '🎱 Bàn Bi-a' },
               ].map((f) => (
                 <button
                   key={f.id}
@@ -552,29 +819,14 @@ export default function MainServerPage() {
               ))}
             </div>
 
-            {/* Chú thích màu sắc trạng thái */}
-            <div className="flex flex-wrap items-center gap-4 text-xs font-mono text-slate-300 bg-black/40 p-3 rounded-2xl border border-white/5">
-              <span className="flex items-center gap-1.5">
-                <span className="w-2.5 h-2.5 rounded-full bg-emerald-400"></span> Trống (Sẵn sàng)
-              </span>
-              <span className="flex items-center gap-1.5">
-                <span className="w-2.5 h-2.5 rounded-full bg-amber-400"></span> Đã Đặt Trước Online
-              </span>
-              <span className="flex items-center gap-1.5">
-                <span className="w-2.5 h-2.5 rounded-full bg-cyan-400"></span> Máy VIP-08 Khách Đang Ngồi
-              </span>
-              <span className="text-[10px] text-slate-500 ml-auto">
-                * Bấm vào máy bất kỳ để điều khiển từ xa
-              </span>
-            </div>
-
-            {/* LƯỚI DANH SÁCH TẤT CẢ CÁC MÁY */}
+            {/* LƯỚI DANH SÁCH MÁY CỦA PHÂN KHU ĐƯỢC CHỌN */}
             <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-3">
               {filteredSeats.map((seat) => {
                 const booking = bookings.find((b) => b.seatId === seat.id);
                 const isBooked = !!booking;
                 const isCurrent = seat.id === 'VIP-08';
                 const isSelected = selectedSeat?.id === seat.id;
+                const currentSeatPrice = customSeatRates[seat.id] || parseDefaultRate(seat.price);
 
                 let cardStyle = 'border-white/10 bg-slate-900/80 hover:border-emerald-400 text-slate-300';
                 let statusBadge = (
@@ -618,7 +870,9 @@ export default function MainServerPage() {
 
                     <div className="font-mono text-[10px] space-y-0.5">
                       <div className="text-slate-400 truncate">{seat.zoneName}</div>
-                      <div className="text-emerald-400 font-bold">{seat.price}</div>
+                      <div className="text-emerald-400 font-bold">
+                        {currentSeatPrice.toLocaleString('vi-VN')}đ/h
+                      </div>
                     </div>
 
                     {/* Nếu đã được đặt trước thì hiện tên khách */}
@@ -630,9 +884,14 @@ export default function MainServerPage() {
                     ) : isCurrent ? (
                       <div className="pt-2 border-t border-cyan-500/30 text-[10px] font-mono text-cyan-300 flex justify-between items-center">
                         <span className="truncate">👤 Nguyễn Văn Thái</span>
-                        <span className="text-[9px] text-emerald-400">Đang bật</span>
+                        <span className="text-[9px] text-emerald-400 font-bold">Đang chơi</span>
                       </div>
-                    ) : null}
+                    ) : (
+                      <div className="pt-2 border-t border-white/5 text-[9px] text-slate-500 font-mono flex items-center justify-between">
+                        <span>Sẵn sàng đón khách</span>
+                        <span>🔍 Bấm xem</span>
+                      </div>
+                    )}
                   </div>
                 );
               })}
@@ -640,17 +899,21 @@ export default function MainServerPage() {
 
           </div>
 
-          {/* ══════════ CHI TIẾT MÁY & BẢNG ĐIỀU KHIỂN MÁY TỪ XA ══════════ */}
+          {/* ══════════ 5. CHI TIẾT MÁY & BẢNG ĐIỀU KHIỂN / CHỈNH GIÁ / NẠP TIỀN ══════════ */}
           {selectedSeat && (
-            <div className="bg-[#070e22] border-2 border-cyan-400/50 rounded-3xl p-6 shadow-2xl font-mono text-xs space-y-4 animate-fadeIn">
+            <div className="bg-[#070e22] border-2 border-cyan-400/50 rounded-3xl p-6 shadow-2xl font-mono text-xs space-y-5 animate-fadeIn">
+              
+              {/* Header chi tiết máy */}
               <div className="flex justify-between items-center border-b border-white/10 pb-3">
                 <div className="flex items-center gap-2.5">
                   <span className="material-symbols-outlined text-cyan-400 text-2xl">settings_remote</span>
                   <div>
                     <h3 className="font-gaming font-black text-lg text-white">
-                      BẢNG ĐIỀU KHIỂN TỪ XA: {selectedSeat.id} ({selectedSeat.zoneName})
+                      BẢNG ĐIỀU KHIỂN &amp; CHI TIẾT: {selectedSeat.id} ({selectedSeat.zoneName})
                     </h3>
-                    <span className="text-[10px] text-slate-400">Điều phối, nạp giờ, gửi cảnh báo hoặc khóa máy từ quầy</span>
+                    <span className="text-[10px] text-slate-400">
+                      Tự thiết lập đơn giá giờ • Nạp tiền ví trực tiếp cho khách • Khóa máy từ xa
+                    </span>
                   </div>
                 </div>
                 <button
@@ -661,7 +924,7 @@ export default function MainServerPage() {
                 </button>
               </div>
 
-              {/* Thông tin phần cứng */}
+              {/* Thông tin phần cứng chi tiết của máy */}
               <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-4 gap-3">
                 <div className="p-3 rounded-xl bg-black/40 border border-white/5">
                   <span className="text-[10px] text-slate-400 block uppercase">VI XỬ LÝ (CPU)</span>
@@ -672,22 +935,143 @@ export default function MainServerPage() {
                   <span className="text-cyan-400 font-bold block mt-1">{selectedSeat.gpu}</span>
                 </div>
                 <div className="p-3 rounded-xl bg-black/40 border border-white/5">
-                  <span className="text-[10px] text-slate-400 block uppercase">MÀN HÌNH</span>
+                  <span className="text-[10px] text-slate-400 block uppercase">MÀN HÌNH HIỂN THỊ</span>
                   <span className="text-white font-bold block mt-1">{selectedSeat.screen}</span>
                 </div>
                 <div className="p-3 rounded-xl bg-black/40 border border-white/5">
-                  <span className="text-[10px] text-slate-400 block uppercase">ĐƠN GIÁ GIỜ</span>
-                  <span className="text-emerald-400 font-bold block mt-1">{selectedSeat.price}</span>
+                  <span className="text-[10px] text-slate-400 block uppercase">ĐƠN GIÁ HIỆN TẠI</span>
+                  <span className="text-emerald-400 font-bold block mt-1">
+                    {(customSeatRates[selectedSeat.id] || parseDefaultRate(selectedSeat.price)).toLocaleString('vi-VN')}đ/h
+                  </span>
                 </div>
               </div>
 
-              {/* 4 NÚT QUẢN TRỊ TÁC VỤ ĐỘC QUYỀN TỪ XA */}
+              {/* MỤC 1: TỰ CHỈNH GIÁ TIỀN GIỜ CHƠI (THEO MỐC VÀ TỰ NHẬP) */}
+              <div className="p-4 rounded-2xl bg-slate-900/90 border border-amber-500/30 space-y-3">
+                <div className="flex justify-between items-center">
+                  <div className="flex items-center gap-1.5">
+                    <span className="material-symbols-outlined text-amber-400 text-base">tune</span>
+                    <span className="text-xs font-bold text-white uppercase tracking-wider">
+                      THIẾT LẬP ĐƠN GIÁ GIỜ CHƠI CHO MÁY {selectedSeat.id}:
+                    </span>
+                  </div>
+                  <span className="text-[10px] text-amber-300 font-bold">
+                    Hiện tại: {(customSeatRates[selectedSeat.id] || parseDefaultRate(selectedSeat.price)).toLocaleString('vi-VN')}đ/h
+                  </span>
+                </div>
+
+                {/* Các mốc giá gợi ý nhanh */}
+                <div className="space-y-1.5">
+                  <span className="text-[10px] text-slate-400 block">Chọn nhanh mốc giá có sẵn:</span>
+                  <div className="grid grid-cols-4 sm:grid-cols-8 gap-1.5">
+                    {[12000, 15000, 18000, 22000, 25000, 35000, 45000, 79000].map((rate) => (
+                      <button
+                        key={rate}
+                        type="button"
+                        onClick={() => handleUpdateSeatRate(selectedSeat.id, rate)}
+                        className={`py-1.5 rounded-lg border text-[11px] font-bold transition cursor-pointer text-center ${
+                          (customSeatRates[selectedSeat.id] || parseDefaultRate(selectedSeat.price)) === rate
+                            ? 'bg-amber-400 text-slate-950 border-amber-300 shadow-sm'
+                            : 'bg-black/40 border-white/10 text-slate-300 hover:border-amber-400'
+                        }`}
+                      >
+                        {rate / 1000}k/h
+                      </button>
+                    ))}
+                  </div>
+                </div>
+
+                {/* Ô tự gõ giá tiền tùy ý */}
+                <div className="pt-2 border-t border-white/10 flex flex-col sm:flex-row gap-2 items-center">
+                  <div className="relative flex-1 w-full">
+                    <input
+                      type="number"
+                      step="1000"
+                      min="1000"
+                      value={customRateInput}
+                      onChange={(e) => setCustomRateInput(e.target.value)}
+                      placeholder="Hoặc tự gõ đơn giá giờ mới (VNĐ / giờ)..."
+                      className="w-full bg-slate-950 border border-amber-500/40 rounded-xl px-3.5 py-2 text-xs text-white focus:border-amber-400 outline-none"
+                    />
+                    <span className="absolute right-3 top-2 text-slate-500 text-[11px]">VNĐ/h</span>
+                  </div>
+                  <button
+                    type="button"
+                    onClick={() => handleUpdateSeatRate(selectedSeat.id, parseInt(customRateInput, 10))}
+                    className="w-full sm:w-auto px-4 py-2 bg-gradient-to-r from-amber-400 to-yellow-500 hover:brightness-110 text-slate-950 font-gaming font-black text-xs rounded-xl shadow-md transition cursor-pointer"
+                  >
+                    ÁP DỤNG GIÁ MÁY
+                  </button>
+                </div>
+              </div>
+
+              {/* MỤC 2: NẠP TIỀN VÍ CHO KHÁCH (THEO MỐC VÀ TỰ NHẬP SỐ TIỀN) */}
+              <div className="p-4 rounded-2xl bg-slate-900/90 border border-emerald-500/30 space-y-3">
+                <div className="flex justify-between items-center">
+                  <div className="flex items-center gap-1.5">
+                    <span className="material-symbols-outlined text-emerald-400 text-base">add_card</span>
+                    <span className="text-xs font-bold text-white uppercase tracking-wider">
+                      NẠP TIỀN VÍ CHO KHÁCH TẠI MÁY {selectedSeat.id}:
+                    </span>
+                  </div>
+                  <span className="text-[10px] text-emerald-300">
+                    Cộng tiền tức thì &amp; thăng hạng hội viên Gamer Pass
+                  </span>
+                </div>
+
+                {/* Các mốc nạp nhanh */}
+                <div className="space-y-1.5">
+                  <span className="text-[10px] text-slate-400 block">Chọn nhanh mốc tiền nạp:</span>
+                  <div className="grid grid-cols-3 sm:grid-cols-5 gap-2">
+                    {[20000, 50000, 100000, 200000, 500000].map((amt) => (
+                      <button
+                        key={amt}
+                        type="button"
+                        onClick={() => handleTopupForSeat(selectedSeat.id, amt)}
+                        className="py-2 px-2 rounded-xl bg-emerald-500/15 hover:bg-emerald-500/30 text-emerald-300 border border-emerald-500/40 font-bold text-xs transition cursor-pointer flex items-center justify-center gap-1"
+                      >
+                        <span>+{amt >= 1000000 ? `${amt / 1000000}M` : `${amt / 1000}k`}</span>
+                      </button>
+                    ))}
+                  </div>
+                </div>
+
+                {/* Ô tự nhập số tiền nạp tùy ý */}
+                <div className="pt-2 border-t border-white/10 flex flex-col sm:flex-row gap-2 items-center">
+                  <div className="relative flex-1 w-full">
+                    <input
+                      type="number"
+                      step="1000"
+                      min="1000"
+                      value={customTopupInput}
+                      onChange={(e) => setCustomTopupInput(e.target.value)}
+                      placeholder="Hoặc tự gõ số tiền muốn nạp (VD: 30000, 75000, 150000...)"
+                      className="w-full bg-slate-950 border border-emerald-500/40 rounded-xl px-3.5 py-2 text-xs text-white focus:border-emerald-400 outline-none"
+                    />
+                    <span className="absolute right-3 top-2 text-slate-500 text-[11px]">VNĐ</span>
+                  </div>
+                  <button
+                    type="button"
+                    disabled={!customTopupInput || parseInt(customTopupInput, 10) <= 0}
+                    onClick={() => handleTopupForSeat(selectedSeat.id, parseInt(customTopupInput, 10))}
+                    className={`w-full sm:w-auto px-5 py-2 rounded-xl font-gaming font-black text-xs transition cursor-pointer ${
+                      customTopupInput && parseInt(customTopupInput, 10) > 0
+                        ? 'bg-gradient-to-r from-emerald-400 to-cyan-500 hover:brightness-110 text-slate-950 shadow-md'
+                        : 'bg-slate-800 text-slate-500 cursor-not-allowed'
+                    }`}
+                  >
+                    XÁC NHẬN NẠP VÍ &rarr;
+                  </button>
+                </div>
+              </div>
+
+              {/* MỤC 3: CÁC TÁC VỤ ĐIỀU KHIỂN TỪ XA KHÁC (KHÓA, REBOOT, NHẮN RIÊNG) */}
               <div className="p-4 rounded-2xl bg-slate-900 border border-cyan-500/30 space-y-3">
                 <span className="text-xs font-bold text-cyan-300 uppercase tracking-wider block">
-                  ⚡ TÁC VỤ ĐIỀU KHIỂN TỪ XA (REMOTE CONTROL):
+                  ⚡ TÁC VỤ ĐIỀU KHIỂN TỪ XA KHÁC:
                 </span>
 
-                <div className="grid grid-cols-1 sm:grid-cols-3 gap-2.5">
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-2.5">
                   <button
                     onClick={() => handleRemoteLockSeat(selectedSeat.id)}
                     className="p-2.5 rounded-xl bg-rose-500/20 hover:bg-rose-500/30 text-rose-300 border border-rose-500/40 font-bold transition flex items-center justify-center gap-1.5 cursor-pointer"
@@ -703,17 +1087,9 @@ export default function MainServerPage() {
                     <span className="material-symbols-outlined text-base">restart_alt</span>
                     <span>Khởi Động Lại (Reboot)</span>
                   </button>
-
-                  <button
-                    onClick={() => handleRemoteTopupForSeat(selectedSeat.id, 50000)}
-                    className="p-2.5 rounded-xl bg-emerald-500/20 hover:bg-emerald-500/30 text-emerald-300 border border-emerald-500/40 font-bold transition flex items-center justify-center gap-1.5 cursor-pointer"
-                  >
-                    <span className="material-symbols-outlined text-base">add_card</span>
-                    <span>Nạp +50k Cho Máy</span>
-                  </button>
                 </div>
 
-                {/* Gửi tin nhắn / nhắc nhở riêng xuống màn hình máy này */}
+                {/* Gửi tin nhắn riêng xuống màn hình máy */}
                 <div className="pt-2 border-t border-white/10 space-y-2">
                   <div className="flex gap-2">
                     <input
@@ -766,6 +1142,7 @@ export default function MainServerPage() {
                 }
                 return null;
               })()}
+
             </div>
           )}
 
