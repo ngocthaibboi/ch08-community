@@ -3,8 +3,72 @@
 import React, { useState, useEffect } from 'react';
 import Link from 'next/link';
 import { ALL_SEATS_CONFIG, saveBooking } from '@/lib/bookingStore';
-import { getLoggedInUser, AUTH_EVENT_NAME, AuthUser } from '@/lib/authStore';
+import { getLoggedInUser, loginUser, AUTH_EVENT_NAME, AuthUser } from '@/lib/authStore';
 import AuthModal from '@/components/auth/AuthModal';
+
+// Danh mục sản phẩm Gear & Dịch vụ Mod Phím chính hãng
+const GEAR_PRODUCTS = [
+  {
+    id: 'gear-1',
+    name: 'Chuột Zowie EC2-CW Wireless',
+    category: 'mouse',
+    price: '2.890.000đ',
+    tag: 'Chuẩn Thi Đấu CS2',
+    image: 'https://images.unsplash.com/photo-1527864550417-7fd91fc51a46?auto=format&fit=crop&w=600&q=80',
+    desc: 'Cảm biến 3395, receiver độc lập chống nhiễu sóng 2.4GHz, form công thái học huyền thoại dành riêng cho tuyển thủ eSports.',
+    testStation: 'Có sẵn trải nghiệm tại dãy máy VIP-01..08',
+  },
+  {
+    id: 'gear-2',
+    name: 'Chuột Razer Viper V3 Pro Esports 8000Hz',
+    category: 'mouse',
+    price: '3.490.000đ',
+    tag: '8000Hz Siêu Tốc',
+    image: 'https://images.unsplash.com/photo-1615663245857-ac93bb7c39e7?auto=format&fit=crop&w=600&q=80',
+    desc: 'Trọng lượng siêu nhẹ chỉ 54g, Polling rate 8000Hz thực, switch quang Gen-3 90 triệu lần nhấn không bao giờ double-click.',
+    testStation: 'Có sẵn tại Sàn Đấu Arena 5vs5 Tầng 1',
+  },
+  {
+    id: 'gear-3',
+    name: 'Bàn Phím Cơ Wooting 60HE Hall Effect',
+    category: 'keyboard',
+    price: '4.290.000đ',
+    tag: 'Rapid Trigger 0.1mm',
+    image: 'https://images.unsplash.com/photo-1618384887929-16ec33fab9ef?auto=format&fit=crop&w=600&q=80',
+    desc: 'Công nghệ switch từ tính Lekker, Rapid Trigger nhận phím tức thì 0.1mm, triệt tiêu hoàn toàn delay trong game đối kháng.',
+    testStation: 'Có sẵn tại Trạm Gear Lab Sảnh Chính',
+  },
+  {
+    id: 'gear-4',
+    name: 'Lót Chuột Artisan Hayate Otsu FX Soft',
+    category: 'mouse',
+    price: '1.250.000đ',
+    tag: 'Made in Japan 🇯🇵',
+    image: 'https://images.unsplash.com/photo-1541140532154-b024d705b909?auto=format&fit=crop&w=600&q=80',
+    desc: 'Vải dệt kim cương Poron xốp dính chặt mặt bàn, stopping power và tracking cực êm, chuẩn gear tuyển thủ Valorant.',
+    testStation: 'Trang bị 100% tại Khu Cyber Pro 540Hz',
+  },
+  {
+    id: 'gear-5',
+    name: 'Dịch Vụ Lube Switch & Cân Wire Custom',
+    category: 'services',
+    price: '150.000đ / phím',
+    tag: 'Trạm Mod Phím Lab',
+    image: 'https://images.unsplash.com/photo-1587202372775-e229f172b9d7?auto=format&fit=crop&w=600&q=80',
+    desc: 'Tra mỡ Krytox 205g0 + mỡ thanh giằng XHT-BDZ, nắn thẳng wire, dán foam đáy Poron chống rỗng, tune âm thocky/creamy.',
+    testStation: 'Kỹ thuật viên phục vụ lấy ngay trong 30 phút',
+  },
+  {
+    id: 'gear-6',
+    name: 'Dịch Vụ Tra Keo Honeywell PTM7950 & Vệ Sinh PC',
+    category: 'services',
+    price: '200.000đ / máy',
+    tag: 'Giảm 15°C Tức Thì',
+    image: 'https://images.unsplash.com/photo-1587202372634-32705e3bf49c?auto=format&fit=crop&w=600&q=80',
+    desc: 'Keo tản nhiệt biến tính pha độc quyền Honeywell PTM7950 nhập khẩu Mỹ, vệ sinh quạt tản bụi và bảo dưỡng bo mạch toàn diện.',
+    testStation: 'Kỹ thuật viên phục vụ tại sảnh hoặc tại nhà',
+  },
+];
 
 export default function Home() {
   const [currentUser, setCurrentUser] = useState<AuthUser | null>(null);
@@ -27,6 +91,68 @@ export default function Home() {
     name: string;
     zone: string;
   } | null>(null);
+
+  // State Gói Hội Viên
+  const [membershipToast, setMembershipToast] = useState<string | null>(null);
+
+  // State Showroom Gear Modal
+  const [isGearModalOpen, setIsGearModalOpen] = useState(false);
+  const [selectedGearTab, setSelectedGearTab] = useState<'all' | 'mouse' | 'keyboard' | 'services'>('all');
+  const [gearSuccessToast, setGearSuccessToast] = useState<string | null>(null);
+
+  // State Community Hub
+  const [activeCommunityTab, setActiveCommunityTab] = useState<'tournaments' | 'lfg' | 'reviews'>('tournaments');
+  const [tournamentSuccessToast, setTournamentSuccessToast] = useState<string | null>(null);
+  const [lfgPosts, setLfgPosts] = useState([
+    {
+      id: 'lfg-1',
+      author: 'Clan Hades (Đội Trưởng Minh)',
+      avatar: '🔥',
+      station: 'Khu Máy PRO-01..04',
+      game: 'CS2 (Counter-Strike 2)',
+      rank: 'Faceit Level 8+',
+      title: 'Cần tuyển 1 Pro Sniper / Rifler try-hard leo rank tối nay. Có mic discord, bao nước Sting dâu!',
+      time: '5 phút trước',
+      slotsNeeded: 1,
+    },
+    {
+      id: 'lfg-2',
+      author: 'Nguyễn Văn Thái (Trưởng Nhóm)',
+      avatar: '⭐',
+      station: 'Máy Trạm VIP-08',
+      game: 'Liên Minh Huyền Thoại',
+      rank: 'Cao Thủ / Kim Cương I',
+      title: 'Tìm 2 anh em leo rank thông đêm phòng Ultra VIP Tầng 2. Máy cực mượt, combat không độ trễ.',
+      time: '18 phút trước',
+      slotsNeeded: 2,
+    },
+    {
+      id: 'lfg-3',
+      author: 'Hoàng Long & Tuấn Anh',
+      avatar: '🎯',
+      station: 'Bàn Bida BIDA-03',
+      game: 'Billiards Pool 9-Ball',
+      rank: 'Cơ thủ phong trào',
+      title: 'Giao lưu giao hữu kèo Pool 9-ball tính điểm Aileex King. Ai thua mời nước giải khát!',
+      time: '35 phút trước',
+      slotsNeeded: 2,
+    },
+    {
+      id: 'lfg-4',
+      author: 'Team Valkyrie (Linh Chi)',
+      avatar: '🌸',
+      station: 'Phòng Đôi COUPLE-01',
+      game: 'Valorant',
+      rank: 'Ascendant / Immortal',
+      title: 'Tìm team 5vs5 scrim giao lưu cọ sát trước thềm giải đấu Cyber Zone Championship.',
+      time: '1 giờ trước',
+      slotsNeeded: 3,
+    },
+  ]);
+  const [newLfgName, setNewLfgName] = useState('');
+  const [newLfgGame, setNewLfgGame] = useState('CS2');
+  const [newLfgStation, setNewLfgStation] = useState('Khu Standard');
+  const [newLfgContent, setNewLfgContent] = useState('');
 
   // Lắng nghe thay đổi đăng nhập
   useEffect(() => {
@@ -98,6 +224,61 @@ export default function Home() {
       name: newBooking.customerName,
       zone: newBooking.zone,
     });
+  };
+
+  // Xử lý đăng ký gói hội viên
+  const handleSubscribePlan = (planName: string, tierBadge: string) => {
+    if (!currentUser) {
+      setAuthModalMessage(`Vui lòng đăng nhập để đăng ký kích hoạt gói ${planName}!`);
+      setIsAuthModalOpen(true);
+      return;
+    }
+    const updatedUser: AuthUser = {
+      ...currentUser,
+      userTier: tierBadge,
+    };
+    loginUser(updatedUser);
+    setCurrentUser(updatedUser);
+    setMembershipToast(`🎉 Chúc mừng bạn đã đăng ký thành công gói ${planName} (${tierBadge})! Quyền lợi chiết khấu và giờ VIP đã được kích hoạt.`);
+    setTimeout(() => setMembershipToast(null), 6000);
+  };
+
+  // Xử lý đăng bài tìm đồng đội (LFG)
+  const handlePostLfg = (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!newLfgContent.trim()) return;
+    const authorName = newLfgName.trim() || currentUser?.fullName || 'Game Thủ Cyber Zone';
+    const newPost = {
+      id: `lfg-${Date.now()}`,
+      author: authorName,
+      avatar: '🎮',
+      station: newLfgStation,
+      game: newLfgGame,
+      rank: 'Đang leo Rank',
+      title: newLfgContent.trim(),
+      time: 'Vừa xong',
+      slotsNeeded: 1,
+    };
+    setLfgPosts([newPost, ...lfgPosts]);
+    setNewLfgContent('');
+    setNewLfgName('');
+  };
+
+  // Xử lý đăng ký giải đấu
+  const handleRegisterTournament = (tournamentName: string) => {
+    if (!currentUser) {
+      setAuthModalMessage(`Vui lòng đăng nhập để đăng ký tham gia giải đấu: ${tournamentName}!`);
+      setIsAuthModalOpen(true);
+      return;
+    }
+    setTournamentSuccessToast(`🎉 Đã đăng ký thành công giải đấu "${tournamentName}". Ban tổ chức sẽ liên hệ qua SĐT ${currentUser.phone || 'của bạn'} để xếp lịch thi đấu!`);
+    setTimeout(() => setTournamentSuccessToast(null), 6000);
+  };
+
+  // Xử lý mượn/đặt test gear
+  const handleRequestGear = (gearName: string) => {
+    setGearSuccessToast(`🎉 Đã tiếp nhận yêu cầu trải nghiệm "${gearName}". Kỹ thuật viên sẽ mang gear tới máy của bạn ngay!`);
+    setTimeout(() => setGearSuccessToast(null), 5000);
   };
 
   return (
@@ -416,137 +597,170 @@ export default function Home() {
           </div>
         </div>
 
-        {/* ══════════ 4. BẢNG GIÁ GIỜ CHƠI & GÓI HỘI VIÊN ══════════ */}
+        {/* ══════════ 4. CÁC GÓI THẺ HỘI VIÊN & ĐẶC QUYỀN VIP (MEMBERSHIP PASS) ══════════ */}
         <div id="bang-gia" className="space-y-8">
           <div className="text-center space-y-2 max-w-2xl mx-auto">
             <span className="text-xs font-mono text-emerald-400 font-bold uppercase tracking-wider">
-              MINH BẠCH &amp; TIẾT KIỆM
+              ĐẶC QUYỀN GAMER PASS • HỘI VIÊN CHÍNH THỨC
             </span>
             <h2 className="text-3xl md:text-5xl font-black text-white font-gaming">
-              Bảng Giá Giờ Chơi &amp; Gói Hội Viên
+              Các Gói Thẻ Hội Viên &amp; Quyền Lợi
             </h2>
             <p className="text-xs text-slate-400">
-              Nạp càng nhiều nhận ưu đãi thưởng giờ lên đến 100%. Áp dụng đồng bộ mọi chi nhánh.
+              Đăng ký gói hội viên theo tháng để nhận chiết khấu tiền giờ lên đến 35%, đồ uống miễn phí mỗi ngày và đặc quyền giữ chỗ trước giờ cao điểm.
             </p>
           </div>
 
+          {/* Flash alert khi đăng ký gói thành công */}
+          {membershipToast && (
+            <div className="p-4 rounded-2xl bg-emerald-500/20 border border-emerald-400 text-emerald-300 font-mono text-xs flex items-center justify-between shadow-2xl animate-bounce">
+              <span className="flex items-center gap-2">
+                <span className="material-symbols-outlined text-emerald-400 text-[20px]">verified</span>
+                {membershipToast}
+              </span>
+              <span className="text-[10px] text-slate-400">Đã cập nhật vào tài khoản</span>
+            </div>
+          )}
+
           <div className="grid grid-cols-1 md:grid-cols-3 gap-6 items-stretch">
-            {/* Standard */}
-            <div className="rounded-3xl bg-slate-900/60 border border-white/10 p-8 flex flex-col justify-between space-y-6">
+            {/* Gói 1: SILVER MEMBER */}
+            <div className="rounded-3xl bg-slate-900/60 border border-white/10 p-8 flex flex-col justify-between space-y-6 hover:border-slate-500/50 transition">
               <div>
                 <div className="flex justify-between items-center text-xs font-mono text-slate-400">
-                  <span>STANDARD</span><span className="px-2 py-0.5 rounded bg-white/5">Public Zone</span>
+                  <span className="font-bold text-slate-300">SILVER MEMBER</span>
+                  <span className="px-2 py-0.5 rounded bg-white/5 border border-white/10">Hội Viên Bạc</span>
                 </div>
-                <div className="text-4xl font-black text-white font-gaming my-4">
-                  12.000đ <span className="text-xs text-slate-400 font-normal font-sans">/ h</span>
+                <div className="text-3xl sm:text-4xl font-black text-white font-gaming my-4">
+                  99.000đ <span className="text-xs text-slate-400 font-normal font-sans">/ tháng</span>
                 </div>
-                <p className="text-xs text-slate-400">Dành cho game thủ chiến game hàng ngày.</p>
+                <p className="text-xs text-slate-400">Gói khởi đầu tối ưu dành cho game thủ thường xuyên ghé quán.</p>
                 <ul className="text-xs space-y-3 text-slate-300 mt-6 border-t border-white/10 pt-6">
                   <li className="flex items-center gap-2">
                     <span className="material-symbols-outlined text-emerald-400 text-sm">check_circle</span>
-                    Màn hình Fast-IPS 280Hz - 360Hz
+                    <span><strong>Giảm 10%</strong> tiền giờ chơi toàn bộ hệ thống máy</span>
                   </li>
                   <li className="flex items-center gap-2">
                     <span className="material-symbols-outlined text-emerald-400 text-sm">check_circle</span>
-                    VGA RTX 4060Ti / 4070 OC
+                    <span>Tặng ngay <strong>3 giờ chơi VIP</strong> miễn phí khi kích hoạt</span>
                   </li>
                   <li className="flex items-center gap-2">
                     <span className="material-symbols-outlined text-emerald-400 text-sm">check_circle</span>
-                    Ghế bọc da đúc chống mỏi lưng
+                    <span>Giảm <strong>5%</strong> đồ ăn nước uống thực đơn Bếp F&amp;B</span>
                   </li>
                   <li className="flex items-center gap-2">
                     <span className="material-symbols-outlined text-emerald-400 text-sm">check_circle</span>
-                    Free refill nước lọc tinh khiết
+                    <span>Free nâng cấp tài khoản game bản quyền tại sảnh</span>
+                  </li>
+                  <li className="flex items-center gap-2">
+                    <span className="material-symbols-outlined text-emerald-400 text-sm">check_circle</span>
+                    <span>Tích lũy 1 điểm thưởng mỗi 1.000đ chi tiêu đổi quà Gear</span>
                   </li>
                 </ul>
               </div>
-              <Link
-                href="/auth"
-                className="w-full py-3 text-center bg-white/10 hover:bg-white/20 text-white font-bold text-xs rounded-xl transition block"
+              <button
+                type="button"
+                onClick={() => handleSubscribePlan('Hội Viên Bạc', 'HỘI VIÊN BẠC 🥈')}
+                className="w-full py-3.5 text-center bg-white/10 hover:bg-white/20 text-white font-bold text-xs rounded-xl transition cursor-pointer font-mono uppercase tracking-wider"
               >
-                Nạp Giờ Chơi
-              </Link>
+                ĐĂNG KÝ GÓI BẠC (99K) &rarr;
+              </button>
             </div>
 
-            {/* VIP Pro */}
-            <div className="rounded-3xl bg-gradient-to-b from-[#09181b] to-slate-900 border-2 border-emerald-400 p-8 flex flex-col justify-between space-y-6 shadow-2xl relative">
-              <span className="absolute -top-3.5 left-1/2 -translate-x-1/2 px-4 py-1 rounded-full bg-emerald-400 text-black text-[10px] font-black font-mono uppercase tracking-wider shadow-lg">
-                LỰA CHỌN PHỔ BIẾN NHẤT
+            {/* Gói 2: GOLD GAMER PASS (HOT) */}
+            <div className="rounded-3xl bg-gradient-to-b from-[#091f1b] via-slate-900 to-slate-900 border-2 border-emerald-400 p-8 flex flex-col justify-between space-y-6 shadow-2xl relative">
+              <span className="absolute -top-3.5 left-1/2 -translate-x-1/2 px-4 py-1 rounded-full bg-gradient-to-r from-emerald-400 to-cyan-400 text-black text-[10px] font-black font-mono uppercase tracking-wider shadow-lg">
+                LỰA CHỌN PHỔ BIẾN NHẤT ⭐
               </span>
               <div>
                 <div className="flex justify-between items-center text-xs font-mono text-emerald-400 font-bold">
-                  <span>VIP PRO</span><span className="px-2 py-0.5 rounded bg-emerald-400/20">Chống Ồn Tuyệt Đối</span>
+                  <span>GOLD GAMER PASS</span>
+                  <span className="px-2 py-0.5 rounded bg-emerald-400/20 text-emerald-300">Hội Viên Vàng</span>
                 </div>
-                <div className="text-4xl font-black text-white font-gaming my-4">
-                  22.000đ <span className="text-xs text-slate-400 font-normal font-sans">/ h</span>
+                <div className="text-3xl sm:text-4xl font-black text-white font-gaming my-4">
+                  249.000đ <span className="text-xs text-slate-400 font-normal font-sans">/ tháng</span>
                 </div>
-                <p className="text-xs text-slate-400">Dành cho Rank cao thủ &amp; Streamer.</p>
+                <p className="text-xs text-slate-400">Dành cho Rank cao thủ, game thủ try-hard và đội nhóm thi đấu.</p>
                 <ul className="text-xs space-y-3 text-slate-300 mt-6 border-t border-white/10 pt-6">
                   <li className="flex items-center gap-2">
                     <span className="material-symbols-outlined text-emerald-400 text-sm">check_circle</span>
-                    Màn ROG OLED 240Hz / BenQ 540Hz
+                    <span><strong>Giảm 20%</strong> tiền giờ chơi (Phòng VIP, Pro 540Hz, Standard)</span>
                   </li>
                   <li className="flex items-center gap-2">
                     <span className="material-symbols-outlined text-emerald-400 text-sm">check_circle</span>
-                    RTX 4080 Super / RTX 4090 24GB
+                    <span>Tặng ngay <strong>8 giờ chơi Ultra VIP Suite</strong> (trị giá 176k)</span>
                   </li>
                   <li className="flex items-center gap-2">
                     <span className="material-symbols-outlined text-emerald-400 text-sm">check_circle</span>
-                    Phòng cách âm riêng biệt 100%
+                    <span>Tặng <strong>01 Combo Ăn Uống Free</strong> mỗi tuần (Mì trộn + Sting)</span>
                   </li>
                   <li className="flex items-center gap-2">
                     <span className="material-symbols-outlined text-emerald-400 text-sm">check_circle</span>
-                    Tai nghe Wireless ROG &amp; Ghế Herman Miller
+                    <span>Giảm <strong>10%</strong> menu Bếp &amp; Dịch vụ Mod phím / Lube switch</span>
                   </li>
                   <li className="flex items-center gap-2">
                     <span className="material-symbols-outlined text-emerald-400 text-sm">check_circle</span>
-                    Tặng 01 Mocktail tự chọn khi chơi &ge; 4h
+                    <span>Ưu tiên giữ máy trước giờ cao điểm 45 phút không lo hết chỗ</span>
+                  </li>
+                  <li className="flex items-center gap-2">
+                    <span className="material-symbols-outlined text-emerald-400 text-sm">check_circle</span>
+                    <span>Miễn phí vé tham dự toàn bộ Giải đấu Clan hàng tuần</span>
                   </li>
                 </ul>
               </div>
-              <a
-                href="#dat-cho"
-                className="w-full py-3 text-center bg-emerald-400 hover:bg-emerald-300 text-black font-extrabold text-xs rounded-xl shadow-lg shadow-emerald-500/30 transition block"
+              <button
+                type="button"
+                onClick={() => handleSubscribePlan('Hội Viên Vàng (Gold Gamer Pass)', 'HỘI VIÊN VÀNG ⭐')}
+                className="w-full py-3.5 text-center bg-gradient-to-r from-emerald-400 to-cyan-400 hover:brightness-110 text-black font-extrabold text-xs rounded-xl shadow-lg shadow-emerald-500/30 transition cursor-pointer font-mono uppercase tracking-wider"
               >
-                ĐẶT CHỖ VIP NGAY
-              </a>
+                ĐĂNG KÝ GÓI VÀNG (249K) &rarr;
+              </button>
             </div>
 
-            {/* Lounge & Club */}
-            <div className="rounded-3xl bg-slate-900/60 border border-white/10 p-8 flex flex-col justify-between space-y-6">
+            {/* Gói 3: DIAMOND ELITE VIP */}
+            <div className="rounded-3xl bg-slate-900/60 border border-purple-500/40 p-8 flex flex-col justify-between space-y-6 hover:border-purple-400 transition">
               <div>
-                <div className="flex justify-between items-center text-xs font-mono text-slate-400">
-                  <span>LOUNGE &amp; CLUB</span><span className="px-2 py-0.5 rounded bg-white/5">Billiards + PS5 Pro</span>
+                <div className="flex justify-between items-center text-xs font-mono text-purple-400 font-bold">
+                  <span>DIAMOND ELITE VIP</span>
+                  <span className="px-2 py-0.5 rounded bg-purple-500/20 text-purple-300">Kim Cương 💎</span>
                 </div>
-                <div className="text-4xl font-black text-white font-gaming my-4">
-                  79.000đ <span className="text-xs text-slate-400 font-normal font-sans">/ bàn/h</span>
+                <div className="text-3xl sm:text-4xl font-black text-white font-gaming my-4">
+                  599.000đ <span className="text-xs text-slate-400 font-normal font-sans">/ tháng</span>
                 </div>
-                <p className="text-xs text-slate-400">Trọn gói bàn thi đấu hoặc phòng PS5 Pro.</p>
+                <p className="text-xs text-slate-400">Đẳng cấp thượng lưu: Full đặc quyền, tủ locker và đồ uống free.</p>
                 <ul className="text-xs space-y-3 text-slate-300 mt-6 border-t border-white/10 pt-6">
                   <li className="flex items-center gap-2">
-                    <span className="material-symbols-outlined text-emerald-400 text-sm">check_circle</span>
-                    Bàn Aileex King 9022 / Nỉ Simonis nhập
+                    <span className="material-symbols-outlined text-purple-400 text-sm">check_circle</span>
+                    <span><strong>Giảm 35%</strong> tiền giờ chơi (Cả Arena, Couple, Console &amp; Bida)</span>
                   </li>
                   <li className="flex items-center gap-2">
-                    <span className="material-symbols-outlined text-emerald-400 text-sm">check_circle</span>
-                    Phòng PS5 Pro TV 65" OLED 120Hz (tối đa 4 người)
+                    <span className="material-symbols-outlined text-purple-400 text-sm">check_circle</span>
+                    <span>Tặng ngay <strong>20 giờ chơi VIP</strong> miễn phí trong tháng (trị giá 440k)</span>
                   </li>
                   <li className="flex items-center gap-2">
-                    <span className="material-symbols-outlined text-emerald-400 text-sm">check_circle</span>
-                    Full kho game bản quyền mới nhất 2026
+                    <span className="material-symbols-outlined text-purple-400 text-sm">check_circle</span>
+                    <span><strong>Free Refill</strong> nước ngọt, cà phê, trà giải khát không giới hạn</span>
                   </li>
                   <li className="flex items-center gap-2">
-                    <span className="material-symbols-outlined text-emerald-400 text-sm">check_circle</span>
-                    Phục vụ đồ ăn uống 24/7 tận phòng
+                    <span className="material-symbols-outlined text-purple-400 text-sm">check_circle</span>
+                    <span>Tặng <strong>01 Áo Jersey Thi Đấu Cyber Zone 2026</strong> in Nickname</span>
+                  </li>
+                  <li className="flex items-center gap-2">
+                    <span className="material-symbols-outlined text-purple-400 text-sm">check_circle</span>
+                    <span>Ngăn tủ Locker cá nhân cất giữ bàn phím &amp; gear riêng biệt an toàn</span>
+                  </li>
+                  <li className="flex items-center gap-2">
+                    <span className="material-symbols-outlined text-purple-400 text-sm">check_circle</span>
+                    <span>Chăm sóc VIP riêng, order món ăn ưu tiên giao trong 3 phút</span>
                   </li>
                 </ul>
               </div>
-              <a
-                href="#dat-cho"
-                className="w-full py-3 text-center bg-white/10 hover:bg-white/20 text-white font-bold text-xs rounded-xl transition block"
+              <button
+                type="button"
+                onClick={() => handleSubscribePlan('Hội Viên Kim Cương (Diamond Elite)', 'HỘI VIÊN KIM CƯƠNG 💎')}
+                className="w-full py-3.5 text-center bg-purple-500 hover:bg-purple-400 text-white font-extrabold text-xs rounded-xl shadow-lg shadow-purple-500/30 transition cursor-pointer font-mono uppercase tracking-wider"
               >
-                Đặt Bàn / Phòng
-              </a>
+                ĐĂNG KÝ KIM CƯƠNG (599K) &rarr;
+              </button>
             </div>
           </div>
 
@@ -554,22 +768,22 @@ export default function Home() {
           <div className="p-4 md:p-6 rounded-2xl bg-gradient-to-r from-emerald-950/60 to-slate-900 border border-emerald-500/30 flex flex-col md:flex-row justify-between items-center gap-4">
             <div className="flex items-center gap-4">
               <div className="w-10 h-10 rounded-xl bg-emerald-500/20 text-emerald-400 flex items-center justify-center text-xl shrink-0">
-                <span className="material-symbols-outlined text-[22px]">account_balance_wallet</span>
+                <span className="material-symbols-outlined text-[22px]">card_membership</span>
               </div>
               <div>
                 <span className="text-xs font-bold text-white uppercase block">
-                  CHƯƠNG TRÌNH KHUYẾN MÃI NẠP GIỜ VÀNG
+                  CHÍNH SÁCH TÍCH LŨY THĂNG HẠNG TỰ ĐỘNG
                 </span>
                 <span className="text-xs text-slate-400">
-                  Nạp 200k tặng 50k • Nạp 500k tặng 200k • Nạp 1.000k tặng 600k + Voucher Ăn Uống 100k
+                  Nạp tiền chơi tích lũy đạt 200k tự động lên BẠC • Đạt 500k tự động lên VÀNG ⭐ • Đạt 1.500k thăng hạng KIM CƯƠNG 💎
                 </span>
               </div>
             </div>
             <Link
               href="/auth"
-              className="px-5 py-2.5 bg-emerald-400 hover:bg-emerald-300 text-black text-xs font-bold rounded-xl transition shrink-0"
+              className="px-5 py-2.5 bg-emerald-400 hover:bg-emerald-300 text-black text-xs font-bold rounded-xl transition shrink-0 font-mono"
             >
-              NẠP NGAY BÂY GIỜ
+              NẠP THẺ VÍ NGAY &rarr;
             </Link>
           </div>
         </div>
@@ -798,13 +1012,14 @@ export default function Home() {
               </div>
 
               <div className="pt-2">
-                <Link
-                  href="/games"
-                  className="text-emerald-400 hover:text-emerald-300 font-bold text-xs inline-flex items-center gap-1.5 transition"
+                <button
+                  type="button"
+                  onClick={() => setIsGearModalOpen(true)}
+                  className="text-emerald-400 hover:text-emerald-300 font-bold text-xs inline-flex items-center gap-1.5 transition cursor-pointer group"
                 >
                   <span>Tham quan danh mục sản phẩm Gear • Đặt lịch bảo dưỡng</span>
-                  <span className="material-symbols-outlined text-[14px]">arrow_forward</span>
-                </Link>
+                  <span className="material-symbols-outlined text-[14px] group-hover:translate-x-1 transition-transform">arrow_forward</span>
+                </button>
               </div>
             </div>
 
@@ -830,87 +1045,525 @@ export default function Home() {
           </div>
         </div>
 
-        {/* ══════════ 7. ĐÁNH GIÁ TỪ HUYỀN THOẠI: FAKER, ĐỘ MIXI & ELON MUSK ══════════ */}
-        <div id="khach-hang" className="space-y-8">
-          <div className="text-center space-y-2">
-            <span className="text-xs font-mono text-emerald-400 font-bold uppercase tracking-wider">
-              CỘNG ĐỒNG GAME THỦ TOÀN CẦU
+        {/* ══════════ 7. CYBER ZONE COMMUNITY HUB & ĐÁNH GIÁ (COMMUNITY FEATURE) ══════════ */}
+        <div id="community" className="space-y-8 scroll-mt-24">
+          <div id="khach-hang" className="text-center space-y-2">
+            <span className="text-xs font-mono text-emerald-400 font-bold uppercase tracking-wider flex items-center justify-center gap-1.5">
+              <span className="w-2 h-2 rounded-full bg-emerald-400 animate-ping"></span>
+              CỘNG ĐỒNG GAME THỦ TOÀN CẦU • COMMUNITY ESPORTS HUB
             </span>
             <h2 className="text-3xl md:text-5xl font-black text-white font-gaming">
-              Đánh Giá Từ Tuyển Thủ &amp; Nhân Vật Hàng Đầu
+              Đấu Trường Cộng Đồng &amp; Đánh Giá
             </h2>
-            <p className="text-xs text-slate-400">
-              Nơi hội tụ những huyền thoại eSports và nhân vật công nghệ có tầm ảnh hưởng lớn nhất.
+            <p className="text-xs text-slate-400 max-w-xl mx-auto">
+              Nơi giao lưu kết nối 15.000+ game thủ, ghép kèo leo rank 5vs5, giải đấu tuần và đánh giá từ những tuyển thủ hàng đầu thế giới.
             </p>
           </div>
 
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-6 font-sans">
-            {/* 1. FAKER */}
-            <div className="p-6 rounded-2xl bg-slate-900/60 border border-red-500/30 space-y-4 hover:border-red-500/60 transition flex flex-col justify-between">
-              <div className="text-amber-400 text-xs tracking-widest">★★★★★</div>
-              <p className="text-xs text-slate-300 italic leading-relaxed">
-                "Màn hình OLED 540Hz và ping mạng 1ms ở Cyber Zone cho độ mượt không tưởng, cảm giác thi đấu chuẩn y hệt như trên sân khấu Chung Kết Thế Giới. Thao tác né chiêu và combo Azir, Orianna hoàn toàn không có độ trễ."
-              </p>
-              <div className="flex items-center gap-3 pt-2 border-t border-white/10">
-                <div className="w-10 h-10 rounded-full bg-red-600/20 text-red-400 font-bold flex items-center justify-center font-mono text-sm border border-red-500/40">
-                  T1
-                </div>
-                <div>
-                  <div className="text-xs font-bold text-white flex items-center gap-1.5">
-                    <span>Faker (Lee Sang-hyeok)</span>
-                    <span className="text-cyan-400 text-xs">✓</span>
-                  </div>
-                  <div className="text-[10px] text-red-400 font-mono">
-                    Đội trưởng T1 • 5 Lần Vô Địch CKTG LoL
-                  </div>
-                </div>
-              </div>
+          {/* Toast thông báo giải đấu */}
+          {tournamentSuccessToast && (
+            <div className="p-4 rounded-2xl bg-cyan-500/20 border border-cyan-400 text-cyan-300 font-mono text-xs flex items-center justify-between shadow-2xl animate-bounce">
+              <span className="flex items-center gap-2">
+                <span className="material-symbols-outlined text-cyan-400 text-[20px]">emoji_events</span>
+                {tournamentSuccessToast}
+              </span>
+              <span className="text-[10px] text-slate-400">Ban tổ chức Cyber Zone</span>
             </div>
+          )}
 
-            {/* 2. ĐỘ MIXI */}
-            <div className="p-6 rounded-2xl bg-slate-900/60 border border-amber-500/30 space-y-4 hover:border-amber-500/60 transition flex flex-col justify-between">
-              <div className="text-amber-400 text-xs tracking-widest">★★★★★</div>
-              <p className="text-xs text-slate-300 italic leading-relaxed">
-                "Từ ngày ghé Cyber Zone bắn CS2 với anh em Bộ Tộc, máy mượt quá sấy toàn vào mồm! Phòng Stream Studio cách âm kín đét không sợ ồn, còn quả mì trộn tóp mỡ trứng lòng đào thì ngon nhức cái nách anh em ạ!"
-              </p>
-              <div className="flex items-center gap-3 pt-2 border-t border-white/10">
-                <div className="w-10 h-10 rounded-full bg-amber-500/20 text-amber-400 font-bold flex items-center justify-center font-mono text-sm border border-amber-500/40">
-                  ĐM
-                </div>
-                <div>
-                  <div className="text-xs font-bold text-white flex items-center gap-1.5">
-                    <span>Độ Mixi (Phùng Thanh Độ)</span>
-                    <span className="text-cyan-400 text-xs">✓</span>
-                  </div>
-                  <div className="text-[10px] text-amber-400 font-mono">
-                    Tộc Trưởng MixiGaming • Streamer Top 1
-                  </div>
-                </div>
-              </div>
-            </div>
+          {/* TAB ĐIỀU KHIỂN COMMUNITY */}
+          <div className="flex justify-center">
+            <div className="inline-flex p-1.5 rounded-2xl bg-slate-900 border border-white/10 gap-1 font-mono text-xs">
+              <button
+                type="button"
+                onClick={() => setActiveCommunityTab('tournaments')}
+                className={`flex items-center gap-2 px-4 py-2.5 rounded-xl font-bold transition cursor-pointer ${
+                  activeCommunityTab === 'tournaments'
+                    ? 'bg-gradient-to-r from-amber-500 to-orange-500 text-black shadow-lg shadow-amber-500/30'
+                    : 'text-slate-400 hover:text-white hover:bg-white/5'
+                }`}
+              >
+                <span className="material-symbols-outlined text-[16px]">emoji_events</span>
+                <span>🏆 Giải Đấu &amp; Bảng Xếp Hạng</span>
+              </button>
 
-            {/* 3. ELON MUSK */}
-            <div className="p-6 rounded-2xl bg-slate-900/60 border border-cyan-500/30 space-y-4 hover:border-cyan-500/60 transition flex flex-col justify-between">
-              <div className="text-amber-400 text-xs tracking-widest">★★★★★</div>
-              <p className="text-xs text-slate-300 italic leading-relaxed">
-                "Đây quả thật là công nghệ vượt xa tầm vũ trụ! Hạ tầng mạng 10Gbps Multi-ISP Trunk và hệ thống làm mát tản nhiệt đối lưu ở Cyber Zone đỉnh cao không khác gì kỹ thuật tên lửa Falcon 9 của SpaceX."
-              </p>
-              <div className="flex items-center gap-3 pt-2 border-t border-white/10">
-                <div className="w-10 h-10 rounded-full bg-cyan-500/20 text-cyan-400 font-bold flex items-center justify-center font-mono text-sm border border-cyan-500/40">
-                  X
-                </div>
-                <div>
-                  <div className="text-xs font-bold text-white flex items-center gap-1.5">
-                    <span>Elon Musk</span>
-                    <span className="text-cyan-400 text-xs">✓</span>
-                  </div>
-                  <div className="text-[10px] text-cyan-400 font-mono">
-                    CEO Tesla, SpaceX &amp; xAI
-                  </div>
-                </div>
-              </div>
+              <button
+                type="button"
+                onClick={() => setActiveCommunityTab('lfg')}
+                className={`flex items-center gap-2 px-4 py-2.5 rounded-xl font-bold transition cursor-pointer ${
+                  activeCommunityTab === 'lfg'
+                    ? 'bg-gradient-to-r from-emerald-400 to-cyan-400 text-black shadow-lg shadow-emerald-500/30'
+                    : 'text-slate-400 hover:text-white hover:bg-white/5'
+                }`}
+              >
+                <span className="material-symbols-outlined text-[16px]">group_add</span>
+                <span>🤝 Ghép Kèo Leo Rank (LFG)</span>
+                <span className="px-1.5 py-0.2 rounded-full bg-rose-500 text-white text-[9px] font-black">LIVE</span>
+              </button>
+
+              <button
+                type="button"
+                onClick={() => setActiveCommunityTab('reviews')}
+                className={`flex items-center gap-2 px-4 py-2.5 rounded-xl font-bold transition cursor-pointer ${
+                  activeCommunityTab === 'reviews'
+                    ? 'bg-gradient-to-r from-purple-500 to-pink-500 text-white shadow-lg shadow-purple-500/30'
+                    : 'text-slate-400 hover:text-white hover:bg-white/5'
+                }`}
+              >
+                <span className="material-symbols-outlined text-[16px]">reviews</span>
+                <span>⭐ Tuyển Thủ &amp; Hội Viên Đánh Giá</span>
+              </button>
             </div>
           </div>
+
+          {/* TAB 1: GIẢI ĐẤU ESPORTS & BẢNG XẾP HẠNG CLAN */}
+          {activeCommunityTab === 'tournaments' && (
+            <div className="space-y-6">
+              <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+                
+                {/* Giải 1: CS2 Major Cup */}
+                <div className="p-6 rounded-3xl bg-slate-900/80 border border-amber-500/40 space-y-4 relative overflow-hidden flex flex-col justify-between">
+                  <div className="space-y-3">
+                    <div className="flex justify-between items-center font-mono text-xs">
+                      <span className="px-2.5 py-1 rounded-full bg-amber-500/20 text-amber-300 font-bold border border-amber-500/40">
+                        GIẢI ĐẤU THÁNG
+                      </span>
+                      <span className="text-emerald-400 font-bold flex items-center gap-1">
+                        <span className="w-2 h-2 rounded-full bg-emerald-400 animate-ping"></span>
+                        12/16 Đội
+                      </span>
+                    </div>
+                    <h3 className="font-gaming font-black text-xl text-white">
+                      CYBER ZONE CS2 MAJOR 2026
+                    </h3>
+                    <p className="text-xs text-slate-300 leading-relaxed font-sans">
+                      Giải đấu Counter-Strike 2 lớn nhất khu vực. Đấu trực tiếp tại Sàn Đấu Arena 5vs5 Tầng 1, livestream bình luận chuyên nghiệp từ Caster.
+                    </p>
+                    <div className="p-3 rounded-2xl bg-black/40 border border-white/5 font-mono text-xs space-y-1">
+                      <div className="flex justify-between">
+                        <span className="text-slate-400">Tổng giải thưởng:</span>
+                        <strong className="text-amber-400 text-sm">30.000.000 VNĐ</strong>
+                      </div>
+                      <div className="flex justify-between">
+                        <span className="text-slate-400">Thể thức:</span>
+                        <span className="text-white">16 Team • BO3 Nhánh Thắng Thua</span>
+                      </div>
+                      <div className="flex justify-between">
+                        <span className="text-slate-400">Thời gian:</span>
+                        <span className="text-cyan-300">Chủ Nhật tuần này (08:30)</span>
+                      </div>
+                    </div>
+                  </div>
+                  <button
+                    type="button"
+                    onClick={() => handleRegisterTournament('CYBER ZONE CS2 MAJOR 2026 (30 Triệu)')}
+                    className="w-full py-3 bg-gradient-to-r from-amber-500 to-orange-500 hover:brightness-110 text-black font-extrabold text-xs rounded-xl shadow-lg transition cursor-pointer font-mono uppercase"
+                  >
+                    ĐĂNG KÝ ĐỘI THI ĐẤU &rarr;
+                  </button>
+                </div>
+
+                {/* Giải 2: LMHT Đấu Trường Vinh Quang */}
+                <div className="p-6 rounded-3xl bg-slate-900/80 border border-cyan-500/40 space-y-4 relative overflow-hidden flex flex-col justify-between">
+                  <div className="space-y-3">
+                    <div className="flex justify-between items-center font-mono text-xs">
+                      <span className="px-2.5 py-1 rounded-full bg-cyan-500/20 text-cyan-300 font-bold border border-cyan-500/40">
+                        GIẢI TUẦN
+                      </span>
+                      <span className="text-emerald-400 font-bold flex items-center gap-1">
+                        <span className="w-2 h-2 rounded-full bg-emerald-400 animate-ping"></span>
+                        24/32 Đội
+                      </span>
+                    </div>
+                    <h3 className="font-gaming font-black text-xl text-white">
+                      LIÊN MINH HUYỀN THOẠI 5VS5 CUP
+                    </h3>
+                    <p className="text-xs text-slate-300 leading-relaxed font-sans">
+                      Đại chiến Summoner&apos;s Rift tại Khu Máy Cyber Pro 540Hz. Chuẩn bị tài khoản thi đấu máy chủ Riot Tournament.
+                    </p>
+                    <div className="p-3 rounded-2xl bg-black/40 border border-white/5 font-mono text-xs space-y-1">
+                      <div className="flex justify-between">
+                        <span className="text-slate-400">Tổng giải thưởng:</span>
+                        <strong className="text-cyan-400 text-sm">15.000.000 VNĐ + 100h VIP</strong>
+                      </div>
+                      <div className="flex justify-between">
+                        <span className="text-slate-400">Thể thức:</span>
+                        <span className="text-white">Tournament Draft Cấm Chọn</span>
+                      </div>
+                      <div className="flex justify-between">
+                        <span className="text-slate-400">Thời gian:</span>
+                        <span className="text-cyan-300">Thứ Bảy hàng tuần (13:30)</span>
+                      </div>
+                    </div>
+                  </div>
+                  <button
+                    type="button"
+                    onClick={() => handleRegisterTournament('LIÊN MINH HUYỀN THOẠI 5VS5 CUP (15 Triệu)')}
+                    className="w-full py-3 bg-gradient-to-r from-cyan-400 to-teal-400 hover:brightness-110 text-black font-extrabold text-xs rounded-xl shadow-lg transition cursor-pointer font-mono uppercase"
+                  >
+                    ĐĂNG KÝ ĐỘI THI ĐẤU &rarr;
+                  </button>
+                </div>
+
+                {/* Giải 3: Billiards Pool 9-Ball Open */}
+                <div className="p-6 rounded-3xl bg-slate-900/80 border border-emerald-500/40 space-y-4 relative overflow-hidden flex flex-col justify-between">
+                  <div className="space-y-3">
+                    <div className="flex justify-between items-center font-mono text-xs">
+                      <span className="px-2.5 py-1 rounded-full bg-emerald-500/20 text-emerald-300 font-bold border border-emerald-500/40">
+                        GIẢI BI-A MỞ RỘNG
+                      </span>
+                      <span className="text-emerald-400 font-bold flex items-center gap-1">
+                        <span className="w-2 h-2 rounded-full bg-emerald-400 animate-ping"></span>
+                        Đang mở đơn
+                      </span>
+                    </div>
+                    <h3 className="font-gaming font-black text-xl text-white">
+                      AILEEX KING 9-BALL CHAMPIONSHIP
+                    </h3>
+                    <p className="text-xs text-slate-300 leading-relaxed font-sans">
+                      Giải đấu cơ thủ Pool 9 bóng tại Billiards Lounge 10 bàn Aileex King 9020. Trọng tài chuẩn quốc gia giám sát từng đường cơ.
+                    </p>
+                    <div className="p-3 rounded-2xl bg-black/40 border border-white/5 font-mono text-xs space-y-1">
+                      <div className="flex justify-between">
+                        <span className="text-slate-400">Tổng giải thưởng:</span>
+                        <strong className="text-emerald-400 text-sm">10.000.000 VNĐ + CÚP VÀNG</strong>
+                      </div>
+                      <div className="flex justify-between">
+                        <span className="text-slate-400">Thể thức:</span>
+                        <span className="text-white">Loại trực tiếp Chạm 7 Ván</span>
+                      </div>
+                      <div className="flex justify-between">
+                        <span className="text-slate-400">Thời gian:</span>
+                        <span className="text-cyan-300">Tối Thứ 6 tuần này (19:00)</span>
+                      </div>
+                    </div>
+                  </div>
+                  <button
+                    type="button"
+                    onClick={() => handleRegisterTournament('AILEEX KING 9-BALL CHAMPIONSHIP (10 Triệu)')}
+                    className="w-full py-3 bg-gradient-to-r from-emerald-400 to-green-500 hover:brightness-110 text-black font-extrabold text-xs rounded-xl shadow-lg transition cursor-pointer font-mono uppercase"
+                  >
+                    ĐĂNG KÝ TRANH CÚP &rarr;
+                  </button>
+                </div>
+
+              </div>
+
+              {/* Bảng Xếp Hạng Top Clan Cyber Zone */}
+              <div className="p-6 rounded-3xl bg-black/40 border border-white/10 space-y-4">
+                <div className="flex justify-between items-center">
+                  <div className="flex items-center gap-2">
+                    <span className="material-symbols-outlined text-amber-400 text-[20px]">military_tech</span>
+                    <h4 className="font-gaming font-black text-lg text-white">BẢNG XẾP HẠNG CLAN XUẤT SẮC THÁNG NÀY</h4>
+                  </div>
+                  <span className="text-xs text-slate-400 font-mono">Đồng bộ theo tỷ lệ thắng tại phòng máy</span>
+                </div>
+
+                <div className="grid grid-cols-1 md:grid-cols-3 gap-4 font-mono text-xs">
+                  <div className="p-4 rounded-2xl bg-slate-900 border border-amber-500/40 flex items-center justify-between">
+                    <div className="flex items-center gap-3">
+                      <span className="w-8 h-8 rounded-xl bg-amber-500 text-black font-black flex items-center justify-center text-sm">#1</span>
+                      <div>
+                        <div className="font-bold text-white text-sm">Clan Hades</div>
+                        <div className="text-[11px] text-slate-400">18 Thành viên • Thắng 142 Trận</div>
+                      </div>
+                    </div>
+                    <span className="text-amber-400 font-bold text-sm">4,850 Elo</span>
+                  </div>
+
+                  <div className="p-4 rounded-2xl bg-slate-900 border border-white/10 flex items-center justify-between">
+                    <div className="flex items-center gap-3">
+                      <span className="w-8 h-8 rounded-xl bg-slate-700 text-white font-black flex items-center justify-center text-sm">#2</span>
+                      <div>
+                        <div className="font-bold text-white text-sm">Bộ Tộc CyberGaming</div>
+                        <div className="text-[11px] text-slate-400">32 Thành viên • Thắng 118 Trận</div>
+                      </div>
+                    </div>
+                    <span className="text-cyan-400 font-bold text-sm">4,210 Elo</span>
+                  </div>
+
+                  <div className="p-4 rounded-2xl bg-slate-900 border border-white/10 flex items-center justify-between">
+                    <div className="flex items-center gap-3">
+                      <span className="w-8 h-8 rounded-xl bg-slate-800 text-slate-300 font-black flex items-center justify-center text-sm">#3</span>
+                      <div>
+                        <div className="font-bold text-white text-sm">Vinh Esports Squad</div>
+                        <div className="text-[11px] text-slate-400">15 Thành viên • Thắng 94 Trận</div>
+                      </div>
+                    </div>
+                    <span className="text-emerald-400 font-bold text-sm">3,740 Elo</span>
+                  </div>
+                </div>
+              </div>
+            </div>
+          )}
+
+          {/* TAB 2: GHÉP KÈO LEO RANK & TÌM ĐỒNG ĐỘI (LFG) */}
+          {activeCommunityTab === 'lfg' && (
+            <div className="grid grid-cols-1 lg:grid-cols-12 gap-8 items-start">
+              
+              {/* Form Đăng Bài Tìm Đồng Đội Mới */}
+              <div className="lg:col-span-5 bg-slate-900/90 border border-emerald-500/40 rounded-3xl p-6 space-y-4">
+                <div className="flex items-center gap-2 border-b border-white/10 pb-3">
+                  <span className="material-symbols-outlined text-emerald-400 text-xl">person_add</span>
+                  <h3 className="font-gaming font-black text-lg text-white">ĐĂNG BÀI TÌM ĐỒNG ĐỘI / RỦ KÈO</h3>
+                </div>
+
+                <form onSubmit={handlePostLfg} className="space-y-3 font-mono text-xs">
+                  <div>
+                    <label className="text-slate-400 block mb-1">TÊN GAME THỦ / NICKNAME</label>
+                    <input
+                      type="text"
+                      value={newLfgName}
+                      onChange={(e) => setNewLfgName(e.target.value)}
+                      placeholder={currentUser?.fullName || "Ví dụ: thaibboi hoặc Nguyễn Văn A"}
+                      className="w-full bg-slate-950 border border-slate-700 rounded-xl p-2.5 text-white outline-none focus:border-emerald-400"
+                    />
+                  </div>
+
+                  <div className="grid grid-cols-2 gap-3">
+                    <div>
+                      <label className="text-slate-400 block mb-1">CHỌN BỘ MÔN</label>
+                      <select
+                        value={newLfgGame}
+                        onChange={(e) => setNewLfgGame(e.target.value)}
+                        className="w-full bg-slate-950 border border-slate-700 rounded-xl p-2.5 text-white outline-none focus:border-emerald-400"
+                      >
+                        <option value="CS2 (Counter-Strike 2)">CS2</option>
+                        <option value="Liên Minh Huyền Thoại">LMHT (LoL)</option>
+                        <option value="Valorant">Valorant</option>
+                        <option value="FC Online (FO4)">FC Online</option>
+                        <option value="Billiards Pool 9-Ball">Bi-a Pool / Carom</option>
+                        <option value="Black Myth Wukong">Black Myth Wukong</option>
+                      </select>
+                    </div>
+
+                    <div>
+                      <label className="text-slate-400 block mb-1">VỊ TRÍ NGỒI / KHU</label>
+                      <select
+                        value={newLfgStation}
+                        onChange={(e) => setNewLfgStation(e.target.value)}
+                        className="w-full bg-slate-950 border border-slate-700 rounded-xl p-2.5 text-white outline-none focus:border-emerald-400"
+                      >
+                        <option value="Khu Máy PRO-01..04">Khu Pro 540Hz</option>
+                        <option value="Phòng Riêng VIP-08">Ultra VIP Suite</option>
+                        <option value="Sàn Đấu Arena Tầng 1">Arena 5vs5</option>
+                        <option value="Khu Standard Tầng 1">Standard Zone</option>
+                        <option value="Phòng Couple Tầng 2">Couple Suite</option>
+                        <option value="Bàn Bida Tầng 1">Billiards Lounge</option>
+                      </select>
+                    </div>
+                  </div>
+
+                  <div>
+                    <label className="text-slate-400 block mb-1">NỘI DUNG TÌM TEAM / GIAO LƯU</label>
+                    <textarea
+                      required
+                      rows={3}
+                      value={newLfgContent}
+                      onChange={(e) => setNewLfgContent(e.target.value)}
+                      placeholder="Ví dụ: Cần 1 bạn Faceit Lv 8+ bắn CS2 tối nay, bao Sting dâu! Hoặc kèo solo bi-a giao lưu vui vẻ..."
+                      className="w-full bg-slate-950 border border-slate-700 rounded-xl p-2.5 text-white outline-none focus:border-emerald-400 resize-none"
+                    ></textarea>
+                  </div>
+
+                  <button
+                    type="submit"
+                    className="w-full py-3 bg-gradient-to-r from-emerald-400 via-teal-400 to-cyan-400 hover:brightness-110 text-slate-950 font-black text-xs uppercase rounded-xl shadow-lg transition font-gaming"
+                  >
+                    ĐĂNG BÀI LÊN BẢNG TIN NGAY &rarr;
+                  </button>
+                </form>
+              </div>
+
+              {/* Feed Danh Sách Ghép Kèo Thực Tế */}
+              <div className="lg:col-span-7 space-y-3">
+                <div className="flex justify-between items-center text-xs font-mono text-slate-400 pb-1 border-b border-white/10">
+                  <span>BẢNG TIN GHÉP KÈO TRỰC TIẾP ({lfgPosts.length} BÀI ĐĂNG)</span>
+                  <span className="text-emerald-400 flex items-center gap-1">
+                    <span className="w-1.5 h-1.5 rounded-full bg-emerald-400 animate-ping"></span>
+                    Cập nhật thời gian thực
+                  </span>
+                </div>
+
+                <div className="space-y-3 max-h-[500px] overflow-y-auto pr-1">
+                  {lfgPosts.map((post) => (
+                    <div
+                      key={post.id}
+                      className="p-4 rounded-2xl bg-slate-900/80 border border-white/10 hover:border-cyan-500/40 transition space-y-2.5 font-sans"
+                    >
+                      <div className="flex justify-between items-start">
+                        <div className="flex items-center gap-2.5">
+                          <span className="w-9 h-9 rounded-xl bg-slate-800 text-white font-bold flex items-center justify-center text-lg border border-white/10">
+                            {post.avatar}
+                          </span>
+                          <div>
+                            <div className="text-xs font-bold text-white flex items-center gap-1.5">
+                              <span>{post.author}</span>
+                              <span className="px-1.5 py-0.2 rounded bg-emerald-500/20 text-emerald-400 font-mono text-[9px] font-bold">
+                                {post.rank}
+                              </span>
+                            </div>
+                            <div className="text-[10px] text-slate-400 font-mono">
+                              {post.station} • <strong className="text-cyan-400">{post.game}</strong>
+                            </div>
+                          </div>
+                        </div>
+                        <span className="text-[10px] text-slate-500 font-mono">{post.time}</span>
+                      </div>
+
+                      <p className="text-xs text-slate-200 leading-relaxed font-sans bg-black/30 p-2.5 rounded-xl border border-white/5">
+                        &ldquo;{post.title}&rdquo;
+                      </p>
+
+                      <div className="flex justify-between items-center pt-1 font-mono text-xs">
+                        <span className="text-amber-400 font-bold text-[11px]">
+                          ⚡ Cần tuyển: {post.slotsNeeded} slot
+                        </span>
+                        <a
+                          href="tel:19008888"
+                          className="px-3 py-1 rounded-lg bg-cyan-500/20 hover:bg-cyan-500/30 text-cyan-300 border border-cyan-500/40 font-bold text-[10px] transition"
+                        >
+                          Kết Nối Qua Quầy / Zalo &rarr;
+                        </a>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              </div>
+
+            </div>
+          )}
+
+          {/* TAB 3: ĐÁNH GIÁ TUYỂN THỦ & CỘNG ĐỒNG HỘI VIÊN */}
+          {activeCommunityTab === 'reviews' && (
+            <div className="space-y-6">
+              
+              {/* 3 Đánh giá từ huyền thoại Faker, Độ Mixi, Elon Musk */}
+              <div className="grid grid-cols-1 md:grid-cols-3 gap-6 font-sans">
+                {/* 1. FAKER */}
+                <div className="p-6 rounded-2xl bg-slate-900/60 border border-red-500/30 space-y-4 hover:border-red-500/60 transition flex flex-col justify-between">
+                  <div className="text-amber-400 text-xs tracking-widest">★★★★★</div>
+                  <p className="text-xs text-slate-300 italic leading-relaxed">
+                    &ldquo;Màn hình OLED 540Hz và ping mạng 1ms ở Cyber Zone cho độ mượt không tưởng, cảm giác thi đấu chuẩn y hệt như trên sân khấu Chung Kết Thế Giới. Thao tác né chiêu và combo Azir, Orianna hoàn toàn không có độ trễ.&rdquo;
+                  </p>
+                  <div className="flex items-center gap-3 pt-2 border-t border-white/10">
+                    <div className="w-10 h-10 rounded-full bg-red-600/20 text-red-400 font-bold flex items-center justify-center font-mono text-sm border border-red-500/40">
+                      T1
+                    </div>
+                    <div>
+                      <div className="text-xs font-bold text-white flex items-center gap-1.5">
+                        <span>Faker (Lee Sang-hyeok)</span>
+                        <span className="text-cyan-400 text-xs">✓</span>
+                      </div>
+                      <div className="text-[10px] text-red-400 font-mono">
+                        Đội trưởng T1 • 5 Lần Vô Địch CKTG LoL
+                      </div>
+                    </div>
+                  </div>
+                </div>
+
+                {/* 2. ĐỘ MIXI */}
+                <div className="p-6 rounded-2xl bg-slate-900/60 border border-amber-500/30 space-y-4 hover:border-amber-500/60 transition flex flex-col justify-between">
+                  <div className="text-amber-400 text-xs tracking-widest">★★★★★</div>
+                  <p className="text-xs text-slate-300 italic leading-relaxed">
+                    &ldquo;Từ ngày ghé Cyber Zone bắn CS2 với anh em Bộ Tộc, máy mượt quá sấy toàn vào mồm! Phòng Stream Studio cách âm kín đét không sợ ồn, còn quả mì trộn tóp mỡ trứng lòng đào thì ngon nhức cái nách anh em ạ!&rdquo;
+                  </p>
+                  <div className="flex items-center gap-3 pt-2 border-t border-white/10">
+                    <div className="w-10 h-10 rounded-full bg-amber-500/20 text-amber-400 font-bold flex items-center justify-center font-mono text-sm border border-amber-500/40">
+                      ĐM
+                    </div>
+                    <div>
+                      <div className="text-xs font-bold text-white flex items-center gap-1.5">
+                        <span>Độ Mixi (Phùng Thanh Độ)</span>
+                        <span className="text-cyan-400 text-xs">✓</span>
+                      </div>
+                      <div className="text-[10px] text-amber-400 font-mono">
+                        Tộc Trưởng MixiGaming • Streamer Top 1
+                      </div>
+                    </div>
+                  </div>
+                </div>
+
+                {/* 3. ELON MUSK */}
+                <div className="p-6 rounded-2xl bg-slate-900/60 border border-cyan-500/30 space-y-4 hover:border-cyan-500/60 transition flex flex-col justify-between">
+                  <div className="text-amber-400 text-xs tracking-widest">★★★★★</div>
+                  <p className="text-xs text-slate-300 italic leading-relaxed">
+                    &ldquo;Đây quả thật là công nghệ vượt xa tầm vũ trụ! Hạ tầng mạng 10Gbps Multi-ISP Trunk và hệ thống làm mát tản nhiệt đối lưu ở Cyber Zone đỉnh cao không khác gì kỹ thuật tên lửa Falcon 9 của SpaceX.&rdquo;
+                  </p>
+                  <div className="flex items-center gap-3 pt-2 border-t border-white/10">
+                    <div className="w-10 h-10 rounded-full bg-cyan-500/20 text-cyan-400 font-bold flex items-center justify-center font-mono text-sm border border-cyan-500/40">
+                      X
+                    </div>
+                    <div>
+                      <div className="text-xs font-bold text-white flex items-center gap-1.5">
+                        <span>Elon Musk</span>
+                        <span className="text-cyan-400 text-xs">✓</span>
+                      </div>
+                      <div className="text-[10px] text-cyan-400 font-mono">
+                        CEO Tesla, SpaceX &amp; xAI
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              </div>
+
+              {/* 3 Đánh giá thực tế từ cộng đồng hội viên Cyber Zone */}
+              <div className="grid grid-cols-1 md:grid-cols-3 gap-6 font-sans">
+                {/* 4. Nguyễn Hoàng Long */}
+                <div className="p-6 rounded-2xl bg-slate-900/40 border border-white/10 space-y-4 flex flex-col justify-between">
+                  <div className="text-amber-400 text-xs tracking-widest">★★★★★</div>
+                  <p className="text-xs text-slate-300 leading-relaxed italic">
+                    &ldquo;Hệ thống tự động quy đổi giờ chơi khi chuyển từ Standard lên Ultra VIP cực kỳ thông minh và minh bạch! Đổi phòng là đồng hồ nhảy giờ chuẩn đến từng giây, không lo bị tính lố tiền.&rdquo;
+                  </p>
+                  <div className="flex items-center gap-3 pt-2 border-t border-white/10 font-mono">
+                    <div className="w-9 h-9 rounded-full bg-emerald-500/20 text-emerald-400 font-bold flex items-center justify-center text-xs">
+                      NL
+                    </div>
+                    <div>
+                      <div className="text-xs font-bold text-white">Nguyễn Hoàng Long</div>
+                      <div className="text-[10px] text-emerald-400">Hội Viên Kim Cương • 320h Chơi</div>
+                    </div>
+                  </div>
+                </div>
+
+                {/* 5. Trần Linh Chi & Bạn Trai */}
+                <div className="p-6 rounded-2xl bg-slate-900/40 border border-pink-500/20 space-y-4 flex flex-col justify-between">
+                  <div className="text-amber-400 text-xs tracking-widest">★★★★★</div>
+                  <p className="text-xs text-slate-300 leading-relaxed italic">
+                    &ldquo;Phòng đôi Couple Sanctuary ghế sofa bọc da Nappa siêu êm ngả 180°, tai nghe đôi riêng tư không bị lẫn tiếng ồn bên ngoài. Mình và bạn trai tuần nào cũng tới đây hẹn hò chơi game.&rdquo;
+                  </p>
+                  <div className="flex items-center gap-3 pt-2 border-t border-white/10 font-mono">
+                    <div className="w-9 h-9 rounded-full bg-pink-500/20 text-pink-400 font-bold flex items-center justify-center text-xs">
+                      LC
+                    </div>
+                    <div>
+                      <div className="text-xs font-bold text-white">Trần Linh Chi</div>
+                      <div className="text-[10px] text-pink-400">Khách Thường Xuyên Couple Zone</div>
+                    </div>
+                  </div>
+                </div>
+
+                {/* 6. Lê Quốc Tuấn */}
+                <div className="p-6 rounded-2xl bg-slate-900/40 border border-white/10 space-y-4 flex flex-col justify-between">
+                  <div className="text-amber-400 text-xs tracking-widest">★★★★★</div>
+                  <p className="text-xs text-slate-300 leading-relaxed italic">
+                    &ldquo;Bàn phím cơ Wooting 60HE Rapid Trigger 0.1mm và dịch vụ lube switch tại sảnh làm rất kỹ. Cân wire không còn tiếng lọc xọc, cảm giác nhấn phím mượt mà như bơ.&rdquo;
+                  </p>
+                  <div className="flex items-center gap-3 pt-2 border-t border-white/10 font-mono">
+                    <div className="w-9 h-9 rounded-full bg-cyan-500/20 text-cyan-400 font-bold flex items-center justify-center text-xs">
+                      QT
+                    </div>
+                    <div>
+                      <div className="text-xs font-bold text-white">Lê Quốc Tuấn</div>
+                      <div className="text-[10px] text-cyan-400">Đội Trưởng Clan Hades CS2</div>
+                    </div>
+                  </div>
+                </div>
+              </div>
+
+            </div>
+          )}
+
         </div>
 
         {/* ══════════ 8. CALL TO ACTION CUỐI CÙNG (Ảnh 5) ══════════ */}
@@ -1025,6 +1678,124 @@ export default function Home() {
           </div>
         </div>
       </footer>
+
+      {/* MODAL SHOWROOM GAMING GEAR & TRẠM MOD PHÍM */}
+      {isGearModalOpen && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/85 backdrop-blur-md">
+          <div className="w-full max-w-4xl bg-slate-900 border border-emerald-500/40 rounded-3xl p-6 sm:p-8 shadow-2xl space-y-6 max-h-[90vh] overflow-y-auto font-sans">
+            <div className="flex justify-between items-start border-b border-white/10 pb-4">
+              <div>
+                <span className="text-[10px] font-mono text-emerald-400 font-bold uppercase tracking-wider">
+                  CYBER ZONE TECH LAB • SHOWROOM GEAR CHÍNH HÃNG
+                </span>
+                <h3 className="text-2xl font-black text-white font-gaming mt-1">
+                  Showroom Gaming Gear &amp; Trạm Mod Phím
+                </h3>
+                <p className="text-xs text-slate-400 mt-1 font-mono">
+                  Trải nghiệm trực tiếp tại phòng máy trước khi mua • Dịch vụ kỹ thuật viên phục vụ tận bàn
+                </p>
+              </div>
+              <button
+                type="button"
+                onClick={() => setIsGearModalOpen(false)}
+                className="w-8 h-8 rounded-xl bg-white/5 hover:bg-white/10 text-slate-400 hover:text-white flex items-center justify-center text-sm transition cursor-pointer"
+              >
+                ✕
+              </button>
+            </div>
+
+            {/* Toast tiếp nhận yêu cầu */}
+            {gearSuccessToast && (
+              <div className="p-3.5 rounded-xl bg-emerald-500/20 border border-emerald-400 text-emerald-300 font-mono text-xs flex items-center gap-2 animate-bounce">
+                <span className="material-symbols-outlined text-[18px]">check_circle</span>
+                <span>{gearSuccessToast}</span>
+              </div>
+            )}
+
+            {/* Filter Tabs */}
+            <div className="flex flex-wrap gap-2 border-b border-white/10 pb-4 font-mono text-xs">
+              {[
+                { id: 'all', label: 'TẤT CẢ SẢN PHẨM & DỊCH VỤ' },
+                { id: 'mouse', label: 'CHUỘT & LÓT 8000HZ' },
+                { id: 'keyboard', label: 'PHÍM CƠ & SWITCH' },
+                { id: 'services', label: 'DỊCH VỤ MOD & TRA KEO' },
+              ].map((tab) => (
+                <button
+                  key={tab.id}
+                  type="button"
+                  onClick={() => setSelectedGearTab(tab.id as 'all' | 'mouse' | 'keyboard' | 'services')}
+                  className={`px-3 py-1.5 rounded-xl font-bold transition cursor-pointer ${
+                    selectedGearTab === tab.id
+                      ? 'bg-emerald-400 text-black shadow-lg shadow-emerald-500/20'
+                      : 'bg-slate-800 text-slate-300 hover:text-white'
+                  }`}
+                >
+                  {tab.label}
+                </button>
+              ))}
+            </div>
+
+            {/* Grid Sản phẩm */}
+            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
+              {GEAR_PRODUCTS
+                .filter((p) => selectedGearTab === 'all' || p.category === selectedGearTab)
+                .map((product) => (
+                  <div
+                    key={product.id}
+                    className="p-4 rounded-2xl bg-slate-950 border border-white/10 hover:border-emerald-500/50 transition flex flex-col justify-between group"
+                  >
+                    <div className="space-y-3">
+                      <div className="h-40 rounded-xl overflow-hidden relative border border-white/5">
+                        <img
+                          src={product.image}
+                          alt={product.name}
+                          className="w-full h-full object-cover group-hover:scale-105 transition duration-300"
+                        />
+                        <span className="absolute top-2 left-2 px-2 py-0.5 rounded bg-black/80 backdrop-blur-md text-emerald-400 font-mono text-[9px] font-bold border border-emerald-500/40">
+                          {product.tag}
+                        </span>
+                      </div>
+                      <div>
+                        <h4 className="font-bold text-white text-sm line-clamp-1">{product.name}</h4>
+                        <p className="text-[11px] text-slate-400 mt-1 line-clamp-2 leading-relaxed font-sans">
+                          {product.desc}
+                        </p>
+                      </div>
+                    </div>
+
+                    <div className="mt-4 pt-3 border-t border-white/10 space-y-2">
+                      <div className="text-[10px] text-cyan-400 font-mono flex items-center gap-1">
+                        <span className="material-symbols-outlined text-[12px]">verified</span>
+                        <span>{product.testStation}</span>
+                      </div>
+                      <div className="flex justify-between items-center">
+                        <span className="text-base font-black text-emerald-400 font-mono">{product.price}</span>
+                        <button
+                          type="button"
+                          onClick={() => handleRequestGear(product.name)}
+                          className="px-3 py-1.5 rounded-lg bg-emerald-400 hover:bg-emerald-300 text-black font-extrabold text-[11px] font-mono transition cursor-pointer"
+                        >
+                          {product.category === 'services' ? 'Đặt Lịch Làm' : 'Mượn Test Tại Máy'}
+                        </button>
+                      </div>
+                    </div>
+                  </div>
+                ))}
+            </div>
+
+            <div className="p-4 rounded-2xl bg-slate-950/60 border border-white/10 flex flex-col sm:flex-row justify-between items-center gap-3 text-xs text-slate-400 font-mono">
+              <span>Địa chỉ Showroom: Sảnh Tầng 1, 182 Lê Duẩn, TP. Vinh • Hotline hỗ trợ kỹ thuật: <strong>1900 8888</strong></span>
+              <button
+                type="button"
+                onClick={() => setIsGearModalOpen(false)}
+                className="px-4 py-2 rounded-xl bg-slate-800 hover:bg-slate-700 text-white font-bold text-xs cursor-pointer"
+              >
+                Đóng
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
 
       {/* MODAL YÊU CẦU ĐĂNG NHẬP */}
       <AuthModal

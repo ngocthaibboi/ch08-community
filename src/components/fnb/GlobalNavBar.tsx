@@ -336,14 +336,14 @@ export default function GlobalNavBar() {
               href="/#bang-gia"
               className="hover:text-emerald-400 transition"
             >
-              BẢNG GIÁ MÁY
+              GÓI HỘI VIÊN
             </Link>
 
             <Link
-              href="/#khach-hang"
+              href="/#community"
               className="hover:text-emerald-400 transition"
             >
-              KHÁCH VIP
+              CỘNG ĐỒNG
             </Link>
 
             <Link
