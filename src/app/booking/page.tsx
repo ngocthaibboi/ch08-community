@@ -199,13 +199,10 @@ export default function BookingSeatMap() {
             </button>
           </div>
 
-          <Link
-            href="/menu"
-            className="bg-gradient-to-r from-cyan-500 to-blue-600 hover:brightness-110 text-white font-bold px-4 py-2.5 rounded-xl text-xs font-mono flex items-center gap-1.5 shadow-lg shadow-cyan-500/20 transition"
-          >
-            <span className="material-symbols-outlined text-[16px]">restaurant_menu</span>
-            <span>Gọi Món Tận Bàn</span>
-          </Link>
+          <div className="flex items-center gap-2 px-3.5 py-2 rounded-xl bg-slate-900 border border-white/10 text-xs font-mono text-slate-300">
+            <span className="w-2 h-2 rounded-full bg-emerald-400 animate-pulse"></span>
+            <span>Trạng thái máy: <strong className="text-emerald-400">Trực tiếp</strong></span>
+          </div>
         </div>
       </div>
 
@@ -414,13 +411,10 @@ export default function BookingSeatMap() {
           <div className="mt-6 pt-4 border-t border-white/10 space-y-2.5 font-mono">
             {activeBooking ? (
               <div className="space-y-2">
-                <Link
-                  href={`/menu?seat=${currentSeatObj.id}`}
-                  className="w-full bg-emerald-400 hover:bg-emerald-300 text-black font-extrabold py-3 rounded-xl text-xs uppercase flex items-center justify-center gap-2 shadow-lg shadow-emerald-500/20 transition cursor-pointer"
-                >
-                  <span className="material-symbols-outlined text-[18px]">restaurant_menu</span>
-                  <span>CHUẨN BỊ MÓN ĂN TRƯỚC CHO MÁY {currentSeatObj.id}</span>
-                </Link>
+                <div className="p-3 rounded-xl bg-emerald-500/10 border border-emerald-500/30 text-emerald-300 text-xs text-center flex items-center justify-center gap-2">
+                  <span className="material-symbols-outlined text-base">check_circle</span>
+                  <span>Bạn đang giữ chỗ máy {currentSeatObj.id}</span>
+                </div>
                 <button
                   onClick={() => handleCancelBooking(currentSeatObj.id)}
                   className="w-full bg-red-500/20 hover:bg-red-500/30 text-red-400 border border-red-500/40 font-bold py-2.5 rounded-xl text-xs uppercase transition cursor-pointer"
@@ -429,7 +423,7 @@ export default function BookingSeatMap() {
                 </button>
               </div>
             ) : currentSeatObj.status === 'AVAILABLE' ? (
-              <div className="space-y-2">
+              <div>
                 <button
                   onClick={handleOpenBooking}
                   className="w-full bg-gradient-to-r from-emerald-400 to-cyan-500 hover:brightness-110 text-black font-extrabold py-3.5 rounded-xl text-xs uppercase flex items-center justify-center gap-2 shadow-lg shadow-emerald-500/30 transition cursor-pointer"
@@ -437,22 +431,17 @@ export default function BookingSeatMap() {
                   <span className="material-symbols-outlined text-[18px]">bookmark_add</span>
                   <span>ĐẶT GIỮ CHỖ MÁY {currentSeatObj.id} NGAY</span>
                 </button>
-                <Link
-                  href={`/menu?seat=${currentSeatObj.id}`}
-                  className="w-full bg-slate-900 hover:bg-slate-800 text-slate-200 border border-white/10 font-bold py-2.5 rounded-xl text-xs uppercase flex items-center justify-center gap-2 transition"
-                >
-                  <span className="material-symbols-outlined text-[16px] text-cyan-400">restaurant_menu</span>
-                  <span>Gọi Món Cho Máy {currentSeatObj.id}</span>
-                </Link>
+              </div>
+            ) : currentSeatObj.status === 'MAINTENANCE' ? (
+              <div className="p-3.5 rounded-xl bg-rose-500/10 border border-rose-500/30 text-rose-300 text-xs text-center flex items-center justify-center gap-2">
+                <span className="material-symbols-outlined text-base">build</span>
+                <span>Máy {currentSeatObj.id} đang bảo trì kỹ thuật định kỳ</span>
               </div>
             ) : (
-              <Link
-                href={`/menu?seat=${currentSeatObj.id}`}
-                className="w-full bg-cyan-500 hover:bg-cyan-400 text-black font-extrabold py-3.5 rounded-xl text-xs uppercase flex items-center justify-center gap-2 shadow-lg shadow-cyan-500/20 transition"
-              >
-                <span className="material-symbols-outlined text-[18px]">restaurant_menu</span>
-                <span>GỌI MÓN TẠI MÁY {currentSeatObj.id}</span>
-              </Link>
+              <div className="p-3.5 rounded-xl bg-amber-500/10 border border-amber-500/30 text-amber-300 text-xs text-center flex items-center justify-center gap-2">
+                <span className="material-symbols-outlined text-base">person</span>
+                <span>Máy {currentSeatObj.id} đang có khách sử dụng</span>
+              </div>
             )}
           </div>
         </div>

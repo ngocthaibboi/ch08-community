@@ -6,6 +6,7 @@ import { usePathname } from 'next/navigation';
 import { getStoredOrders, STORAGE_EVENT_NAME } from '@/lib/orderStore';
 import { getStoredWallet, WALLET_EVENT_NAME, UserWallet, INITIAL_WALLET } from '@/lib/walletStore';
 import { getLoggedInUser, logoutUser, AUTH_EVENT_NAME, AuthUser } from '@/lib/authStore';
+import { getTierByName } from '@/lib/gamerPass';
 import AuthModal from '@/components/auth/AuthModal';
 
 export default function GlobalNavBar() {
@@ -387,9 +388,14 @@ export default function GlobalNavBar() {
                   className="flex items-center gap-2 px-3 py-1.5 rounded-xl bg-slate-900 border border-emerald-500/50 hover:border-emerald-400 transition"
                 >
                   <div className="text-right font-mono text-[11px] hidden sm:block">
-                    <span className="text-white font-bold block truncate max-w-[120px]">
-                      {currentUser.fullName}
-                    </span>
+                    <div className="flex items-center justify-end gap-1.5">
+                      <span className="text-white font-bold block truncate max-w-[120px]">
+                        {currentUser.fullName}
+                      </span>
+                      <span className={`text-[9px] px-1.5 py-0.2 rounded font-bold border ${getTierByName(currentUser.userTier || wallet.userTier).badgeClass}`}>
+                        {getTierByName(currentUser.userTier || wallet.userTier).shortName}
+                      </span>
+                    </div>
                     <span className="text-emerald-400 font-bold block">
                       {wallet.balance.toLocaleString('vi-VN')}đ
                     </span>

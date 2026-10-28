@@ -1,5 +1,13 @@
 'use client';
 
+import {
+  determineTierByAmount,
+  getTierByName,
+  calculateTierProgression,
+  GAMER_PASS_TIERS,
+  TierInfo,
+} from './gamerPass';
+
 export interface WalletTransaction {
   id: string;
   type: 'TOPUP' | 'FNB_PAYMENT' | 'PLAY_TIME';
@@ -34,7 +42,7 @@ export const INITIAL_WALLET: UserWallet = {
   userName: 'Nguyễn Văn Thái',
   pcName: 'VIP-08',
   zoneName: 'PHÒNG RIÊNG VIP TẦNG 2',
-  userTier: 'HỘI VIÊN VÀNG ⭐',
+  userTier: 'HỘI VIÊN BẠC 🥈',
   balance: 200000,
   hourlyRate: 22000,
   transactions: [],
@@ -53,6 +61,16 @@ export function calculateRemainingPlayTime(balance: number, hourlyRate: number =
 }
 
 /**
+ * Tính tổng số tiền nạp tích lũy hoặc số dư thực tế làm căn cứ xét hạng
+ */
+export function getCumulativeTopupAmount(wallet: UserWallet): number {
+  if (!wallet) return 0;
+  const topups = (wallet.transactions || []).filter((tx) => tx.type === 'TOPUP');
+  const sumFromTx = topups.reduce((sum, tx) => sum + tx.amount, 0);
+  return Math.max(sumFromTx, wallet.balance || 0);
+}
+
+/**
  * Get current wallet state from localStorage
  */
 export function getStoredWallet(): UserWallet {
@@ -65,11 +83,20 @@ export function getStoredWallet(): UserWallet {
     }
     const parsed = JSON.parse(raw);
     if (parsed && typeof parsed.balance === 'number') {
-      return {
+      const merged: UserWallet = {
         ...INITIAL_WALLET,
         ...parsed,
         transactions: Array.isArray(parsed.transactions) ? parsed.transactions : [],
       };
+      // Tự động kiểm tra và chuẩn hóa hạng thẻ nếu chưa đúng
+      const effectiveAmount = getCumulativeTopupAmount(merged);
+      const matchedTier = determineTierByAmount(effectiveAmount);
+      // Chỉ tự động nâng nếu hạng hiện tại chưa đạt mức tương ứng
+      const currentTierInfo = getTierByName(merged.userTier);
+      if (matchedTier.minAmount > currentTierInfo.minAmount) {
+        merged.userTier = matchedTier.name;
+      }
+      return merged;
     }
     localStorage.setItem(STORAGE_KEY_WALLET, JSON.stringify(INITIAL_WALLET));
     return INITIAL_WALLET;
@@ -92,11 +119,21 @@ export function broadcastWalletUpdate(wallet: UserWallet) {
 }
 
 /**
- * Top up money into wallet (Matching auth/page.tsx)
+ * Top up money into wallet (Matching auth/page.tsx, client-pc)
+ * Tự động tính toán thăng hạng hội viên Gamer Pass khi đạt mốc nạp tích lũy
  */
 export function topupWallet(amount: number, method: string = 'QR'): UserWallet {
   const current = getStoredWallet();
-  const newBalance = current.balance + amount;
+  const newBalance = Math.max(0, current.balance + amount);
+
+  // Tính lũy kế nạp
+  const prevTopups = (current.transactions || []).filter((tx) => tx.type === 'TOPUP');
+  const totalTopupAfter = prevTopups.reduce((sum, tx) => sum + tx.amount, 0) + amount;
+  const effectiveAmount = Math.max(totalTopupAfter, newBalance);
+
+  // Xác định hạng mới tự động
+  const newTierInfo = determineTierByAmount(effectiveAmount);
+
   const tx: WalletTransaction = {
     id: `tx-${Date.now()}`,
     type: 'TOPUP',
@@ -111,9 +148,28 @@ export function topupWallet(amount: number, method: string = 'QR'): UserWallet {
   const updated: UserWallet = {
     ...current,
     balance: newBalance,
+    userTier: newTierInfo.name, // TỰ ĐỘNG THĂNG HẠNG!
     transactions: [tx, ...(current.transactions || [])],
     lastTransaction: tx,
   };
+
+  // Đồng bộ sang cyber_auth_current_user nếu đang đăng nhập
+  if (typeof window !== 'undefined') {
+    try {
+      const authRaw = localStorage.getItem('cyber_auth_current_user');
+      if (authRaw) {
+        const authUser = JSON.parse(authRaw);
+        if (authUser) {
+          authUser.userTier = newTierInfo.name;
+          authUser.balance = newBalance;
+          localStorage.setItem('cyber_auth_current_user', JSON.stringify(authUser));
+          window.dispatchEvent(new CustomEvent('cyber_auth_updated', { detail: authUser }));
+        }
+      }
+    } catch (e) {
+      console.error('Lỗi sync auth state:', e);
+    }
+  }
 
   broadcastWalletUpdate(updated);
   return updated;

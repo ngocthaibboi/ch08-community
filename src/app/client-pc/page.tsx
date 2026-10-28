@@ -12,9 +12,18 @@ import {
   topupWallet,
   calculateRemainingPlayTime,
   broadcastWalletUpdate,
+  getCumulativeTopupAmount,
 } from '@/lib/walletStore';
 import { getLoggedInUser, loginUser, logoutUser, AUTH_EVENT_NAME, AuthUser } from '@/lib/authStore';
 import { createStaffRequest } from '@/lib/staffRequestStore';
+import {
+  getTierByName,
+  determineTierByAmount,
+  calculateTierProgression,
+  GAMER_PASS_TIERS,
+  TIERS_ORDER,
+  TierInfo,
+} from '@/lib/gamerPass';
 
 // Cấu hình các loại phòng máy và đơn giá giờ chơi mặc định
 interface StationPreset {
@@ -164,6 +173,12 @@ export default function ClientPcPage() {
   // Gọi nhân viên
   const [showCallModal, setShowCallModal] = useState(false);
   const [alertSuccess, setAlertSuccess] = useState<string | null>(null);
+
+  // Modal Gamer Pass và chúc mừng thăng hạng
+  const [showGamerPassModal, setShowGamerPassModal] = useState(false);
+  const [showUpgradeSuccessModal, setShowUpgradeSuccessModal] = useState(false);
+  const [newUpgradedTierName, setNewUpgradedTierName] = useState('');
+  const [upgradePerks, setUpgradePerks] = useState<string[]>([]);
 
   // Khởi tạo và đồng bộ
   useEffect(() => {
@@ -382,16 +397,26 @@ export default function ClientPcPage() {
     }
   };
 
-  // Nạp nhanh tiền để demo
+  // Nạp nhanh tiền để demo & tự động phát hiện thăng hạng
   const handleQuickAddMoney = (amount: number) => {
+    const prevTier = getTierByName(wallet.userTier);
     const updated = topupWallet(amount, 'Nạp Nhanh Diễn Tập');
     setWallet(updated);
+    const newTier = getTierByName(updated.userTier);
+
     const addedSeconds = Math.floor((amount / (customRate || currentStation.hourlyRate)) * 3600);
     setRemainingSeconds((prev) => prev + addedSeconds);
-    setAlertSuccess(
-      `+ ĐÃ NẠP +${amount.toLocaleString('vi-VN')}đ! Cộng thêm +${formatSecondsToHMS(addedSeconds)} vào đồng hồ đếm ngược.`
-    );
-    setTimeout(() => setAlertSuccess(null), 5000);
+
+    if (newTier.minAmount > prevTier.minAmount) {
+      setNewUpgradedTierName(newTier.name);
+      setUpgradePerks(newTier.perks);
+      setShowUpgradeSuccessModal(true);
+    } else {
+      setAlertSuccess(
+        `+ ĐÃ NẠP +${amount.toLocaleString('vi-VN')}đ! Số dư mới: ${updated.balance.toLocaleString('vi-VN')}đ (+${formatSecondsToHMS(addedSeconds)} vào đồng hồ).`
+      );
+      setTimeout(() => setAlertSuccess(null), 5000);
+    }
   };
 
   // Xử lý gọi nhân viên
@@ -670,9 +695,20 @@ export default function ClientPcPage() {
             <div className="text-right hidden sm:block font-mono">
               <div className="flex items-center justify-end gap-1.5 text-xs">
                 <span className="text-white font-bold">{currentUser?.fullName || wallet.userName}</span>
-                <span className="px-1.5 py-0.2 rounded bg-amber-500/20 text-amber-300 border border-amber-500/40 text-[9px] font-bold">
-                  {currentUser?.userTier || wallet.userTier}
-                </span>
+                {(() => {
+                  const t = getTierByName(currentUser?.userTier || wallet.userTier);
+                  return (
+                    <button
+                      type="button"
+                      onClick={() => setShowGamerPassModal(true)}
+                      className={`px-2 py-0.5 rounded text-[9px] font-bold border ${t.badgeClass} cursor-pointer hover:brightness-125 transition flex items-center gap-1`}
+                      title="Bấm để xem đặc quyền Gamer Pass"
+                    >
+                      <span>{t.name}</span>
+                      <span className="material-symbols-outlined text-[10px]">open_in_new</span>
+                    </button>
+                  );
+                })()}
               </div>
               <div className="text-emerald-400 font-extrabold text-xs">
                 Ví khả dụng: {liveBalance.toLocaleString('vi-VN')}đ
@@ -997,44 +1033,98 @@ export default function ClientPcPage() {
             </div>
           </div>
 
-          {/* Cột phải: Đặc quyền thẻ VIP Hạng Vàng */}
-          <div className="lg:col-span-5 bg-gradient-to-br from-[#0c1730] to-[#060b18] border border-amber-500/30 rounded-3xl p-6 space-y-4">
-            <div className="flex justify-between items-center border-b border-white/10 pb-4">
-              <div>
-                <span className="text-xs font-mono text-amber-400 font-bold uppercase">HỘI VIÊN CAO CẤP</span>
-                <h3 className="text-xl font-black text-white font-gaming mt-0.5">Thẻ Gamer Pass: GOLD</h3>
-              </div>
-              <span className="w-8 h-8 rounded-xl bg-amber-500/20 text-amber-400 border border-amber-500/40 flex items-center justify-center font-bold">
-                ⭐
-              </span>
-            </div>
+          {/* Cột phải: Thẻ Gamer Pass Trực Tiếp Theo Hạng Thực Tế Của Hội Viên */}
+          {(() => {
+            const currentTier = getTierByName(currentUser?.userTier || wallet.userTier);
+            const cumulative = getCumulativeTopupAmount(wallet);
+            const progression = calculateTierProgression(cumulative);
+            return (
+              <div className={`lg:col-span-5 bg-gradient-to-br from-[#0c1730] to-[#060b18] border ${currentTier.borderColor} rounded-3xl p-6 space-y-4 shadow-xl relative overflow-hidden`}>
+                <div className="flex justify-between items-center border-b border-white/10 pb-4">
+                  <div>
+                    <span className={`text-xs font-mono font-bold uppercase ${currentTier.textColor}`}>
+                      THẺ GAMER PASS HỘI VIÊN
+                    </span>
+                    <h3 className="text-xl font-black text-white font-gaming mt-0.5">
+                      {currentTier.name}
+                    </h3>
+                  </div>
+                  <span className={`w-10 h-10 rounded-2xl ${currentTier.accentBg} ${currentTier.textColor} border ${currentTier.borderColor} flex items-center justify-center font-bold text-lg shadow-lg`}>
+                    <span className="material-symbols-outlined">{currentTier.icon}</span>
+                  </span>
+                </div>
 
-            <div className="space-y-3 font-mono text-xs">
-              <div className="flex justify-between p-3 rounded-xl bg-black/40 border border-white/5">
-                <span className="text-slate-400">Đơn giá máy hiện tại:</span>
-                <span className="text-emerald-400 font-bold">{customRate.toLocaleString('vi-VN')}đ/h</span>
-              </div>
-              <div className="flex justify-between p-3 rounded-xl bg-black/40 border border-white/5">
-                <span className="text-slate-400">Giảm giá món ăn F&amp;B:</span>
-                <span className="text-emerald-400 font-bold">-5% toàn menu Bếp</span>
-              </div>
-              <div className="flex justify-between p-3 rounded-xl bg-black/40 border border-white/5">
-                <span className="text-slate-400">Ưu tiên phục vụ:</span>
-                <span className="text-cyan-400 font-bold">Ưu tiên nhận món &lt; 5 phút</span>
-              </div>
-              <div className="flex justify-between p-3 rounded-xl bg-black/40 border border-white/5">
-                <span className="text-slate-400">Tiến trình lên KIM CƯƠNG:</span>
-                <span className="text-white font-bold">65% (Cần nạp thêm 300k)</span>
-              </div>
-            </div>
+                <div className="space-y-2.5 font-mono text-xs">
+                  <div className="flex justify-between p-2.5 rounded-xl bg-black/40 border border-white/5">
+                    <span className="text-slate-400">Đặc quyền giờ chơi:</span>
+                    <span className="text-emerald-400 font-bold">
+                      {currentTier.playDiscountPercent > 0 ? `Giảm ${currentTier.playDiscountPercent}% toàn bộ máy` : 'Giá niêm yết chuẩn'}
+                    </span>
+                  </div>
+                  <div className="flex justify-between p-2.5 rounded-xl bg-black/40 border border-white/5">
+                    <span className="text-slate-400">Đặc quyền menu Bếp F&amp;B:</span>
+                    <span className="text-cyan-400 font-bold">
+                      {currentTier.fnbDiscountPercent > 0 ? `Giảm ${currentTier.fnbDiscountPercent}% toàn menu Bếp` : 'Giá niêm yết chuẩn'}
+                    </span>
+                  </div>
+                  <div className="flex justify-between p-2.5 rounded-xl bg-black/40 border border-white/5">
+                    <span className="text-slate-400">Thời gian giữ máy trước:</span>
+                    <span className="text-amber-400 font-bold">
+                      {currentTier.reserveDurationMinutes >= 999 ? 'Ưu tiên tuyệt đối' : `${currentTier.reserveDurationMinutes} phút`}
+                    </span>
+                  </div>
 
-            <Link
-              href="/auth"
-              className="w-full py-3 rounded-xl bg-amber-400 hover:bg-amber-300 text-black font-extrabold text-xs font-mono text-center block transition uppercase tracking-wider"
-            >
-              NÂNG HẠNG KIM CƯƠNG (GIẢM 20%) &rarr;
-            </Link>
-          </div>
+                  {/* Thanh tiến trình thăng hạng Gamer Pass */}
+                  <div className="p-3 rounded-xl bg-black/50 border border-white/10 space-y-2">
+                    <div className="flex justify-between text-[11px]">
+                      <span className="text-slate-400">
+                        {progression.isMaxTier ? 'Cấp độ hội viên:' : `Tiến trình lên ${progression.nextTier?.shortName}:`}
+                      </span>
+                      <span className="text-white font-bold">
+                        {progression.isMaxTier
+                          ? '100% (ĐỈNH CAO VIP)'
+                          : `${progression.progressPercent}% (Cần +${progression.neededAmount.toLocaleString('vi-VN')}đ)`}
+                      </span>
+                    </div>
+                    <div className="w-full h-2 rounded-full bg-slate-800 overflow-hidden">
+                      <div
+                        className="h-full bg-gradient-to-r from-emerald-400 via-cyan-400 to-amber-400 rounded-full transition-all duration-500"
+                        style={{ width: `${progression.progressPercent}%` }}
+                      ></div>
+                    </div>
+                  </div>
+                </div>
+
+                <div className="grid grid-cols-2 gap-2 pt-1">
+                  <button
+                    onClick={() => setShowGamerPassModal(true)}
+                    className="py-2.5 px-3 rounded-xl bg-cyan-500/20 hover:bg-cyan-500/30 text-cyan-300 border border-cyan-500/40 font-bold text-xs font-mono text-center transition flex items-center justify-center gap-1 cursor-pointer"
+                  >
+                    <span className="material-symbols-outlined text-sm">badge</span>
+                    <span>Xem Đặc Quyền</span>
+                  </button>
+
+                  <button
+                    onClick={() => {
+                      if (progression.isMaxTier) {
+                        setShowGamerPassModal(true);
+                      } else {
+                        handleQuickAddMoney(progression.neededAmount || 200000);
+                      }
+                    }}
+                    className={`py-2.5 px-3 rounded-xl ${
+                      progression.isMaxTier
+                        ? 'bg-purple-600 hover:bg-purple-500 text-white'
+                        : 'bg-gradient-to-r from-amber-400 to-yellow-500 hover:brightness-110 text-black font-extrabold'
+                    } text-xs font-mono text-center transition tracking-wider shadow-lg cursor-pointer flex items-center justify-center gap-1`}
+                  >
+                    <span className="material-symbols-outlined text-sm">upgrade</span>
+                    <span>{progression.isMaxTier ? 'Kim Cương Max' : 'Nạp Lên Hạng'}</span>
+                  </button>
+                </div>
+              </div>
+            );
+          })()}
 
         </div>
 
@@ -1205,6 +1295,238 @@ export default function ClientPcPage() {
               className="w-full py-2.5 rounded-xl bg-slate-800 hover:bg-slate-700 text-slate-400 text-xs font-mono font-bold transition"
             >
               Hủy bỏ
+            </button>
+          </div>
+        </div>
+      )}
+
+      {/* ══════════ MODAL XEM CHI TIẾT GAMER PASS & BẢNG QUYỀN LỢI ══════════ */}
+      {showGamerPassModal && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/85 backdrop-blur-md">
+          <div className="w-full max-w-4xl bg-[#090f20] border border-cyan-500/50 rounded-3xl p-6 sm:p-8 shadow-2xl space-y-6 font-sans text-slate-100 max-h-[92vh] overflow-y-auto">
+            {/* Header Modal */}
+            <div className="flex justify-between items-center border-b border-white/10 pb-4">
+              <div className="flex items-center gap-3">
+                <div className="w-12 h-12 rounded-2xl bg-gradient-to-tr from-cyan-400 to-amber-400 text-black flex items-center justify-center font-black text-xl shadow-lg">
+                  CZ
+                </div>
+                <div>
+                  <h3 className="text-2xl font-black text-white font-gaming tracking-wide">
+                    HỆ THỐNG GAMER PASS &amp; ĐẶC QUYỀN HỘI VIÊN
+                  </h3>
+                  <p className="text-xs text-slate-400 font-mono mt-0.5">
+                    Tích lũy nạp tiền tự động mở khóa các cấp bậc hội viên và siêu ưu đãi giảm giá
+                  </p>
+                </div>
+              </div>
+              <button
+                onClick={() => setShowGamerPassModal(false)}
+                className="w-9 h-9 rounded-full bg-slate-800 hover:bg-slate-700 text-slate-300 hover:text-white flex items-center justify-center transition cursor-pointer text-sm font-bold"
+              >
+                ✕
+              </button>
+            </div>
+
+            {/* Current user badge & progression */}
+            {(() => {
+              const currentTier = getTierByName(currentUser?.userTier || wallet.userTier);
+              const cumulative = getCumulativeTopupAmount(wallet);
+              const progression = calculateTierProgression(cumulative);
+              return (
+                <div className="p-4 rounded-2xl bg-[#060a16] border border-white/10 flex flex-col md:flex-row items-center justify-between gap-4 font-mono shadow-inner">
+                  <div className="flex items-center gap-3">
+                    <div className={`w-12 h-12 rounded-xl ${currentTier.accentBg} ${currentTier.textColor} border ${currentTier.borderColor} flex items-center justify-center text-2xl`}>
+                      <span className="material-symbols-outlined">{currentTier.icon}</span>
+                    </div>
+                    <div>
+                      <span className="text-[10px] text-slate-400 block uppercase">Hạng hội viên hiện tại:</span>
+                      <h4 className="text-lg font-black text-white flex items-center gap-2">
+                        <span>{currentTier.name}</span>
+                        <span className={`text-[10px] px-2 py-0.5 rounded font-bold border ${currentTier.badgeClass}`}>
+                          {currentTier.shortName}
+                        </span>
+                      </h4>
+                      <span className="text-xs text-emerald-400">
+                        Số dư khả dụng: {wallet.balance.toLocaleString('vi-VN')}đ • Tích lũy nạp: {cumulative.toLocaleString('vi-VN')}đ
+                      </span>
+                    </div>
+                  </div>
+
+                  <div className="w-full md:w-80 space-y-1.5">
+                    <div className="flex justify-between text-xs">
+                      <span className="text-slate-400">
+                        {progression.isMaxTier ? 'Cấp độ hội viên:' : `Lên ${progression.nextTier?.name}:`}
+                      </span>
+                      <span className="text-white font-bold">
+                        {progression.isMaxTier ? 'HẠNG TỐI ĐA (MAX)' : `${progression.progressPercent}%`}
+                      </span>
+                    </div>
+                    <div className="w-full h-2 rounded-full bg-slate-800 overflow-hidden">
+                      <div
+                        className="h-full bg-gradient-to-r from-emerald-400 via-cyan-400 to-amber-400"
+                        style={{ width: `${progression.progressPercent}%` }}
+                      ></div>
+                    </div>
+                    {!progression.isMaxTier && (
+                      <span className="text-[10px] text-amber-300 block text-right font-bold">
+                        Cần nạp thêm +{progression.neededAmount.toLocaleString('vi-VN')}đ để thăng hạng
+                      </span>
+                    )}
+                  </div>
+                </div>
+              );
+            })()}
+
+            {/* 4-Tier Comparison Cards */}
+            <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
+              {TIERS_ORDER.map((tierKey) => {
+                const tier = GAMER_PASS_TIERS[tierKey];
+                const activeTier = getTierByName(currentUser?.userTier || wallet.userTier);
+                const isCurrent = activeTier.code === tierKey;
+                return (
+                  <div
+                    key={tierKey}
+                    className={`rounded-2xl p-4 flex flex-col justify-between border transition-all ${
+                      isCurrent
+                        ? `bg-slate-800/90 ${tier.borderColor} ring-2 ring-emerald-400/60 shadow-xl shadow-emerald-500/10`
+                        : 'bg-black/40 border-white/10 hover:border-white/20'
+                    }`}
+                  >
+                    <div>
+                      <div className="flex justify-between items-center mb-2">
+                        <span className={`px-2 py-0.5 rounded text-[10px] font-bold font-mono border ${tier.badgeClass}`}>
+                          {tier.shortName}
+                        </span>
+                        <span className="material-symbols-outlined text-base text-slate-400">{tier.icon}</span>
+                      </div>
+                      <h4 className="font-bold text-white text-sm mb-1">{tier.name}</h4>
+                      <p className="text-[11px] text-slate-400 mb-3 font-mono">{tier.tagline}</p>
+
+                      <div className="space-y-1.5 border-t border-white/10 pt-3 text-xs font-mono">
+                        <div className="flex justify-between text-slate-300">
+                          <span>Giảm giờ chơi:</span>
+                          <span className="font-bold text-emerald-400">
+                            {tier.playDiscountPercent > 0 ? `-${tier.playDiscountPercent}%` : 'Chuẩn'}
+                          </span>
+                        </div>
+                        <div className="flex justify-between text-slate-300">
+                          <span>Giảm món ăn Bếp:</span>
+                          <span className="font-bold text-cyan-400">
+                            {tier.fnbDiscountPercent > 0 ? `-${tier.fnbDiscountPercent}%` : 'Chuẩn'}
+                          </span>
+                        </div>
+                        <div className="flex justify-between text-slate-300">
+                          <span>Giữ máy trước:</span>
+                          <span className="font-bold text-amber-400">
+                            {tier.reserveDurationMinutes >= 999 ? 'Ưu tiên tối đa' : `${tier.reserveDurationMinutes}p`}
+                          </span>
+                        </div>
+                      </div>
+
+                      <div className="mt-3 pt-3 border-t border-white/10 space-y-1.5 text-[11px] text-slate-300">
+                        {tier.perks.map((p, idx) => (
+                          <div key={idx} className="flex items-start gap-1.5 leading-snug">
+                            <span className="text-emerald-400 font-bold shrink-0">✓</span>
+                            <span>{p}</span>
+                          </div>
+                        ))}
+                      </div>
+                    </div>
+
+                    <div className="mt-4 pt-3 border-t border-white/10">
+                      {isCurrent ? (
+                        <div className="py-2 text-center text-xs font-bold text-emerald-400 font-mono bg-emerald-500/10 rounded-xl border border-emerald-500/30">
+                          ✓ HẠNG HIỆN TẠI CỦA BẠN
+                        </div>
+                      ) : (
+                        <button
+                          onClick={() => {
+                            const needed = Math.max(50000, tier.minAmount - wallet.balance);
+                            handleQuickAddMoney(needed);
+                          }}
+                          className="w-full py-2 rounded-xl bg-slate-800 hover:bg-slate-700 text-white border border-white/10 font-bold text-xs font-mono transition text-center cursor-pointer"
+                        >
+                          Nạp +{(tier.minAmount || 50000).toLocaleString('vi-VN')}đ
+                        </button>
+                      )}
+                    </div>
+                  </div>
+                );
+              })}
+            </div>
+
+            {/* Quick Demo Instant Upgrade Bar */}
+            <div className="p-4 rounded-2xl bg-slate-800/80 border border-amber-500/30 space-y-3 font-mono">
+              <div className="flex items-center justify-between">
+                <div className="flex items-center gap-2">
+                  <span className="material-symbols-outlined text-amber-400">bolt</span>
+                  <span className="text-xs font-bold text-white uppercase">
+                    THỬ NGHIỆM THĂNG HẠNG TỨC THÌ (DEMO ĐÁNH GIÁ DỰ ÁN)
+                  </span>
+                </div>
+                <span className="text-[10px] text-slate-400">Cộng số dư và tự động thăng hạng ngay sau 1 click</span>
+              </div>
+              <div className="grid grid-cols-1 sm:grid-cols-3 gap-2">
+                <button
+                  onClick={() => handleQuickAddMoney(200000)}
+                  className="py-2.5 px-3 bg-slate-700/70 hover:bg-slate-600 text-slate-200 border border-slate-500 rounded-xl font-bold text-xs flex items-center justify-center gap-1.5 transition cursor-pointer"
+                >
+                  <span>🥈 Thử nạp +200k lên BẠC</span>
+                </button>
+                <button
+                  onClick={() => handleQuickAddMoney(500000)}
+                  className="py-2.5 px-3 bg-amber-500/20 hover:bg-amber-500/30 text-amber-300 border border-amber-500/50 rounded-xl font-bold text-xs flex items-center justify-center gap-1.5 transition cursor-pointer"
+                >
+                  <span>⭐ Thử nạp +500k lên VÀNG</span>
+                </button>
+                <button
+                  onClick={() => handleQuickAddMoney(1500000)}
+                  className="py-2.5 px-3 bg-purple-500/20 hover:bg-purple-500/30 text-purple-300 border border-purple-500/50 rounded-xl font-bold text-xs flex items-center justify-center gap-1.5 transition cursor-pointer"
+                >
+                  <span>💎 Thử nạp +1.5M lên KIM CƯƠNG</span>
+                </button>
+              </div>
+            </div>
+
+          </div>
+        </div>
+      )}
+
+      {/* ══════════ MODAL CHÚC MỪNG THĂNG HẠNG HỘI VIÊN ══════════ */}
+      {showUpgradeSuccessModal && (
+        <div className="fixed inset-0 z-[60] flex items-center justify-center p-4 bg-black/90 backdrop-blur-md animate-fadeIn">
+          <div className="w-full max-w-md bg-gradient-to-b from-[#132347] to-[#070d1e] border-2 border-amber-400 rounded-3xl p-6 sm:p-8 text-center space-y-4 shadow-2xl relative">
+            <div className="w-20 h-20 rounded-3xl bg-gradient-to-tr from-amber-400 to-yellow-300 text-black flex items-center justify-center mx-auto shadow-[0_0_30px_rgba(245,158,11,0.6)] animate-bounce">
+              <span className="material-symbols-outlined text-4xl">military_tech</span>
+            </div>
+
+            <div>
+              <span className="text-xs font-mono text-amber-400 font-extrabold uppercase tracking-widest">
+                🎉 CHÚC MỪNG BẠN ĐÃ THĂNG HẠNG!
+              </span>
+              <h3 className="text-2xl font-black text-white font-gaming mt-1">
+                {newUpgradedTierName}
+              </h3>
+            </div>
+
+            <p className="text-xs text-slate-300 leading-relaxed font-mono">
+              Hệ thống Cyber Zone đã tự động kích hoạt toàn bộ các quyền lợi ưu đãi mới nhất cho tài khoản của bạn!
+            </p>
+
+            <div className="p-3.5 rounded-2xl bg-black/50 border border-white/10 text-left space-y-1.5 text-xs font-mono text-emerald-300">
+              {upgradePerks.slice(0, 3).map((perk, i) => (
+                <div key={i} className="flex items-center gap-2">
+                  <span className="text-amber-400">★</span>
+                  <span>{perk}</span>
+                </div>
+              ))}
+            </div>
+
+            <button
+              onClick={() => setShowUpgradeSuccessModal(false)}
+              className="w-full py-3 rounded-xl bg-gradient-to-r from-amber-400 to-yellow-500 hover:brightness-110 text-black font-extrabold text-xs uppercase font-gaming tracking-wider shadow-lg cursor-pointer"
+            >
+              TIẾP TỤC TRẢI NGHIỆM MÁY
             </button>
           </div>
         </div>
