@@ -187,26 +187,7 @@ function CyberMenuClientContent() {
     progressPercent: 65,
   });
 
-  const [cart, setCart] = useState<CartItem[]>([
-    {
-      id: 'cart-init-1',
-      menuItemId: 'food-2',
-      name: 'Cơm Bò Lúc Lắc Phô Mai',
-      price: 63000,
-      qty: 1,
-      selectedOption: 'Trứng ốp la lòng đào (+8k)',
-      note: 'Cơm nóng dẻo',
-    },
-    {
-      id: 'cart-init-2',
-      menuItemId: 'food-5',
-      name: 'Monster Energy Ultra Lạnh',
-      price: 35000,
-      qty: 1,
-      selectedOption: 'Kèm 01 ly đá riêng',
-      note: 'Ưu tiên mang trước nước',
-    },
-  ]);
+  const [cart, setCart] = useState<CartItem[]>([]);
 
   const categories = [
     { id: 'all', name: 'TẤT CẢ', count: 28, icon: 'grid_view' },

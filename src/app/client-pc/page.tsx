@@ -25,8 +25,23 @@ import {
   TierInfo,
 } from '@/lib/gamerPass';
 
-// Cấu hình các loại phòng máy và đơn giá giờ chơi mặc định
-interface StationPreset {
+// Cấu hình các loại phòng máy và giao diện màu sắc độc quyền tương ứng
+export interface StationTheme {
+  name: string;
+  badgeText: string;
+  colorName: string;
+  bgGradient: string;
+  glowAura: string;
+  accentText: string;
+  accentBorder: string;
+  bannerBg: string;
+  hudGlow: string;
+  stationTagBg: string;
+  exclusiveDesc: string;
+  roomIcon: string;
+}
+
+export interface StationPreset {
   id: string;
   name: string;
   zone: string;
@@ -37,6 +52,7 @@ interface StationPreset {
   gear: string;
   chair: string;
   badge: string;
+  theme: StationTheme;
 }
 
 const STATION_PRESETS: StationPreset[] = [
@@ -51,6 +67,20 @@ const STATION_PRESETS: StationPreset[] = [
     gear: 'Zowie EC2-CW + Akko Custom Lube',
     chair: 'Ghế bọc da Nappa ngả 160°',
     badge: 'ULTRA VIP',
+    theme: {
+      name: 'Ultra VIP Gold Luxury',
+      badgeText: 'VÀNG KIM & CYAN VIP',
+      colorName: 'amber-cyan',
+      bgGradient: 'bg-[radial-gradient(ellipse_at_top,_var(--tw-gradient-stops))] from-[#231a06] via-[#091428] to-[#020617]',
+      glowAura: 'shadow-[0_0_60px_rgba(245,158,11,0.25)]',
+      accentText: 'text-amber-400',
+      accentBorder: 'border-amber-500/50',
+      bannerBg: 'bg-gradient-to-r from-amber-500/25 via-yellow-500/10 to-transparent border-l-4 border-amber-400',
+      hudGlow: 'border-b border-amber-500/40 shadow-[0_4px_25px_rgba(245,158,11,0.25)]',
+      stationTagBg: 'bg-gradient-to-r from-amber-400 to-yellow-500 text-slate-950',
+      exclusiveDesc: '👑 ĐẶC QUYỀN ULTRA VIP: Da Nappa ngả 160°, màn ASUS ROG 240Hz Fast-IPS & Akko Lube',
+      roomIcon: 'workspace_premium',
+    },
   },
   {
     id: 'PRO-01',
@@ -63,6 +93,20 @@ const STATION_PRESETS: StationPreset[] = [
     gear: 'Razer Viper V3 Pro + Huntsman V3',
     chair: 'Ghế công thái học Herman Miller Embody',
     badge: 'CYBER PRO',
+    theme: {
+      name: 'Cyber Pro 540Hz FPS Lime',
+      badgeText: 'LIME NEON & LỤC ESPORTS',
+      colorName: 'emerald-neon',
+      bgGradient: 'bg-[radial-gradient(ellipse_at_top,_var(--tw-gradient-stops))] from-[#032918] via-[#041a24] to-[#020617]',
+      glowAura: 'shadow-[0_0_60px_rgba(16,185,129,0.3)]',
+      accentText: 'text-emerald-400',
+      accentBorder: 'border-emerald-500/50',
+      bannerBg: 'bg-gradient-to-r from-emerald-500/25 via-teal-500/10 to-transparent border-l-4 border-emerald-400',
+      hudGlow: 'border-b border-emerald-500/40 shadow-[0_4px_25px_rgba(16,185,129,0.25)]',
+      stationTagBg: 'bg-gradient-to-r from-emerald-400 to-teal-400 text-slate-950',
+      exclusiveDesc: '⚡ ĐẶC QUYỀN CYBER PRO: Tần số quét kỷ lục 540Hz DyAc+, Ryzen 7 7800X3D & Ghế Herman Miller',
+      roomIcon: 'bolt',
+    },
   },
   {
     id: 'STD-01',
@@ -75,6 +119,20 @@ const STATION_PRESETS: StationPreset[] = [
     gear: 'Logitech G102 Lightsync + DareU EK87',
     chair: 'Ghế bọc da đúc chống mỏi lưng',
     badge: 'STANDARD',
+    theme: {
+      name: 'Standard Electric Sky Blue',
+      badgeText: 'CYBER SKY BLUE',
+      colorName: 'sky-blue',
+      bgGradient: 'bg-[radial-gradient(ellipse_at_top,_var(--tw-gradient-stops))] from-[#071d40] via-[#061226] to-[#020617]',
+      glowAura: 'shadow-[0_0_50px_rgba(56,189,248,0.2)]',
+      accentText: 'text-sky-400',
+      accentBorder: 'border-sky-500/40',
+      bannerBg: 'bg-gradient-to-r from-sky-500/20 via-blue-500/10 to-transparent border-l-4 border-sky-400',
+      hudGlow: 'border-b border-sky-500/40 shadow-[0_4px_25px_rgba(56,189,248,0.15)]',
+      stationTagBg: 'bg-gradient-to-r from-sky-400 to-blue-500 text-slate-950',
+      exclusiveDesc: '🎮 KHU TIÊU CHUẨN STANDARD: Tần số quét 280Hz Fast-IPS, Core i5 13400F & RTX 4060 Ti mát lạnh',
+      roomIcon: 'desktop_windows',
+    },
   },
   {
     id: 'ARENA-A1',
@@ -87,6 +145,20 @@ const STATION_PRESETS: StationPreset[] = [
     gear: 'Wooting 60HE Rapid Trigger + EC2-CW',
     chair: 'Ghế thi đấu chuẩn giải IESF Major',
     badge: 'ARENA 5VS5',
+    theme: {
+      name: 'Arena Crimson Battle Flame',
+      badgeText: 'CRIMSON RED & RUBY',
+      colorName: 'rose-crimson',
+      bgGradient: 'bg-[radial-gradient(ellipse_at_top,_var(--tw-gradient-stops))] from-[#32060e] via-[#1a0513] to-[#020617]',
+      glowAura: 'shadow-[0_0_70px_rgba(244,63,94,0.35)]',
+      accentText: 'text-rose-400',
+      accentBorder: 'border-rose-500/50',
+      bannerBg: 'bg-gradient-to-r from-rose-500/25 via-red-500/10 to-transparent border-l-4 border-rose-500',
+      hudGlow: 'border-b border-rose-500/50 shadow-[0_4px_30px_rgba(244,63,94,0.3)]',
+      stationTagBg: 'bg-gradient-to-r from-rose-500 to-red-600 text-white',
+      exclusiveDesc: '⚔️ ĐẶC QUYỀN ĐẤU TRƯỜNG 5VS5: RTX 4090 24GB, OLED 540Hz, Phím Wooting 60HE Rapid Trigger',
+      roomIcon: 'swords',
+    },
   },
   {
     id: 'STREAM-01',
@@ -99,6 +171,20 @@ const STATION_PRESETS: StationPreset[] = [
     gear: 'GoXLR + Shure SM7B + Sony Cam 4K',
     chair: 'Ghế Streamer Corsair T3 Rush',
     badge: 'STREAM STUDIO',
+    theme: {
+      name: 'Stream Neon Violet RGB',
+      badgeText: 'VIOLET & FUCHSIA RGB',
+      colorName: 'purple-fuchsia',
+      bgGradient: 'bg-[radial-gradient(ellipse_at_top,_var(--tw-gradient-stops))] from-[#2a053b] via-[#140826] to-[#020617]',
+      glowAura: 'shadow-[0_0_60px_rgba(192,132,252,0.3)]',
+      accentText: 'text-purple-300',
+      accentBorder: 'border-purple-500/50',
+      bannerBg: 'bg-gradient-to-r from-purple-500/25 via-fuchsia-500/10 to-transparent border-l-4 border-purple-400',
+      hudGlow: 'border-b border-purple-500/40 shadow-[0_4px_30px_rgba(192,132,252,0.25)]',
+      stationTagBg: 'bg-gradient-to-r from-purple-500 to-fuchsia-500 text-white',
+      exclusiveDesc: '🎙️ ĐẶC QUYỀN PHÒNG STREAM 4K: Cách âm tuyệt đối, Mic Shure SM7B, Dual PC Core i7 & Cam 4K',
+      roomIcon: 'videocam',
+    },
   },
   {
     id: 'COUPLE-01',
@@ -111,6 +197,20 @@ const STATION_PRESETS: StationPreset[] = [
     gear: 'Sofa Da Nappa Đôi + 2 Tai Nghe Kép',
     chair: 'Sofa giường đôi công thái học ngả 180°',
     badge: 'COUPLE SUITE',
+    theme: {
+      name: 'Romantic Rose Pink Suite',
+      badgeText: 'ROSE GOLD & PINK',
+      colorName: 'pink-coral',
+      bgGradient: 'bg-[radial-gradient(ellipse_at_top,_var(--tw-gradient-stops))] from-[#2f081d] via-[#18071f] to-[#020617]',
+      glowAura: 'shadow-[0_0_55px_rgba(244,114,182,0.25)]',
+      accentText: 'text-pink-300',
+      accentBorder: 'border-pink-500/50',
+      bannerBg: 'bg-gradient-to-r from-pink-500/20 via-rose-500/10 to-transparent border-l-4 border-pink-400',
+      hudGlow: 'border-b border-pink-500/40 shadow-[0_4px_25px_rgba(244,114,182,0.2)]',
+      stationTagBg: 'bg-gradient-to-r from-pink-400 to-rose-400 text-slate-950',
+      exclusiveDesc: '💖 ĐẶC QUYỀN COUPLE SUITE: Sofa đôi ngả 180°, 2 màn cong Odyssey G7 240Hz riêng biệt',
+      roomIcon: 'favorite',
+    },
   },
   {
     id: 'CONSOLE-01',
@@ -123,6 +223,20 @@ const STATION_PRESETS: StationPreset[] = [
     gear: '4 Tay Cầm DualSense Edge + Soundbar Atmos',
     chair: 'Ghế LazyBoy bọc da thư giãn cao cấp',
     badge: 'PS5 PRO LOUNGE',
+    theme: {
+      name: 'PlayStation Deep Cobalt',
+      badgeText: 'PLAYSTATION COBALT BLUE',
+      colorName: 'indigo-blue',
+      bgGradient: 'bg-[radial-gradient(ellipse_at_top,_var(--tw-gradient-stops))] from-[#071647] via-[#050e2b] to-[#020617]',
+      glowAura: 'shadow-[0_0_65px_rgba(59,130,246,0.35)]',
+      accentText: 'text-blue-400',
+      accentBorder: 'border-blue-500/50',
+      bannerBg: 'bg-gradient-to-r from-blue-500/25 via-indigo-500/10 to-transparent border-l-4 border-blue-400',
+      hudGlow: 'border-b border-blue-500/50 shadow-[0_4px_30px_rgba(59,130,246,0.25)]',
+      stationTagBg: 'bg-gradient-to-r from-blue-600 to-indigo-500 text-white',
+      exclusiveDesc: '🕹️ ĐẶC QUYỀN PS5 PRO LOUNGE: Màn LG OLED 75" 4K 120Hz Dolby Atmos & Ghế Sofa LazyBoy',
+      roomIcon: 'sports_esports',
+    },
   },
   {
     id: 'BIDA-01',
@@ -135,6 +249,20 @@ const STATION_PRESETS: StationPreset[] = [
     gear: 'Cơ Carbon Rhino Pro + Bảng Điểm Điện Tử',
     chair: 'Ghế quầy bar quan sát cao cấp bọc nỉ',
     badge: 'BILLIARDS CLUB',
+    theme: {
+      name: 'Billiards Felt Emerald & Amber',
+      badgeText: 'FELT GREEN & AMBER',
+      colorName: 'emerald-amber',
+      bgGradient: 'bg-[radial-gradient(ellipse_at_top,_var(--tw-gradient-stops))] from-[#042c1b] via-[#1f1a04] to-[#020617]',
+      glowAura: 'shadow-[0_0_60px_rgba(16,185,129,0.3)]',
+      accentText: 'text-emerald-300',
+      accentBorder: 'border-emerald-500/50',
+      bannerBg: 'bg-gradient-to-r from-emerald-500/20 via-amber-500/10 to-transparent border-l-4 border-emerald-400',
+      hudGlow: 'border-b border-emerald-500/40 shadow-[0_4px_25px_rgba(16,185,129,0.2)]',
+      stationTagBg: 'bg-gradient-to-r from-emerald-500 to-amber-500 text-slate-950',
+      exclusiveDesc: '🎱 ĐẶC QUYỀN BIDA CLUB: Bàn Aileex King 9020 đá tự nhiên 3 tấm, Cơ Carbon Rhino Pro & Bảng điện tử',
+      roomIcon: 'sports',
+    },
   },
 ];
 
@@ -173,12 +301,15 @@ export default function ClientPcPage() {
   // Gọi nhân viên
   const [showCallModal, setShowCallModal] = useState(false);
   const [alertSuccess, setAlertSuccess] = useState<string | null>(null);
+  const [customStaffNote, setCustomStaffNote] = useState('');
 
   // Modal Gamer Pass và chúc mừng thăng hạng
   const [showGamerPassModal, setShowGamerPassModal] = useState(false);
   const [showUpgradeSuccessModal, setShowUpgradeSuccessModal] = useState(false);
   const [newUpgradedTierName, setNewUpgradedTierName] = useState('');
   const [upgradePerks, setUpgradePerks] = useState<string[]>([]);
+  const [activeBroadcast, setActiveBroadcast] = useState<string | null>(null);
+  const [directAdminMessage, setDirectAdminMessage] = useState<string | null>(null);
 
   // Khởi tạo và đồng bộ
   useEffect(() => {
@@ -219,10 +350,34 @@ export default function ClientPcPage() {
     window.addEventListener(AUTH_EVENT_NAME, handleSync);
     window.addEventListener('storage', handleSync);
 
+    const handleBroadcast = (e: any) => {
+      setActiveBroadcast(e.detail || null);
+    };
+
+    const handleDirectMessage = (e: any) => {
+      if (!e.detail?.seatId || e.detail?.seatId === currentStation.id || e.detail?.seatId === 'VIP-08') {
+        setDirectAdminMessage(e.detail?.message || 'Có tin nhắn mới từ quầy lễ tân!');
+      }
+    };
+
+    const handleRemoteLock = (e: any) => {
+      if (!e.detail?.seatId || e.detail?.seatId === currentStation.id || e.detail?.seatId === 'VIP-08') {
+        setIsLocked(true);
+        setAlertSuccess('⚠️ MÁY ĐÃ ĐƯỢC KHÓA TỪ XA BỞI QUẦY LỄ TÂN SERVER!');
+      }
+    };
+
+    window.addEventListener('cyber_broadcast_alert', handleBroadcast);
+    window.addEventListener('cyber_client_direct_message', handleDirectMessage);
+    window.addEventListener('cyber_remote_lock_command', handleRemoteLock);
+
     return () => {
       window.removeEventListener(WALLET_EVENT_NAME, handleSync);
       window.removeEventListener(AUTH_EVENT_NAME, handleSync);
       window.removeEventListener('storage', handleSync);
+      window.removeEventListener('cyber_broadcast_alert', handleBroadcast);
+      window.removeEventListener('cyber_client_direct_message', handleDirectMessage);
+      window.removeEventListener('cyber_remote_lock_command', handleRemoteLock);
     };
   }, []);
 
@@ -625,21 +780,60 @@ export default function ClientPcPage() {
   // GIAO DIỆN 2: MÀN HÌNH MÁY TRẠM ĐÃ ĐĂNG NHẬP THÀNH CÔNG (LIVE CLIENT PC)
   // ════════════════════════════════════════════════════════════════════════════
   return (
-    <div className="min-h-screen bg-[#020617] text-slate-100 font-sans selection:bg-emerald-400 selection:text-black pb-16">
+    <div className={`min-h-screen ${currentStation.theme.bgGradient} text-slate-100 font-sans selection:bg-emerald-400 selection:text-black pb-16 transition-colors duration-700 relative`}>
       
+      {/* Hiệu ứng hào quang ánh sáng độc quyền của phòng */}
+      <div className={`absolute top-0 left-1/2 -translate-x-1/2 w-full max-w-5xl h-80 ${currentStation.theme.glowAura} rounded-full blur-3xl pointer-events-none opacity-30 transition-all duration-700`}></div>
+
+      {/* THÔNG BÁO PHÁT LOA TỪ QUẦY LỄ TÂN */}
+      {activeBroadcast && (
+        <div className="bg-gradient-to-r from-purple-600 via-pink-600 to-cyan-500 text-white py-2 px-4 shadow-xl flex items-center justify-between animate-fadeIn z-50">
+          <div className="max-w-7xl mx-auto w-full flex items-center justify-between gap-3 text-xs font-mono font-bold">
+            <span className="flex items-center gap-2">
+              <span className="material-symbols-outlined text-base animate-pulse">campaign</span>
+              <span>📢 THÔNG BÁO TỪ QUẦY: {activeBroadcast}</span>
+            </span>
+            <button
+              onClick={() => setActiveBroadcast(null)}
+              className="text-white/80 hover:text-white px-2 cursor-pointer font-bold"
+            >
+              ✕
+            </button>
+          </div>
+        </div>
+      )}
+
+      {/* TIN NHẮN RIÊNG GỬI TRỰC TIẾP TỪ LỄ TÂN TỚI MÁY */}
+      {directAdminMessage && (
+        <div className="bg-amber-400 text-slate-950 py-2.5 px-4 shadow-2xl flex items-center justify-between font-mono text-xs font-bold z-50 animate-bounce">
+          <div className="max-w-7xl mx-auto w-full flex items-center justify-between gap-3">
+            <span className="flex items-center gap-2">
+              <span className="material-symbols-outlined text-lg">sms</span>
+              <span>💬 LỄ TÂN NHẮN RIÊNG: &quot;{directAdminMessage}&quot;</span>
+            </span>
+            <button
+              onClick={() => setDirectAdminMessage(null)}
+              className="bg-slate-950 text-white px-3 py-1 rounded-lg text-[10px] cursor-pointer"
+            >
+              ĐÃ ĐỌC ✓
+            </button>
+          </div>
+        </div>
+      )}
+
       {/* ══════════ 1. HUD THỜI GIAN THẬT TRÊN MÁY TRẠM ══════════ */}
-      <div className="bg-gradient-to-r from-slate-950 via-[#070e22] to-slate-950 border-b border-emerald-500/30 shadow-2xl py-3 px-4 sticky top-0 z-40 backdrop-blur-md">
+      <div className={`bg-slate-950/80 backdrop-blur-md ${currentStation.theme.hudGlow} py-3 px-4 sticky top-0 z-40 transition-all duration-500`}>
         <div className="max-w-7xl mx-auto flex flex-wrap items-center justify-between gap-4">
           
           {/* Cụm trái: Thông tin máy & Nút đổi phòng máy */}
           <div className="flex items-center gap-3">
-            <div className="w-10 h-10 rounded-xl bg-gradient-to-br from-emerald-400 to-cyan-500 flex items-center justify-center text-slate-950 font-black font-gaming text-lg shadow-lg shadow-emerald-500/20">
+            <div className={`w-10 h-10 rounded-xl ${currentStation.theme.stationTagBg} flex items-center justify-center font-black font-gaming text-lg shadow-lg`}>
               {currentStation.id.slice(-2)}
             </div>
             <div>
               <div className="flex items-center gap-2">
                 <span className="font-gaming font-black text-white text-base tracking-wide">
-                  MÁY: <span className="text-emerald-400">{currentStation.id}</span>
+                  MÁY: <span className={currentStation.theme.accentText}>{currentStation.id}</span>
                 </span>
                 <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full bg-emerald-500/20 text-emerald-400 border border-emerald-500/40 text-[9px] font-mono font-bold">
                   <span className="w-1.5 h-1.5 rounded-full bg-emerald-400 animate-ping"></span> ONLINE
@@ -1158,8 +1352,8 @@ export default function ClientPcPage() {
                 >
                   <div className="flex justify-between items-start mb-2">
                     <span className="font-gaming font-black text-base text-white">{p.id}</span>
-                    <span className="px-2 py-0.5 rounded bg-cyan-500/20 text-cyan-300 text-[10px] font-bold">
-                      {p.badge}
+                    <span className={`px-2 py-0.5 rounded text-[10px] font-black font-mono ${p.theme.stationTagBg}`}>
+                      {p.theme.badgeText}
                     </span>
                   </div>
                   <div className="text-slate-200 font-bold">{p.name}</div>
@@ -1282,12 +1476,45 @@ export default function ClientPcPage() {
                 <button
                   key={idx}
                   onClick={() => handleCallStaff(reason)}
-                  className="w-full p-2.5 rounded-xl bg-slate-800/80 hover:bg-rose-500/20 hover:border-rose-500/40 border border-white/5 text-left text-slate-200 hover:text-rose-300 transition flex items-center justify-between"
+                  className="w-full p-2.5 rounded-xl bg-slate-800/80 hover:bg-rose-500/20 hover:border-rose-500/40 border border-white/5 text-left text-slate-200 hover:text-rose-300 transition flex items-center justify-between cursor-pointer"
                 >
                   <span>{reason}</span>
                   <span className="text-[10px] text-rose-400">&rarr;</span>
                 </button>
               ))}
+            </div>
+
+            {/* Mục Khách Tự Nhập Yêu Cầu Riêng */}
+            <div className="pt-3 border-t border-white/10 space-y-2">
+              <label className="text-[11px] text-slate-300 font-mono font-bold flex items-center gap-1.5">
+                <span className="material-symbols-outlined text-[15px] text-rose-400">edit_note</span>
+                <span>Hoặc tự nhập yêu cầu riêng của bạn:</span>
+              </label>
+              <textarea
+                rows={2}
+                value={customStaffNote}
+                onChange={(e) => setCustomStaffNote(e.target.value)}
+                placeholder="Ví dụ: Cho mượn củ sạc Type-C, tăng nhiệt độ điều hòa, xin thêm giấy ăn..."
+                className="w-full bg-slate-950 border border-rose-500/40 rounded-xl p-2.5 text-xs text-white placeholder-slate-500 focus:border-rose-400 focus:ring-1 focus:ring-rose-400 outline-none resize-none font-sans"
+              />
+              <button
+                type="button"
+                disabled={!customStaffNote.trim()}
+                onClick={() => {
+                  if (customStaffNote.trim()) {
+                    handleCallStaff(customStaffNote.trim());
+                    setCustomStaffNote('');
+                  }
+                }}
+                className={`w-full py-2.5 rounded-xl font-bold font-mono text-xs flex items-center justify-center gap-1.5 transition ${
+                  customStaffNote.trim()
+                    ? 'bg-gradient-to-r from-rose-500 to-red-600 hover:brightness-110 text-white shadow-lg shadow-rose-500/30 cursor-pointer'
+                    : 'bg-slate-800 text-slate-500 cursor-not-allowed border border-white/5'
+                }`}
+              >
+                <span className="material-symbols-outlined text-sm">send</span>
+                <span>GỬI YÊU CẦU NÀY TỚI LỄ TÂN &rarr;</span>
+              </button>
             </div>
 
             <button
