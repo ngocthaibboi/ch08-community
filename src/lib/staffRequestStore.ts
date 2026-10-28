@@ -11,39 +11,30 @@ export interface StaffRequest {
 export const STAFF_REQUEST_STORAGE_KEY = 'CYBER_STAFF_REQUESTS';
 export const STAFF_REQUEST_EVENT = 'cyber_staff_request_sync';
 
-export const INITIAL_STAFF_REQUESTS: StaffRequest[] = [
-  {
-    id: 'req-1',
-    pcName: 'VIP-05',
-    type: 'TOPUP_CASH',
-    title: 'Nạp tiền mặt tại máy',
-    details: 'Khách cần nạp 100.000đ tiền mặt vào tài khoản máy VIP-05',
-    status: 'PENDING',
-    createdAt: new Date(Date.now() - 3 * 60 * 1000).toISOString(),
-  },
-  {
-    id: 'req-2',
-    pcName: 'ARENA-03',
-    type: 'EXTRA_SERVICE',
-    title: 'Thêm đá lạnh & nước lọc',
-    details: 'Khách xin thêm 01 ly đá riêng và giấy lau tay',
-    status: 'PENDING',
-    createdAt: new Date(Date.now() - 8 * 60 * 1000).toISOString(),
-  },
-];
+// KHỞI TẠO BAN ĐẦU: TRỐNG (Khi khách tại máy bấm gọi thì mới xuất hiện)
+export const INITIAL_STAFF_REQUESTS: StaffRequest[] = [];
 
 export function getStoredStaffRequests(): StaffRequest[] {
   if (typeof window === 'undefined') return INITIAL_STAFF_REQUESTS;
   try {
     const raw = localStorage.getItem(STAFF_REQUEST_STORAGE_KEY);
     if (!raw) {
-      localStorage.setItem(STAFF_REQUEST_STORAGE_KEY, JSON.stringify(INITIAL_STAFF_REQUESTS));
       return INITIAL_STAFF_REQUESTS;
     }
     const parsed = JSON.parse(raw);
     return Array.isArray(parsed) ? parsed : INITIAL_STAFF_REQUESTS;
   } catch {
     return INITIAL_STAFF_REQUESTS;
+  }
+}
+
+export function broadcastStaffRequests(reqs: StaffRequest[]) {
+  if (typeof window === 'undefined') return;
+  try {
+    localStorage.setItem(STAFF_REQUEST_STORAGE_KEY, JSON.stringify(reqs));
+    window.dispatchEvent(new CustomEvent(STAFF_REQUEST_EVENT, { detail: reqs }));
+  } catch (err) {
+    console.error('Failed to broadcast staff requests:', err);
   }
 }
 
@@ -59,23 +50,17 @@ export function createStaffRequest(
   };
 
   const updated = [newReq, ...current];
-  if (typeof window !== 'undefined') {
-    localStorage.setItem(STAFF_REQUEST_STORAGE_KEY, JSON.stringify(updated));
-    window.dispatchEvent(new CustomEvent(STAFF_REQUEST_EVENT, { detail: updated }));
-    window.dispatchEvent(new Event('storage'));
-  }
+  broadcastStaffRequests(updated);
   return newReq;
 }
 
-export function resolveStaffRequest(requestId: string): StaffRequest[] {
+export function resolveStaffRequest(id: string): StaffRequest[] {
   const current = getStoredStaffRequests();
-  const updated = current.map((r) =>
-    r.id === requestId ? { ...r, status: 'RESOLVED' as const } : r
-  );
-  if (typeof window !== 'undefined') {
-    localStorage.setItem(STAFF_REQUEST_STORAGE_KEY, JSON.stringify(updated));
-    window.dispatchEvent(new CustomEvent(STAFF_REQUEST_EVENT, { detail: updated }));
-    window.dispatchEvent(new Event('storage'));
-  }
+  const updated = current.map((r) => (r.id === id ? { ...r, status: 'RESOLVED' as const } : r));
+  broadcastStaffRequests(updated);
   return updated;
+}
+
+export function clearAllStaffRequests(): void {
+  broadcastStaffRequests([]);
 }

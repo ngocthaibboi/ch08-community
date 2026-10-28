@@ -27,7 +27,7 @@ export default function DashboardFnb() {
   const [orders, setOrders] = useState<Order[]>([]);
   const [fnbStats, setFnbStats] = useState(() => calculateLiveDashboardStats([]));
   const [topupStats, setTopupStats] = useState<{ totalTopup: number; recentTopups: WalletTransaction[] }>({
-    totalTopup: 12450000,
+    totalTopup: 0,
     recentTopups: [],
   });
   const [lastNotice, setLastNotice] = useState<string | null>(null);

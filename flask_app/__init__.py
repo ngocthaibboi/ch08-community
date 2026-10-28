@@ -30,7 +30,7 @@ def create_app():
         return render_template('index.html')
 
     # Đăng ký Blueprint cho Thành viên 1
-    from app.blueprints.auth.routes import auth_bp
+    from flask_app.blueprints.auth.routes import auth_bp
     app.register_blueprint(auth_bp, url_prefix='/auth')
 
     with app.app_context():
