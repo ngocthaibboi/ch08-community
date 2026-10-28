@@ -2,7 +2,14 @@
 
 import React, { useState, useEffect } from 'react';
 import Link from 'next/link';
-import { ALL_SEATS_CONFIG, saveBooking } from '@/lib/bookingStore';
+import {
+  ALL_SEATS_CONFIG,
+  saveBooking,
+  getStoredBookings,
+  BOOKING_STORAGE_EVENT,
+  SeatBooking,
+  BaseSeat,
+} from '@/lib/bookingStore';
 import { getLoggedInUser, loginUser, AUTH_EVENT_NAME, AuthUser } from '@/lib/authStore';
 import AuthModal from '@/components/auth/AuthModal';
 
@@ -70,8 +77,145 @@ const GEAR_PRODUCTS = [
   },
 ];
 
+
+// Cấu hình chuẩn xác 6 Phân Khu Đẳng Cấp Thượng Thừa trên Trang Chủ
+const SIX_ZONES_HOME = [
+  {
+    id: 'STANDARD' as const,
+    num: '01',
+    name: 'Standard Zone Tiêu Chuẩn',
+    badge: '10 MÁY • STD-01..10',
+    rate: '12.000đ/h',
+    themeColor: 'emerald',
+    cardBorder: 'hover:border-emerald-500/50',
+    activeRing: 'border-emerald-400 ring-2 ring-emerald-400/50 shadow-emerald-500/20',
+    tagClass: 'text-emerald-400 border-emerald-500/40',
+    accentText: 'text-emerald-400',
+    image: 'https://images.unsplash.com/photo-1542751371-adc38448a05e?auto=format&fit=crop&w=700&q=80',
+    desc: 'Khu máy công cộng tiêu chuẩn (mã máy STD-01..10). Tối ưu thi đấu đối kháng CS2, Valorant, LMHT, FO4. Ghế da đúc công thái học, phím cơ DareU, chuột Logitech G102.',
+    cpu: 'i5-13400F 10 Cores',
+    gpu: 'RTX 4060Ti 8GB OC',
+    screen: 'ASUS TUF 24.5" Fast-IPS 280Hz',
+    gear: 'Logitech G102 + Phím DareU EK87',
+    chair: 'Ghế da đúc công thái học',
+  },
+  {
+    id: 'PRO' as const,
+    num: '02',
+    name: 'Cyber Pro 540Hz Try-Hard',
+    badge: '4 MÁY • PRO-01..04',
+    rate: '18.000đ/h',
+    themeColor: 'cyan',
+    cardBorder: 'hover:border-cyan-500/50',
+    activeRing: 'border-cyan-400 ring-2 ring-cyan-400/50 shadow-cyan-500/20',
+    tagClass: 'text-cyan-400 border-cyan-500/40',
+    accentText: 'text-cyan-400',
+    image: 'https://images.unsplash.com/photo-1511512578047-dfb367046420?auto=format&fit=crop&w=700&q=80',
+    desc: 'Khu vực máy thi đấu FPS cao cấp (mã PRO-01..04). Màn hình Zowie 540Hz phá vỡ mọi giới hạn tốc độ, phím Wooting 60HE Hall Effect Rapid Trigger, ghế Herman Miller Embody.',
+    cpu: 'Ryzen 7 7800X3D 3D V-Cache',
+    gpu: 'RTX 4080 Super 16GB GDDR6X',
+    screen: 'BenQ Zowie XL2566K 540Hz DyAc+',
+    gear: 'Wooting 60HE Rapid Trigger + Zowie EC2-CW',
+    chair: 'Herman Miller Embody Gaming',
+  },
+  {
+    id: 'VIP' as const,
+    num: '03',
+    name: 'Phòng Riêng Ultra VIP Tầng 2',
+    badge: '8 PHÒNG • VIP-01..08',
+    rate: '22.000đ/h',
+    themeColor: 'purple',
+    cardBorder: 'hover:border-purple-500/50',
+    activeRing: 'border-purple-400 ring-2 ring-purple-400/50 shadow-purple-500/20',
+    tagClass: 'text-purple-400 border-purple-500/40',
+    accentText: 'text-purple-400',
+    image: 'https://images.unsplash.com/photo-1587202372775-e229f172b9d7?auto=format&fit=crop&w=700&q=80',
+    desc: 'Dãy phòng VIP riêng biệt (mã VIP-01..08 bao gồm máy bạn trải nghiệm VIP-08). Cách âm 45dB, ghế bọc da Nappa ngả 160°, chuột Zowie EC2-CW không dây, bàn phím Akko Custom Lube.',
+    cpu: 'Core i7-14700K / Core i9 14900K',
+    gpu: 'RTX 4070Ti Super / RTX 4090 24GB',
+    screen: 'ASUS ROG Swift 27" 240Hz Fast-IPS',
+    gear: 'Akko Custom Lube + Zowie EC2-CW Wireless',
+    chair: 'Ghế bọc da Nappa ngả lưng 160° gác chân',
+  },
+  {
+    id: 'ARENA' as const,
+    num: '04',
+    name: 'Đấu Trường 5vs5 Chuẩn IESF',
+    badge: '10 MÁY • ARENA-A1..B5',
+    rate: '25.000đ/h',
+    themeColor: 'amber',
+    cardBorder: 'hover:border-amber-500/50',
+    activeRing: 'border-amber-400 ring-2 ring-amber-400/50 shadow-amber-500/20',
+    tagClass: 'text-amber-400 border-amber-500/40',
+    accentText: 'text-amber-400',
+    image: 'https://images.unsplash.com/photo-1542751110-97427bbecf20?auto=format&fit=crop&w=700&q=80',
+    desc: 'Sàn đấu thi đấu đối kháng chuyên nghiệp (ARENA-A1..A5 Đội Xanh vs ARENA-B1..B5 Đội Đỏ). Đường truyền cáp quang riêng biệt ≤ 1ms, chuẩn bị sẵn sàng cho giải đấu trường học & clan.',
+    cpu: 'Core i9-14900KS Flagship 6.2GHz',
+    gpu: 'RTX 4090 24GB OC Gaming Edition',
+    screen: 'ROG Swift Pro OLED 540Hz Kỷ Lục',
+    gear: 'Wooting 60HE + Zowie EC2-CW + Artisan Pad',
+    chair: 'Ghế thi đấu IESF World Championship',
+  },
+  {
+    id: 'COUPLE_STREAM' as const,
+    num: '05',
+    name: 'Couple Suite & Phòng Stream 4K',
+    badge: '4 PHÒNG • COUPLE & STREAM',
+    rate: '35.000đ - 45.000đ/h',
+    themeColor: 'pink',
+    cardBorder: 'hover:border-pink-500/50',
+    activeRing: 'border-pink-400 ring-2 ring-pink-400/50 shadow-pink-500/20',
+    tagClass: 'text-pink-400 border-pink-500/40',
+    accentText: 'text-pink-400',
+    image: 'https://images.unsplash.com/photo-1593305841991-05c297ba4575?auto=format&fit=crop&w=700&q=80',
+    desc: 'Phòng đôi hẹn hò gaming riêng tư cách âm (COUPLE-01..02) và Phòng Stream Studio Soundproof (STREAM-01..02) trang bị camera Sony Alpha 4K, đèn Elgato Key Light và mic Shure SM7B.',
+    cpu: 'Dual Core i7-14700K Gaming & Stream',
+    gpu: 'Dual RTX 4070Ti Super + Card 4K60 Pro',
+    screen: '2x Samsung Odyssey G7 27" Cong 240Hz',
+    gear: 'Mic Shure SM7B + Sony A6700 4K Cam + GoXLR',
+    chair: 'Sofa đôi da Nappa ngả 180° nệm mút đúc',
+  },
+  {
+    id: 'CONSOLE_BIDA' as const,
+    num: '06',
+    name: 'Console Lounge PS5 Pro & Bida Club',
+    badge: '6 MÁY/BÀN • CONSOLE & BIDA',
+    rate: '79.000đ/h',
+    themeColor: 'blue',
+    cardBorder: 'hover:border-blue-500/50',
+    activeRing: 'border-blue-400 ring-2 ring-blue-400/50 shadow-blue-500/20',
+    tagClass: 'text-blue-400 border-blue-500/40',
+    accentText: 'text-blue-400',
+    image: 'https://images.unsplash.com/photo-1606813907291-d86efa9b94db?auto=format&fit=crop&w=700&q=80',
+    desc: 'Phòng riêng hội bạn chiến FC25, Mortal Kombat, Mario Kart (CONSOLE-01..02) và Billiards Club 10 bàn Aileex King 9020 (BIDA-01..04). TV 75" 4K OLED 120Hz Dolby Vision, 4 tay cầm DualSense Edge.',
+    cpu: 'PS5 Pro 2TB Ray-Tracing + Bàn Aileex King 9020',
+    gpu: 'Custom RDNA 3 67WGP + Đá tự nhiên 3 tấm Bỉ',
+    screen: 'TV LG OLED G3 75" 4K 120Hz Dolby Vision',
+    gear: '4 Tay cầm DualSense Edge + Bi Aramith Pro',
+    chair: 'Sofa góc bọc nỉ Lounge thể thao sang trọng',
+  },
+];
+
+function getZoneForSeat(seat: BaseSeat): 'STANDARD' | 'PRO' | 'VIP' | 'ARENA' | 'COUPLE_STREAM' | 'CONSOLE_BIDA' {
+  const id = seat.id.toUpperCase();
+  if (id.startsWith('STD-') || id.startsWith('REG-')) return 'STANDARD';
+  if (id.startsWith('PRO-')) return 'PRO';
+  if (id.startsWith('VIP-')) return 'VIP';
+  if (id.startsWith('ARENA-')) return 'ARENA';
+  if (id.startsWith('COUPLE-') || id.startsWith('STREAM-')) return 'COUPLE_STREAM';
+  if (id.startsWith('CONSOLE-') || id.startsWith('BIDA-')) return 'CONSOLE_BIDA';
+  return 'STANDARD';
+}
+
 export default function Home() {
   const [currentUser, setCurrentUser] = useState<AuthUser | null>(null);
+
+  // 6 Phân Khu State & Quản Lý Trạm Máy Thời Gian Thực
+  const [selectedZone, setSelectedZone] = useState<'ALL' | 'STANDARD' | 'PRO' | 'VIP' | 'ARENA' | 'COUPLE_STREAM' | 'CONSOLE_BIDA'>('STANDARD');
+  const [selectedModalSeat, setSelectedModalSeat] = useState<BaseSeat | null>(null);
+  const [selectedSeatForBooking, setSelectedSeatForBooking] = useState<string | null>(null);
+  const [storedBookings, setStoredBookings] = useState<SeatBooking[]>([]);
+  const [customSeatRates, setCustomSeatRates] = useState<Record<string, number>>({});
 
   // Form Booking State
   const [branch, setBranch] = useState('Zone 01: 182 Lê Duẩn, TP. Vinh (Flagship Complex)');
@@ -154,6 +298,86 @@ export default function Home() {
   const [newLfgStation, setNewLfgStation] = useState('Khu Standard');
   const [newLfgContent, setNewLfgContent] = useState('');
 
+
+  // Tính toán trạng thái thời gian thực của máy
+  const getSeatLiveStatus = (seat: BaseSeat) => {
+    const booking = storedBookings.find(
+      (b) => b.seatId === seat.id && b.status === 'RESERVED'
+    );
+    if (booking) {
+      return {
+        status: 'RESERVED' as const,
+        label: 'ĐÃ GIỮ CHỖ',
+        badgeClass: 'bg-amber-500/20 text-amber-300 border-amber-500/40',
+        dotClass: 'bg-amber-400',
+        occupant: booking.customerName,
+        timeSlot: booking.timeSlot,
+      };
+    }
+
+    if (seat.id === 'VIP-08') {
+      return {
+        status: 'OCCUPIED' as const,
+        label: 'ĐANG HOẠT ĐỘNG',
+        badgeClass: 'bg-rose-500/20 text-rose-300 border-rose-500/40',
+        dotClass: 'bg-rose-500 animate-ping',
+        occupant: 'Tân Thủ Cyber (Hội Viên)',
+        timeSlot: 'Đang trải nghiệm',
+      };
+    }
+
+    return {
+      status: 'AVAILABLE' as const,
+      label: 'MÁY TRỐNG',
+      badgeClass: 'bg-emerald-500/20 text-emerald-300 border-emerald-500/40',
+      dotClass: 'bg-emerald-400',
+      occupant: null,
+      timeSlot: null,
+    };
+  };
+
+  // Đơn giá thực tế (lấy từ tùy chỉnh của server nếu có)
+  const getSeatPrice = (seat: BaseSeat) => {
+    if (customSeatRates[seat.id]) {
+      return `${customSeatRates[seat.id].toLocaleString('vi-VN')}đ/h`;
+    }
+    return seat.price;
+  };
+
+  // Xử lý chọn máy nhanh để đặt chỗ
+  const handleSelectSeatToBook = (seat: BaseSeat) => {
+    if (!currentUser) {
+      setAuthModalMessage(`Vui lòng đăng nhập tài khoản Cyber Zone để tiến hành đặt giữ chỗ cho máy ${seat.id} (${seat.zoneName})!`);
+      setIsAuthModalOpen(true);
+      return;
+    }
+    setSelectedSeatForBooking(seat.id);
+    setSelectedModalSeat(null);
+
+    if (seat.id.startsWith('STD-')) {
+      setZoneCategory('Standard Zone Tiêu Chuẩn (STD-01..10) - 12.000đ/h');
+    } else if (seat.id.startsWith('PRO-')) {
+      setZoneCategory('Cyber Pro 540Hz (PRO-01..04) - 18.000đ/h');
+    } else if (seat.id.startsWith('VIP-')) {
+      setZoneCategory('Ultra VIP Suite (VIP-01..08) - 22.000đ/h');
+    } else if (seat.id.startsWith('ARENA-')) {
+      setZoneCategory('Đấu Trường Arena 5vs5 (ARENA-A1..B5) - 25.000đ/h');
+    } else if (seat.id.startsWith('STREAM-')) {
+      setZoneCategory('Stream Studio Soundproof (STREAM-01..02) - 35.000đ/h');
+    } else if (seat.id.startsWith('COUPLE-')) {
+      setZoneCategory('Couple Sanctuary (COUPLE-01..02) - 45.000đ/h');
+    } else if (seat.id.startsWith('CONSOLE-')) {
+      setZoneCategory('Console Lounge & PS5 Pro (CONSOLE-01..02) - 79.000đ/h');
+    } else if (seat.id.startsWith('BIDA-')) {
+      setZoneCategory('Billiards Club (BIDA-01..10) - 79.000đ/h');
+    }
+
+    const formEl = document.getElementById('dat-cho');
+    if (formEl) {
+      formEl.scrollIntoView({ behavior: 'smooth' });
+    }
+  };
+
   // Lắng nghe thay đổi đăng nhập
   useEffect(() => {
     const user = getLoggedInUser();
@@ -172,12 +396,37 @@ export default function Home() {
       }
     };
 
+    // Khởi tạo & đồng bộ danh sách đơn đặt máy
+    setStoredBookings(getStoredBookings());
+    try {
+      const savedRates = localStorage.getItem('CYBER_CUSTOM_SEAT_RATES');
+      if (savedRates) setCustomSeatRates(JSON.parse(savedRates));
+    } catch {}
+
+    const handleBookingSync = () => {
+      setStoredBookings(getStoredBookings());
+    };
+
+    const handleCustomRatesSync = (e: StorageEvent) => {
+      if (e.key === 'CYBER_CUSTOM_SEAT_RATES' && e.newValue) {
+        try {
+          setCustomSeatRates(JSON.parse(e.newValue));
+        } catch {}
+      }
+    };
+
     window.addEventListener(AUTH_EVENT_NAME, handleAuthChange);
     window.addEventListener('storage', handleAuthChange);
+    window.addEventListener(BOOKING_STORAGE_EVENT, handleBookingSync);
+    window.addEventListener('storage', handleBookingSync);
+    window.addEventListener('storage', handleCustomRatesSync);
 
     return () => {
       window.removeEventListener(AUTH_EVENT_NAME, handleAuthChange);
       window.removeEventListener('storage', handleAuthChange);
+      window.removeEventListener(BOOKING_STORAGE_EVENT, handleBookingSync);
+      window.removeEventListener('storage', handleBookingSync);
+      window.removeEventListener('storage', handleCustomRatesSync);
     };
   }, []);
 
@@ -192,16 +441,18 @@ export default function Home() {
       return;
     }
 
-    // Tìm máy/bàn phù hợp theo phân khu được chọn
-    let targetSeatId = 'REG-01';
-    if (zoneCategory.includes('Standard')) targetSeatId = 'REG-01';
-    else if (zoneCategory.includes('Billiards')) targetSeatId = 'BIDA-01';
-    else if (zoneCategory.includes('VIP')) targetSeatId = 'VIP-01';
-    else if (zoneCategory.includes('Pro')) targetSeatId = 'PRO-01';
-    else if (zoneCategory.includes('Arena')) targetSeatId = 'ARENA-A1';
-    else if (zoneCategory.includes('Stream')) targetSeatId = 'STREAM-01';
-    else if (zoneCategory.includes('Couple')) targetSeatId = 'COUPLE-01';
-    else if (zoneCategory.includes('Console')) targetSeatId = 'CONSOLE-01';
+    // Tìm máy/bàn phù hợp (ưu tiên máy khách đã bấm chọn trực tiếp trên sơ đồ)
+    let targetSeatId = selectedSeatForBooking || 'STD-01';
+    if (!selectedSeatForBooking) {
+      if (zoneCategory.includes('Standard')) targetSeatId = 'STD-01';
+      else if (zoneCategory.includes('Billiards') || zoneCategory.includes('Bida')) targetSeatId = 'BIDA-01';
+      else if (zoneCategory.includes('VIP')) targetSeatId = 'VIP-01';
+      else if (zoneCategory.includes('Pro')) targetSeatId = 'PRO-01';
+      else if (zoneCategory.includes('Arena')) targetSeatId = 'ARENA-A1';
+      else if (zoneCategory.includes('Stream')) targetSeatId = 'STREAM-01';
+      else if (zoneCategory.includes('Couple')) targetSeatId = 'COUPLE-01';
+      else if (zoneCategory.includes('Console')) targetSeatId = 'CONSOLE-01';
+    }
 
     const seat = ALL_SEATS_CONFIG.find((s) => s.id === targetSeatId) || ALL_SEATS_CONFIG[0];
 
@@ -218,6 +469,7 @@ export default function Home() {
       notes: `Đặt trước ${quantity} chỗ - ${zoneCategory}`,
     });
 
+    setStoredBookings(getStoredBookings());
     setSuccessBooking({
       code: newBooking.bookingCode,
       seatId: newBooking.seatId,
@@ -420,7 +672,7 @@ export default function Home() {
         </div>
 
         {/* ══════════ 3. 6 PHÂN KHU ĐẲNG CẤP THƯỢNG THỪA ══════════ */}
-        <div id="phan-khu" className="space-y-8">
+        <div id="phan-khu" className="space-y-8 scroll-mt-24">
           <div className="flex flex-col md:flex-row justify-between items-start md:items-end gap-4 border-b border-white/10 pb-6">
             <div>
               <span className="text-xs font-mono text-emerald-400 font-bold uppercase tracking-wider flex items-center gap-1.5">
@@ -432,168 +684,324 @@ export default function Home() {
               </h2>
             </div>
             <p className="text-xs text-slate-400 max-w-md">
-              Mỗi phân khu được thiết kế riêng biệt về âm học, công thái học và cấu hình phần cứng để phục vụ hoàn hảo từng nhu cầu gaming.
+              Mỗi phân khu được thiết kế riêng biệt về âm học, công thái học và cấu hình phần cứng. Bấm vào bất kỳ phân khu nào để xem danh sách phòng máy, cấu hình chi tiết và đặt chỗ ngay.
             </p>
           </div>
 
+          {/* THANH SELECTOR NHANH 6 PHÂN KHU + TẤT CẢ */}
+          <div className="flex items-center gap-2 overflow-x-auto pb-2 scrollbar-none">
+            <button
+              type="button"
+              onClick={() => setSelectedZone('ALL')}
+              className={`px-4 py-2 rounded-xl font-mono text-xs font-bold transition flex items-center gap-2 whitespace-nowrap shrink-0 ${
+                selectedZone === 'ALL'
+                  ? 'bg-emerald-400 text-black shadow-lg shadow-emerald-400/25 ring-1 ring-emerald-300'
+                  : 'bg-slate-900 text-slate-300 border border-white/10 hover:border-emerald-400/50'
+              }`}
+            >
+              <span className="material-symbols-outlined text-[16px]">apps</span>
+              <span>TẤT CẢ (42 MÁY/BÀN)</span>
+            </button>
+
+            {SIX_ZONES_HOME.map((zone) => {
+              const isActive = selectedZone === zone.id;
+              const zoneSeats = ALL_SEATS_CONFIG.filter((s) => getZoneForSeat(s) === zone.id);
+              return (
+                <button
+                  key={zone.id}
+                  type="button"
+                  onClick={() => {
+                    setSelectedZone(zone.id);
+                    const el = document.getElementById('danh-sach-may-phan-khu');
+                    if (el) el.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+                  }}
+                  className={`px-4 py-2 rounded-xl font-mono text-xs font-bold transition flex items-center gap-2 whitespace-nowrap shrink-0 ${
+                    isActive
+                      ? 'bg-white text-black shadow-lg ring-2 ring-white/50'
+                      : 'bg-slate-900 text-slate-300 border border-white/10 hover:border-white/30'
+                  }`}
+                >
+                  <span className={`w-2 h-2 rounded-full ${isActive ? 'bg-black' : 'bg-emerald-400'}`} />
+                  <span>{zone.name}</span>
+                  <span className={`text-[10px] px-1.5 py-0.5 rounded ${isActive ? 'bg-black/10 text-black' : 'bg-white/10 text-slate-400'}`}>
+                    {zoneSeats.length}
+                  </span>
+                </button>
+              );
+            })}
+          </div>
+
+          {/* 6 CARDS SHOWCASE CỦA 6 PHÂN KHU (BẤM VÀO ĐỂ CHỌN XEM MÁY) */}
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+            {SIX_ZONES_HOME.map((zone) => {
+              const isActive = selectedZone === zone.id;
+              const zoneSeats = ALL_SEATS_CONFIG.filter((s) => getZoneForSeat(s) === zone.id);
+              return (
+                <div
+                  key={zone.id}
+                  onClick={() => {
+                    setSelectedZone(zone.id);
+                    const el = document.getElementById('danh-sach-may-phan-khu');
+                    if (el) el.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+                  }}
+                  className={`rounded-2xl bg-slate-900/80 border transition duration-300 overflow-hidden flex flex-col group cursor-pointer relative ${
+                    isActive
+                      ? `${zone.activeRing} ring-2 scale-[1.02] bg-slate-900`
+                      : `border-white/10 ${zone.cardBorder} hover:scale-[1.01]`
+                  }`}
+                >
+                  <div className="h-48 overflow-hidden relative">
+                    <img
+                      src={zone.image}
+                      alt={zone.name}
+                      className="w-full h-full object-cover group-hover:scale-105 transition duration-500"
+                    />
+                    <div className="absolute inset-0 bg-gradient-to-t from-slate-950 via-transparent to-transparent opacity-80" />
+                    
+                    <span className={`absolute top-3 left-3 px-2.5 py-1 rounded bg-black/80 backdrop-blur-md font-mono text-[10px] font-bold border ${zone.tagClass}`}>
+                      {zone.num} • {zone.name.toUpperCase()} ({zone.rate})
+                    </span>
+
+                    <span className="absolute top-3 right-3 px-2 py-0.5 rounded bg-black/70 font-mono text-[10px] text-white/80 border border-white/20">
+                      {zoneSeats.length} Máy/Bàn
+                    </span>
+
+                    {isActive && (
+                      <span className="absolute bottom-3 left-3 right-3 py-1.5 px-3 rounded-lg bg-emerald-400 text-black font-mono font-black text-[11px] text-center shadow-lg animate-pulse flex items-center justify-center gap-1.5">
+                        <span className="material-symbols-outlined text-[16px]">visibility</span>
+                        ĐANG HIỂN THỊ PHÒNG MÁY PHÂN KHU NÀY 👇
+                      </span>
+                    )}
+                  </div>
+
+                  <div className="p-6 flex-1 flex flex-col justify-between space-y-4">
+                    <div>
+                      <div className="flex items-center justify-between">
+                        <h3 className={`text-lg font-bold font-gaming transition ${isActive ? zone.accentText : 'text-white'}`}>
+                          {zone.name}
+                        </h3>
+                      </div>
+                      <p className="text-xs text-slate-400 mt-2 leading-relaxed">
+                        {zone.desc}
+                      </p>
+                    </div>
+
+                    <div className="pt-4 border-t border-white/10 font-mono text-xs space-y-1.5">
+                      <div className="flex justify-between text-slate-400">
+                        <span>Cấu hình:</span>
+                        <span className={`font-bold ${zone.accentText}`}>{zone.cpu} • {zone.gpu}</span>
+                      </div>
+                      <div className="flex justify-between text-slate-400">
+                        <span>Màn hình:</span>
+                        <span className="text-white">{zone.screen}</span>
+                      </div>
+                    </div>
+
+                    {/* Nút gợi ý bấm vào xem máy */}
+                    <div className={`mt-2 py-2 px-3 rounded-xl font-mono text-xs font-bold text-center border transition flex items-center justify-center gap-2 ${
+                      isActive
+                        ? 'bg-emerald-500/10 border-emerald-500/40 text-emerald-300'
+                        : 'bg-white/5 border-white/10 text-slate-300 group-hover:border-white/30 group-hover:text-white'
+                    }`}>
+                      <span className="material-symbols-outlined text-[16px]">
+                        {isActive ? 'expand_circle_down' : 'touch_app'}
+                      </span>
+                      <span>
+                        {isActive
+                          ? `Đang hiển thị ${zoneSeats.length} phòng máy bên dưới`
+                          : `Bấm để xem ${zoneSeats.length} phòng máy khu này`}
+                      </span>
+                    </div>
+                  </div>
+                </div>
+              );
+            })}
+          </div>
+
+          {/* ══════════ SƠ ĐỒ & DANH SÁCH PHÒNG MÁY CỦA PHÂN KHU ĐƯỢC CHỌN ══════════ */}
+          <div id="danh-sach-may-phan-khu" className="pt-4 space-y-6 scroll-mt-24">
             
-            {/* Zone 1: Standard Zone (Khớp sơ đồ máy STD-01..10) */}
-            <div className="rounded-2xl bg-slate-900/80 border border-white/10 hover:border-emerald-500/50 transition duration-300 overflow-hidden flex flex-col group">
-              <div className="h-48 overflow-hidden relative">
-                <img
-                  src="https://images.unsplash.com/photo-1542751371-adc38448a05e?auto=format&fit=crop&w=700&q=80"
-                  alt="Standard Zone"
-                  className="w-full h-full object-cover group-hover:scale-105 transition duration-500"
-                />
-                <span className="absolute top-3 left-3 px-2.5 py-1 rounded bg-black/80 backdrop-blur-md text-emerald-400 font-mono text-[10px] font-bold border border-emerald-500/40">
-                  01 • STANDARD ZONE (12.000đ/h)
-                </span>
-              </div>
-              <div className="p-6 flex-1 flex flex-col justify-between space-y-4">
-                <div>
-                  <h3 className="text-lg font-bold text-white font-gaming">Standard Zone Tiêu Chuẩn</h3>
-                  <p className="text-xs text-slate-400 mt-2 leading-relaxed">
-                    Khu máy công cộng tiêu chuẩn (mã máy STD-01..10). Tối ưu thi đấu đối kháng CS2, Valorant, LMHT, FO4. Ghế da đúc công thái học, phím cơ DareU, chuột Logitech G102.
-                  </p>
-                </div>
-                <div className="pt-4 border-t border-white/10 font-mono text-xs space-y-1.5">
-                  <div className="flex justify-between text-slate-400"><span>Cấu hình:</span><span className="text-emerald-400 font-bold">i5-13400F • RTX 4060Ti 8GB OC</span></div>
-                  <div className="flex justify-between text-slate-400"><span>Màn hình:</span><span className="text-white">ASUS TUF 24.5" Fast-IPS 280Hz</span></div>
-                </div>
-              </div>
-            </div>
+            {/* Header Phân Khu Hiện Tại */}
+            {(() => {
+              const currentZoneConfig = SIX_ZONES_HOME.find((z) => z.id === selectedZone);
+              const zoneTitle = currentZoneConfig ? currentZoneConfig.name : 'Tất Cả 6 Phân Khu Cyber Zone';
+              const zoneBadge = currentZoneConfig ? currentZoneConfig.badge : 'TOÀN BỘ 42 MÁY/BÀN';
+              const zoneRate = currentZoneConfig ? currentZoneConfig.rate : '12.000đ - 79.000đ/h';
+              const zoneSeats = ALL_SEATS_CONFIG.filter((s) => selectedZone === 'ALL' || getZoneForSeat(s) === selectedZone);
+              
+              const availableCount = zoneSeats.filter((s) => getSeatLiveStatus(s).status === 'AVAILABLE').length;
+              const occupiedCount = zoneSeats.filter((s) => getSeatLiveStatus(s).status === 'OCCUPIED').length;
+              const reservedCount = zoneSeats.filter((s) => getSeatLiveStatus(s).status === 'RESERVED').length;
 
-            {/* Zone 2: Cyber Pro 540Hz (Khớp sơ đồ máy PRO-01..04) */}
-            <div className="rounded-2xl bg-slate-900/80 border border-white/10 hover:border-cyan-500/50 transition duration-300 overflow-hidden flex flex-col group">
-              <div className="h-48 overflow-hidden relative">
-                <img
-                  src="https://images.unsplash.com/photo-1511512578047-dfb367046420?auto=format&fit=crop&w=700&q=80"
-                  alt="Cyber Pro 540Hz"
-                  className="w-full h-full object-cover group-hover:scale-105 transition duration-500"
-                />
-                <span className="absolute top-3 left-3 px-2.5 py-1 rounded bg-black/80 backdrop-blur-md text-cyan-400 font-mono text-[10px] font-bold border border-cyan-500/40">
-                  02 • CYBER PRO 540HZ (18.000đ/h)
-                </span>
-              </div>
-              <div className="p-6 flex-1 flex flex-col justify-between space-y-4">
-                <div>
-                  <h3 className="text-lg font-bold text-white font-gaming">Cyber Pro 540Hz Try-Hard</h3>
-                  <p className="text-xs text-slate-400 mt-2 leading-relaxed">
-                    Khu vực máy thi đấu FPS cao cấp (mã PRO-01..04). Màn hình Zowie 540Hz phá vỡ mọi giới hạn tốc độ, phím Wooting 60HE Hall Effect Rapid Trigger, ghế Herman Miller Embody.
-                  </p>
-                </div>
-                <div className="pt-4 border-t border-white/10 font-mono text-xs space-y-1.5">
-                  <div className="flex justify-between text-slate-400"><span>Cấu hình:</span><span className="text-cyan-400 font-bold">Ryzen 7 7800X3D • RTX 4080 Super</span></div>
-                  <div className="flex justify-between text-slate-400"><span>Màn hình:</span><span className="text-white">BenQ Zowie XL2566K 540Hz DyAc+</span></div>
-                </div>
-              </div>
-            </div>
+              return (
+                <div className="p-6 md:p-8 rounded-3xl bg-gradient-to-r from-slate-900 via-[#0a1622] to-slate-900 border border-white/10 shadow-2xl space-y-6">
+                  <div className="flex flex-col lg:flex-row justify-between lg:items-center gap-4 border-b border-white/10 pb-6">
+                    <div>
+                      <div className="flex items-center gap-2 mb-1.5">
+                        <span className="px-2.5 py-0.5 rounded font-mono text-[10px] font-bold bg-emerald-400 text-black">
+                          {zoneBadge}
+                        </span>
+                        <span className="px-2 py-0.5 rounded font-mono text-[10px] text-slate-300 bg-white/5 border border-white/10">
+                          ĐƠN GIÁ: {zoneRate}
+                        </span>
+                      </div>
+                      <h3 className="text-2xl md:text-3xl font-black text-white font-gaming flex items-center gap-3">
+                        <span>{zoneTitle}</span>
+                      </h3>
+                      <p className="text-xs text-slate-400 mt-1">
+                        Bấm vào máy bất kỳ để xem cấu hình phần cứng chi tiết (CPU, GPU, Screen, Gear) và đặt giữ chỗ ngay lập tức.
+                      </p>
+                    </div>
 
-            {/* Zone 3: Ultra VIP Suite (Khớp sơ đồ máy VIP-01..08) */}
-            <div className="rounded-2xl bg-slate-900/80 border border-white/10 hover:border-purple-500/50 transition duration-300 overflow-hidden flex flex-col group">
-              <div className="h-48 overflow-hidden relative">
-                <img
-                  src="https://images.unsplash.com/photo-1587202372775-e229f172b9d7?auto=format&fit=crop&w=700&q=80"
-                  alt="Ultra VIP Suite"
-                  className="w-full h-full object-cover group-hover:scale-105 transition duration-500"
-                />
-                <span className="absolute top-3 left-3 px-2.5 py-1 rounded bg-black/80 backdrop-blur-md text-purple-400 font-mono text-[10px] font-bold border border-purple-500/40">
-                  03 • ULTRA VIP SUITE (22.000đ/h)
-                </span>
-              </div>
-              <div className="p-6 flex-1 flex flex-col justify-between space-y-4">
-                <div>
-                  <h3 className="text-lg font-bold text-white font-gaming">Phòng Riêng Ultra VIP Tầng 2</h3>
-                  <p className="text-xs text-slate-400 mt-2 leading-relaxed">
-                    Dãy phòng VIP riêng biệt (mã VIP-01..08 bao gồm máy bạn trải nghiệm VIP-08). Cách âm 45dB, ghế bọc da Nappa ngả 160°, chuột Zowie EC2-CW không dây, bàn phím Akko Custom Lube.
-                  </p>
-                </div>
-                <div className="pt-4 border-t border-white/10 font-mono text-xs space-y-1.5">
-                  <div className="flex justify-between text-slate-400"><span>Cấu hình:</span><span className="text-purple-400 font-bold">Core i7-14700K • RTX 4070Ti Super</span></div>
-                  <div className="flex justify-between text-slate-400"><span>Màn hình:</span><span className="text-white">ASUS ROG Swift 27" 240Hz Fast-IPS</span></div>
-                </div>
-              </div>
-            </div>
+                    {/* Thống kê trạng thái máy của khu */}
+                    <div className="flex flex-wrap items-center gap-2 text-xs font-mono">
+                      <div className="px-3 py-1.5 rounded-xl bg-emerald-500/15 border border-emerald-500/40 text-emerald-300 flex items-center gap-1.5">
+                        <span className="w-2 h-2 rounded-full bg-emerald-400" />
+                        <span><strong>{availableCount}</strong> Trống</span>
+                      </div>
+                      <div className="px-3 py-1.5 rounded-xl bg-rose-500/15 border border-rose-500/40 text-rose-300 flex items-center gap-1.5">
+                        <span className="w-2 h-2 rounded-full bg-rose-400" />
+                        <span><strong>{occupiedCount}</strong> Đang Chơi</span>
+                      </div>
+                      <div className="px-3 py-1.5 rounded-xl bg-amber-500/15 border border-amber-500/40 text-amber-300 flex items-center gap-1.5">
+                        <span className="w-2 h-2 rounded-full bg-amber-400" />
+                        <span><strong>{reservedCount}</strong> Đã Giữ Chỗ</span>
+                      </div>
+                    </div>
+                  </div>
 
-            {/* Zone 4: Đấu Trường Arena 5vs5 (Khớp sơ đồ máy ARENA-A1..B5) */}
-            <div className="rounded-2xl bg-slate-900/80 border border-white/10 hover:border-amber-500/50 transition duration-300 overflow-hidden flex flex-col group">
-              <div className="h-48 overflow-hidden relative">
-                <img
-                  src="https://images.unsplash.com/photo-1542751110-97427bbecf20?auto=format&fit=crop&w=700&q=80"
-                  alt="Arena 5vs5"
-                  className="w-full h-full object-cover group-hover:scale-105 transition duration-500"
-                />
-                <span className="absolute top-3 left-3 px-2.5 py-1 rounded bg-black/80 backdrop-blur-md text-amber-400 font-mono text-[10px] font-bold border border-amber-500/40">
-                  04 • ĐẤU TRƯỜNG ARENA 5VS5 (25.000đ/h)
-                </span>
-              </div>
-              <div className="p-6 flex-1 flex flex-col justify-between space-y-4">
-                <div>
-                  <h3 className="text-lg font-bold text-white font-gaming">Đấu Trường 5vs5 Chuẩn IESF</h3>
-                  <p className="text-xs text-slate-400 mt-2 leading-relaxed">
-                    Sàn đấu thi đấu đối kháng chuyên nghiệp (ARENA-A1..A5 Đội Xanh vs ARENA-B1..B5 Đội Đỏ). Đường truyền cáp quang riêng biệt ≤ 1ms, chuẩn bị sẵn sàng cho giải đấu trường học &amp; clan.
-                  </p>
-                </div>
-                <div className="pt-4 border-t border-white/10 font-mono text-xs space-y-1.5">
-                  <div className="flex justify-between text-slate-400"><span>Flagship:</span><span className="text-amber-400 font-bold">Core i9-14900K • RTX 4090 24GB</span></div>
-                  <div className="flex justify-between text-slate-400"><span>Màn hình:</span><span className="text-white">ROG Swift Pro OLED 540Hz Kỷ Lục</span></div>
-                </div>
-              </div>
-            </div>
+                  {/* Cấu hình tiêu chuẩn của phân khu (nếu đang chọn 1 phân khu cụ thể) */}
+                  {currentZoneConfig && (
+                    <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 font-mono text-xs">
+                      <div className="p-3 rounded-xl bg-black/40 border border-white/5 space-y-1">
+                        <div className="text-[10px] text-slate-400 flex items-center gap-1">
+                          <span className="material-symbols-outlined text-[14px] text-cyan-400">memory</span>
+                          VI XỬ LÝ (CPU)
+                        </div>
+                        <div className="font-bold text-white truncate">{currentZoneConfig.cpu}</div>
+                      </div>
 
-            {/* Zone 5: Couple Sanctuary (Khớp sơ đồ máy COUPLE-01..02) */}
-            <div className="rounded-2xl bg-slate-900/80 border border-white/10 hover:border-pink-500/50 transition duration-300 overflow-hidden flex flex-col group">
-              <div className="h-48 overflow-hidden relative">
-                <img
-                  src="https://images.unsplash.com/photo-1593305841991-05c297ba4575?auto=format&fit=crop&w=700&q=80"
-                  alt="Couple Sanctuary"
-                  className="w-full h-full object-cover group-hover:scale-105 transition duration-500"
-                />
-                <span className="absolute top-3 left-3 px-2.5 py-1 rounded bg-black/80 backdrop-blur-md text-pink-400 font-mono text-[10px] font-bold border border-pink-500/40">
-                  05 • COUPLE SANCTUARY (45.000đ/h)
-                </span>
-              </div>
-              <div className="p-6 flex-1 flex flex-col justify-between space-y-4">
-                <div>
-                  <h3 className="text-lg font-bold text-white font-gaming">Couple Suite Phòng Đôi Riêng Tư</h3>
-                  <p className="text-xs text-slate-400 mt-2 leading-relaxed">
-                    Phòng đôi hẹn hò gaming riêng tư cách âm (COUPLE-01..02). Ghế sofa đôi Nappa ngả 180°, 2 tai nghe độc lập, ánh sáng LED RGB chuyển sắc theo cảm xúc.
-                  </p>
-                </div>
-                <div className="pt-4 border-t border-white/10 font-mono text-xs space-y-1.5">
-                  <div className="flex justify-between text-slate-400"><span>Cấu hình đôi:</span><span className="text-pink-400 font-bold">2x Core i7-14700K • 2x RTX 4070</span></div>
-                  <div className="flex justify-between text-slate-400"><span>Màn hình:</span><span className="text-white">2x Samsung Odyssey G7 27" Cong</span></div>
-                </div>
-              </div>
-            </div>
+                      <div className="p-3 rounded-xl bg-black/40 border border-white/5 space-y-1">
+                        <div className="text-[10px] text-slate-400 flex items-center gap-1">
+                          <span className="material-symbols-outlined text-[14px] text-emerald-400">videogame_asset</span>
+                          CARD ĐỒ HỌA (GPU)
+                        </div>
+                        <div className="font-bold text-white truncate">{currentZoneConfig.gpu}</div>
+                      </div>
 
-            {/* Zone 6: Console Lounge & PS5 Pro (Khớp sơ đồ máy CONSOLE-01..02) */}
-            <div className="rounded-2xl bg-slate-900/80 border border-white/10 hover:border-blue-500/50 transition duration-300 overflow-hidden flex flex-col group">
-              <div className="h-48 overflow-hidden relative">
-                <img
-                  src="https://images.unsplash.com/photo-1606813907291-d86efa9b94db?auto=format&fit=crop&w=700&q=80"
-                  alt="Console Living"
-                  className="w-full h-full object-cover group-hover:scale-105 transition duration-500"
-                />
-                <span className="absolute top-3 left-3 px-2.5 py-1 rounded bg-black/80 backdrop-blur-md text-blue-400 font-mono text-[10px] font-bold border border-blue-500/40">
-                  06 • CONSOLE LOUNGE &amp; PS5 PRO (79.000đ/h)
-                </span>
-              </div>
-              <div className="p-6 flex-1 flex flex-col justify-between space-y-4">
-                <div>
-                  <h3 className="text-lg font-bold text-white font-gaming">Console Lounge PS5 Pro &amp; Bida</h3>
-                  <p className="text-xs text-slate-400 mt-2 leading-relaxed">
-                    Phòng riêng hội bạn chiến FC25, Mortal Kombat, Mario Kart (CONSOLE-01..02) và Billiards Club 10 bàn Aileex King. TV 75" 4K OLED 120Hz Dolby Vision, 4 tay cầm DualSense Edge.
-                  </p>
-                </div>
-                <div className="pt-4 border-t border-white/10 font-mono text-xs space-y-1.5">
-                  <div className="flex justify-between text-slate-400"><span>Hệ máy:</span><span className="text-blue-400 font-bold">PS5 Pro + Nintendo Switch OLED</span></div>
-                  <div className="flex justify-between text-slate-400"><span>Hiển thị:</span><span className="text-white">LG OLED G3 75" 4K 120Hz Dolby Atmos</span></div>
-                </div>
-              </div>
-            </div>
+                      <div className="p-3 rounded-xl bg-black/40 border border-white/5 space-y-1">
+                        <div className="text-[10px] text-slate-400 flex items-center gap-1">
+                          <span className="material-symbols-outlined text-[14px] text-amber-400">monitor</span>
+                          MÀN HÌNH GAMING
+                        </div>
+                        <div className="font-bold text-white truncate">{currentZoneConfig.screen}</div>
+                      </div>
 
+                      <div className="p-3 rounded-xl bg-black/40 border border-white/5 space-y-1">
+                        <div className="text-[10px] text-slate-400 flex items-center gap-1">
+                          <span className="material-symbols-outlined text-[14px] text-pink-400">keyboard</span>
+                          GEAR &amp; GHẾ ĐI KÈM
+                        </div>
+                        <div className="font-bold text-white truncate">{currentZoneConfig.gear}</div>
+                      </div>
+                    </div>
+                  )}
+
+                  {/* LƯỚI PHÒNG MÁY / TRẠM MÁY THỜI GIAN THỰC */}
+                  <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 xl:grid-cols-6 gap-3.5 pt-2">
+                    {zoneSeats.map((seat) => {
+                      const live = getSeatLiveStatus(seat);
+                      const price = getSeatPrice(seat);
+                      const isVipExperience = seat.id === 'VIP-08';
+                      const isSelectedForBooking = selectedSeatForBooking === seat.id;
+
+                      return (
+                        <div
+                          key={seat.id}
+                          className={`rounded-2xl p-4 transition duration-200 border flex flex-col justify-between space-y-3 relative group ${
+                            isSelectedForBooking
+                              ? 'bg-emerald-500/15 border-emerald-400 ring-2 ring-emerald-400 shadow-xl'
+                              : live.status === 'AVAILABLE'
+                              ? 'bg-slate-900/90 border-white/10 hover:border-emerald-400/60 hover:bg-slate-800/80'
+                              : live.status === 'OCCUPIED'
+                              ? 'bg-[#180d12]/90 border-rose-500/30 hover:border-rose-500/60'
+                              : 'bg-[#18140d]/90 border-amber-500/30 hover:border-amber-500/60'
+                          }`}
+                        >
+                          {/* Mã máy + Badge */}
+                          <div>
+                            <div className="flex items-start justify-between gap-1 mb-1.5">
+                              <span className="text-base sm:text-lg font-black text-white font-gaming tracking-wider">
+                                {seat.id}
+                              </span>
+                              <span className={`text-[9px] font-mono font-bold px-1.5 py-0.5 rounded border flex items-center gap-1 shrink-0 ${live.badgeClass}`}>
+                                <span className={`w-1.5 h-1.5 rounded-full ${live.dotClass}`} />
+                                {live.label}
+                              </span>
+                            </div>
+
+                            {/* Tag máy trải nghiệm */}
+                            {isVipExperience && (
+                              <div className="mb-2 px-1.5 py-0.5 rounded bg-purple-500/20 border border-purple-500/40 text-purple-300 font-mono text-[9px] font-bold text-center">
+                                ⭐ MÁY TRẢI NGHIỆM ĐỘC QUYỀN
+                              </div>
+                            )}
+
+                            {/* Thông tin khách nếu bận/đặt */}
+                            {live.occupant && (
+                              <div className="text-[10px] font-mono text-slate-300 truncate mb-1">
+                                👤 {live.occupant}
+                              </div>
+                            )}
+
+                            {/* Cấu hình rút gọn */}
+                            <div className="font-mono text-[10px] text-slate-400 space-y-0.5">
+                              <div className="truncate text-slate-300">{seat.cpu}</div>
+                              <div className="truncate text-cyan-400">{seat.gpu}</div>
+                              <div className="truncate text-slate-400">{seat.screen}</div>
+                            </div>
+                          </div>
+
+                          {/* Giá tiền & Nút thao tác */}
+                          <div className="pt-2 border-t border-white/10 space-y-2">
+                            <div className="flex justify-between items-center text-xs font-mono">
+                              <span className="text-slate-400 text-[10px]">Đơn giá:</span>
+                              <span className="font-bold text-emerald-400">{price}</span>
+                            </div>
+
+                            <div className="grid grid-cols-2 gap-1.5 pt-1">
+                              <button
+                                type="button"
+                                onClick={() => setSelectedModalSeat(seat)}
+                                className="px-2 py-1.5 rounded-lg bg-white/5 hover:bg-white/15 text-slate-200 hover:text-white font-mono text-[10px] font-bold border border-white/10 transition text-center flex items-center justify-center gap-1"
+                                title="Xem cấu hình chi tiết"
+                              >
+                                <span className="material-symbols-outlined text-[13px]">info</span>
+                                <span>Chi Tiết</span>
+                              </button>
+
+                              <button
+                                type="button"
+                                onClick={() => handleSelectSeatToBook(seat)}
+                                className={`px-2 py-1.5 rounded-lg font-mono text-[10px] font-extrabold transition text-center flex items-center justify-center gap-1 ${
+                                  isSelectedForBooking
+                                    ? 'bg-emerald-400 text-black'
+                                    : 'bg-emerald-500/20 hover:bg-emerald-400 hover:text-black text-emerald-300 border border-emerald-500/40'
+                                }`}
+                                title="Đặt giữ chỗ máy này"
+                              >
+                                <span className="material-symbols-outlined text-[13px]">bolt</span>
+                                <span>{isSelectedForBooking ? 'Đang Chọn' : 'Đặt Máy'}</span>
+                              </button>
+                            </div>
+                          </div>
+                        </div>
+                      );
+                    })}
+                  </div>
+                </div>
+              );
+            })()}
           </div>
         </div>
 
@@ -817,8 +1225,23 @@ export default function Home() {
               </div>
             </div>
 
-            {/* Trạng thái xác thực tài khoản */}
-            <div className="p-3 rounded-xl bg-black/40 border border-white/10 mt-4 text-xs font-mono">
+            {/* Trạng thái xác thực tài khoản & Máy đang chọn */}
+            <div className="p-3 rounded-xl bg-black/40 border border-white/10 mt-4 text-xs font-mono space-y-2">
+              {selectedSeatForBooking && (
+                <div className="flex items-center justify-between p-2 rounded-lg bg-emerald-500/15 border border-emerald-500/40 text-emerald-300">
+                  <span className="flex items-center gap-1.5 font-bold">
+                    <span className="material-symbols-outlined text-[16px] text-emerald-400">check_circle</span>
+                    Đang chọn trạm máy: <strong className="text-white">{selectedSeatForBooking}</strong>
+                  </span>
+                  <button
+                    type="button"
+                    onClick={() => setSelectedSeatForBooking(null)}
+                    className="text-[10px] text-slate-400 hover:text-white underline"
+                  >
+                    Bỏ chọn máy
+                  </button>
+                </div>
+              )}
               {currentUser ? (
                 <div className="text-emerald-400 flex items-center gap-2">
                   <span className="material-symbols-outlined text-sm">verified_user</span>
@@ -849,9 +1272,9 @@ export default function Home() {
                   </div>
                 </div>
                 <div className="flex gap-2 shrink-0">
-                  <Link href="/booking" className="px-3 py-1.5 rounded-lg bg-emerald-400 text-black font-black text-[11px]">
-                    Xem Sơ Đồ Máy &rarr;
-                  </Link>
+                  <a href="#phan-khu" className="px-3 py-1.5 rounded-lg bg-emerald-400 text-black font-black text-[11px]">
+                    Xem Phòng Máy Vừa Đặt &rarr;
+                  </a>
                   <Link href="/server" className="px-3 py-1.5 rounded-lg bg-purple-600 text-white font-black text-[11px]">
                     Xem Trên Server &rarr;
                   </Link>
@@ -1791,6 +2214,146 @@ export default function Home() {
                 className="px-4 py-2 rounded-xl bg-slate-800 hover:bg-slate-700 text-white font-bold text-xs cursor-pointer"
               >
                 Đóng
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+            {/* ══════════ MODAL CHI TIẾT CẤU HÌNH PHÒNG MÁY / TRẠM MÁY ══════════ */}
+      {selectedModalSeat && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/80 backdrop-blur-md animate-fadeIn">
+          <div className="relative w-full max-w-2xl bg-gradient-to-br from-slate-900 via-[#0a1420] to-slate-950 border border-emerald-500/40 rounded-3xl p-6 md:p-8 shadow-2xl text-white space-y-6">
+            
+            {/* Header Modal */}
+            <div className="flex items-start justify-between border-b border-white/10 pb-4">
+              <div>
+                <div className="flex items-center gap-2 mb-1">
+                  <span className="px-2.5 py-0.5 rounded font-mono text-[10px] font-bold bg-emerald-400 text-black uppercase">
+                    {selectedModalSeat.zoneName}
+                  </span>
+                  <span className="px-2 py-0.5 rounded font-mono text-[10px] text-slate-300 bg-white/5 border border-white/10">
+                    TẦNG {selectedModalSeat.floor}
+                  </span>
+                  {selectedModalSeat.id === 'VIP-08' && (
+                    <span className="px-2 py-0.5 rounded font-mono text-[10px] font-bold bg-purple-500/30 text-purple-300 border border-purple-500/50">
+                      ⭐ MÁY TRẢI NGHIỆM ĐỘC QUYỀN
+                    </span>
+                  )}
+                </div>
+                <h3 className="text-2xl sm:text-3xl font-black text-white font-gaming flex items-center gap-3">
+                  <span>MÃ TRẠM: {selectedModalSeat.id}</span>
+                </h3>
+              </div>
+
+              <button
+                type="button"
+                onClick={() => setSelectedModalSeat(null)}
+                className="w-9 h-9 rounded-full bg-white/5 hover:bg-white/15 text-slate-400 hover:text-white flex items-center justify-center transition border border-white/10"
+              >
+                ✕
+              </button>
+            </div>
+
+            {/* Trạng thái & Đơn giá */}
+            <div className="flex flex-wrap items-center justify-between gap-3 p-3.5 rounded-2xl bg-black/40 border border-white/5 font-mono text-xs">
+              <div className="flex items-center gap-2">
+                <span className="text-slate-400">Trạng thái:</span>
+                {(() => {
+                  const live = getSeatLiveStatus(selectedModalSeat);
+                  return (
+                    <span className={`px-2.5 py-1 rounded-lg border font-bold flex items-center gap-1.5 ${live.badgeClass}`}>
+                      <span className={`w-2 h-2 rounded-full ${live.dotClass}`} />
+                      {live.label}
+                      {live.occupant && ` (${live.occupant})`}
+                    </span>
+                  );
+                })()}
+              </div>
+
+              <div className="flex items-center gap-2">
+                <span className="text-slate-400">Đơn giá giờ chơi:</span>
+                <span className="text-emerald-400 font-extrabold text-sm sm:text-base">
+                  {getSeatPrice(selectedModalSeat)}
+                </span>
+              </div>
+            </div>
+
+            {/* Bảng cấu hình phần cứng chi tiết */}
+            <div className="space-y-3 font-mono text-xs">
+              <div className="text-[11px] font-bold text-slate-400 uppercase tracking-wider flex items-center gap-1.5">
+                <span className="material-symbols-outlined text-[15px] text-emerald-400">tune</span>
+                THÔNG SỐ KỸ THUẬT &amp; TIỆN NGHI CAO CẤP
+              </div>
+
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                <div className="p-3.5 rounded-xl bg-white/5 border border-white/5 space-y-1">
+                  <div className="text-[10px] text-cyan-400 flex items-center gap-1.5">
+                    <span className="material-symbols-outlined text-[14px]">memory</span>
+                    BỘ VI XỬ LÝ (CPU)
+                  </div>
+                  <div className="font-bold text-white">{selectedModalSeat.cpu}</div>
+                </div>
+
+                <div className="p-3.5 rounded-xl bg-white/5 border border-white/5 space-y-1">
+                  <div className="text-[10px] text-emerald-400 flex items-center gap-1.5">
+                    <span className="material-symbols-outlined text-[14px]">videogame_asset</span>
+                    CARD ĐỒ HỌA (GPU)
+                  </div>
+                  <div className="font-bold text-white">{selectedModalSeat.gpu}</div>
+                </div>
+
+                <div className="p-3.5 rounded-xl bg-white/5 border border-white/5 space-y-1">
+                  <div className="text-[10px] text-amber-400 flex items-center gap-1.5">
+                    <span className="material-symbols-outlined text-[14px]">monitor</span>
+                    MÀN HÌNH GAMING
+                  </div>
+                  <div className="font-bold text-white">{selectedModalSeat.screen}</div>
+                </div>
+
+                <div className="p-3.5 rounded-xl bg-white/5 border border-white/5 space-y-1">
+                  <div className="text-[10px] text-pink-400 flex items-center gap-1.5">
+                    <span className="material-symbols-outlined text-[14px]">keyboard</span>
+                    GAMING GEAR CHÍNH HÃNG
+                  </div>
+                  <div className="font-bold text-white">{selectedModalSeat.gear}</div>
+                </div>
+
+                <div className="p-3.5 rounded-xl bg-white/5 border border-white/5 space-y-1">
+                  <div className="text-[10px] text-purple-400 flex items-center gap-1.5">
+                    <span className="material-symbols-outlined text-[14px]">chair</span>
+                    GHẾ &amp; CÔNG THÁI HỌC
+                  </div>
+                  <div className="font-bold text-white">{selectedModalSeat.chair}</div>
+                </div>
+
+                <div className="p-3.5 rounded-xl bg-white/5 border border-white/5 space-y-1">
+                  <div className="text-[10px] text-sky-400 flex items-center gap-1.5">
+                    <span className="material-symbols-outlined text-[14px]">wifi</span>
+                    MẠNG LAN &amp; DỊCH VỤ F&amp;B
+                  </div>
+                  <div className="font-bold text-white">Đường truyền 10Gbps ping 1ms • Gọi món tận bàn</div>
+                </div>
+              </div>
+            </div>
+
+            {/* Nút hành động */}
+            <div className="flex flex-col sm:flex-row justify-end gap-3 pt-2 border-t border-white/10 font-mono text-xs">
+              <button
+                type="button"
+                onClick={() => setSelectedModalSeat(null)}
+                className="px-5 py-2.5 rounded-xl bg-white/5 hover:bg-white/10 text-slate-300 font-bold transition text-center"
+              >
+                Đóng
+              </button>
+
+              <button
+                type="button"
+                onClick={() => handleSelectSeatToBook(selectedModalSeat)}
+                className="px-6 py-2.5 rounded-xl bg-emerald-400 hover:bg-emerald-300 text-black font-extrabold shadow-lg shadow-emerald-500/25 transition text-center flex items-center justify-center gap-2"
+              >
+                <span className="material-symbols-outlined text-[18px]">bolt</span>
+                <span>ĐẶT GIỮ CHỖ MÁY NÀY NGAY</span>
               </button>
             </div>
           </div>

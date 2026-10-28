@@ -353,13 +353,6 @@ export default function GlobalNavBar() {
             >
               SHOWROOM
             </Link>
-
-            <Link
-              href="/booking"
-              className={`transition hover:text-emerald-400 ${pathname === '/booking' ? 'text-emerald-400 font-black' : ''}`}
-            >
-              SƠ ĐỒ MÁY
-            </Link>
           </div>
 
           {/* Cụm Bên Phải: Hotline, Nút Đặt Máy Trước & ĐĂNG NHẬP / ĐĂNG KÝ */}
@@ -371,9 +364,9 @@ export default function GlobalNavBar() {
               <span className="text-emerald-400">📞</span> 1900 8888
             </a>
 
-            {/* Nút Đặt Máy Trước */}
+            {/* Nút Đặt Máy Trước (Dẫn trực tiếp đến 6 Phân Khu để chọn máy) */}
             <Link
-              href="/#dat-cho"
+              href="/#phan-khu"
               className="px-3.5 sm:px-4 py-2 bg-emerald-400 hover:bg-emerald-300 text-black font-extrabold text-xs rounded-xl shadow-lg shadow-emerald-500/25 transition uppercase font-sans flex items-center gap-1"
             >
               <span>ĐẶT MÁY TRƯỚC</span>
