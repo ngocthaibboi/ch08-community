@@ -5,60 +5,35 @@ import Link from 'next/link';
 import { usePathname } from 'next/navigation';
 import { getStoredOrders, STORAGE_EVENT_NAME } from '@/lib/orderStore';
 import { getStoredWallet, WALLET_EVENT_NAME, UserWallet, INITIAL_WALLET } from '@/lib/walletStore';
+import { getLoggedInUser, logoutUser, AUTH_EVENT_NAME, AuthUser } from '@/lib/authStore';
+import AuthModal from '@/components/auth/AuthModal';
 
 export default function GlobalNavBar() {
   const pathname = usePathname();
   const navContainerRef = useRef<HTMLDivElement>(null);
-  const [isDragging, setIsDragging] = useState(false);
-  const [startX, setStartX] = useState(0);
-  const [scrollLeft, setScrollLeft] = useState(0);
-  const [hasMoved, setHasMoved] = useState(false);
   const [pendingOrdersCount, setPendingOrdersCount] = useState(0);
   const [wallet, setWallet] = useState<UserWallet>(INITIAL_WALLET);
+  const [currentUser, setCurrentUser] = useState<AuthUser | null>(null);
+
+  // Modal Auth
+  const [isAuthModalOpen, setIsAuthModalOpen] = useState(false);
+  const [authModalTab, setAuthModalTab] = useState<'login' | 'register'>('login');
+
+  // Dropdown Khu máy
+  const [isServiceDropdownOpen, setIsServiceDropdownOpen] = useState(false);
+  const dropdownRef = useRef<HTMLDivElement>(null);
 
   // Kiểm tra nếu đang ở Cổng Bếp & Vận Hành
   const isStaffPortal = pathname === '/kds' || pathname === '/dashboard';
 
-  // Interface cho menu links
-  interface NavLinkItem {
-    href: string;
-    label: string;
-    icon: string;
-    badge?: string;
-    badgeBg?: string;
-    countBadge?: boolean;
-    liveBadge?: boolean;
-  }
-
   // 5 Chế độ trải nghiệm hệ sinh thái Cyber Game
   const ecosystemModes = [
-    { href: '/', label: '1. Cổng Khách Hàng (Trang Chủ)', icon: 'public', activeBadge: 'Web Chính' },
-    { href: '/client-pc', label: '2. Khách Ngồi Tại Máy (VIP-08)', icon: 'desktop_windows', activeBadge: 'Tại Bàn' },
-    { href: '/server', label: '3. Máy Chủ Phòng Máy (Server Tổng)', icon: 'dns', activeBadge: 'Master Node' },
+    { href: '/', label: '1. Cổng Khách Hàng (Trang Chủ)', icon: 'public' },
+    { href: '/client-pc', label: '2. Khách Ngồi Tại Máy (VIP-08)', icon: 'desktop_windows' },
+    { href: '/server', label: '3. Máy Chủ Phòng Máy (Server Tổng)', icon: 'dns' },
     { href: '/kds', label: '4. Màn Hình Bếp (KDS)', icon: 'soup_kitchen', countBadge: true },
     { href: '/dashboard', label: '5. Quản Lý Doanh Thu', icon: 'monitoring', liveBadge: true },
   ];
-
-  // Menu điều hướng chi tiết
-  const playerLinks: NavLinkItem[] = [
-    { href: '/', label: 'Trang chủ', icon: 'home' },
-    { href: '/client-pc', label: 'Màn hình máy VIP-08', icon: 'desktop_windows', badge: 'LIVE PC', badgeBg: 'bg-emerald-500 text-black' },
-    { href: '/server', label: 'Máy chủ Server', icon: 'dns', badge: 'MASTER', badgeBg: 'bg-purple-500 text-white' },
-    { href: '/booking', label: 'Sơ đồ máy', icon: 'table_restaurant' },
-    { href: '/menu', label: 'Menu đồ ăn F&B', icon: 'restaurant_menu', badge: 'HOT', badgeBg: 'bg-rose-500 text-white' },
-    { href: '/games', label: 'Kho game', icon: 'sports_esports', badge: '16 GAME', badgeBg: 'bg-cyan-500 text-slate-950' },
-    { href: '/auth', label: 'Nạp ví tiền', icon: 'account_balance_wallet' },
-  ];
-
-  const staffLinks: NavLinkItem[] = [
-    { href: '/server', label: 'Máy chủ Server Quản Lý', icon: 'dns', liveBadge: true },
-    { href: '/kds', label: 'Màn hình bếp KDS', icon: 'soup_kitchen', countBadge: true },
-    { href: '/dashboard', label: 'Thống kê doanh thu & Vận hành', icon: 'monitoring', liveBadge: true },
-    { href: '/client-pc', label: 'Xem màn hình máy trạm', icon: 'desktop_windows' },
-    { href: '/auth', label: 'Quầy nạp tiền', icon: 'point_of_sale' },
-  ];
-
-  const currentNavLinks = isStaffPortal ? staffLinks : playerLinks;
 
   useEffect(() => {
     const updateAll = () => {
@@ -67,6 +42,7 @@ export default function GlobalNavBar() {
         const pending = orders.filter((o) => o.status === 'PENDING' || o.status === 'COOKING').length;
         setPendingOrdersCount(pending);
         setWallet(getStoredWallet());
+        setCurrentUser(getLoggedInUser());
       } catch {
         // Fallback
       }
@@ -75,56 +51,49 @@ export default function GlobalNavBar() {
     updateAll();
     window.addEventListener(STORAGE_EVENT_NAME, updateAll);
     window.addEventListener(WALLET_EVENT_NAME, updateAll);
+    window.addEventListener(AUTH_EVENT_NAME, updateAll);
     window.addEventListener('storage', updateAll);
+
+    // Click outside to close dropdown
+    const handleClickOutside = (e: MouseEvent) => {
+      if (dropdownRef.current && !dropdownRef.current.contains(e.target as Node)) {
+        setIsServiceDropdownOpen(false);
+      }
+    };
+    document.addEventListener('mousedown', handleClickOutside);
 
     return () => {
       window.removeEventListener(STORAGE_EVENT_NAME, updateAll);
       window.removeEventListener(WALLET_EVENT_NAME, updateAll);
+      window.removeEventListener(AUTH_EVENT_NAME, updateAll);
       window.removeEventListener('storage', updateAll);
+      document.removeEventListener('mousedown', handleClickOutside);
     };
   }, []);
 
-  const handleMouseDown = (e: React.MouseEvent) => {
-    if (!navContainerRef.current) return;
-    setIsDragging(true);
-    setHasMoved(false);
-    setStartX(e.pageX - navContainerRef.current.offsetLeft);
-    setScrollLeft(navContainerRef.current.scrollLeft);
+  const handleOpenAuth = (mode: 'login' | 'register') => {
+    setAuthModalTab(mode);
+    setIsAuthModalOpen(true);
   };
 
-  const handleMouseMove = (e: React.MouseEvent) => {
-    if (!isDragging || !navContainerRef.current) return;
-    e.preventDefault();
-    const x = e.pageX - navContainerRef.current.offsetLeft;
-    const walk = (x - startX) * 1.6;
-    if (Math.abs(walk) > 4) {
-      setHasMoved(true);
+  const handleLogout = () => {
+    if (confirm('Bạn có chắc chắn muốn đăng xuất tài khoản?')) {
+      logoutUser();
+      setCurrentUser(null);
     }
-    navContainerRef.current.scrollLeft = scrollLeft - walk;
-  };
-
-  const handleMouseUp = () => setIsDragging(false);
-  const handleMouseLeave = () => setIsDragging(false);
-
-  const scrollNav = (direction: 'left' | 'right') => {
-    if (!navContainerRef.current) return;
-    navContainerRef.current.scrollBy({
-      left: direction === 'left' ? -200 : 200,
-      behavior: 'smooth',
-    });
   };
 
   return (
     <header className="sticky top-0 z-50 flex flex-col shadow-2xl">
       
-      {/* ══════════ THANH 1: BỘ CHUYỂN ĐỔI 4 GÓC NHÌN HỆ SINH THÁI ══════════ */}
-      <div className="bg-[#020617] border-b border-white/10 px-3 sm:px-4 py-2 font-mono">
-        <div className="max-w-7xl mx-auto flex flex-col lg:flex-row items-start lg:items-center justify-between gap-2.5">
+      {/* ══════════ THANH 1: BỘ CHUYỂN ĐỔI 5 GÓC NHÌN HỆ SINH THÁI CYBER ══════════ */}
+      <div className="bg-[#020617] border-b border-white/10 px-3 sm:px-4 py-1.5 font-mono text-[10px] sm:text-[11px]">
+        <div className="max-w-7xl mx-auto flex flex-col lg:flex-row items-start lg:items-center justify-between gap-2">
           
           <div className="flex items-center gap-2">
             <span className="w-2 h-2 rounded-full bg-emerald-400 animate-ping"></span>
-            <span className="text-[10px] sm:text-[11px] font-bold text-slate-400 uppercase tracking-widest">
-              CHỌN GÓC NHÌN TRẢI NGHIỆM:
+            <span className="font-bold text-slate-400 uppercase tracking-wider">
+              GIAO DIỆN HỆ THỐNG:
             </span>
           </div>
 
@@ -135,13 +104,13 @@ export default function GlobalNavBar() {
                 <Link
                   key={mode.href}
                   href={mode.href}
-                  className={`flex items-center gap-1.5 px-2.5 sm:px-3 py-1 rounded-xl text-[10px] sm:text-[11px] font-bold transition-all ${
+                  className={`flex items-center gap-1.5 px-2.5 sm:px-3 py-1 rounded-lg font-bold transition-all ${
                     isActive
-                      ? 'bg-gradient-to-r from-emerald-400 to-cyan-400 text-slate-950 font-black shadow-[0_0_15px_rgba(16,185,129,0.4)] scale-105'
+                      ? 'bg-gradient-to-r from-emerald-400 to-cyan-400 text-slate-950 font-black shadow-[0_0_12px_rgba(16,185,129,0.35)] scale-105'
                       : 'bg-slate-900/90 text-slate-300 hover:text-white border border-white/10 hover:border-emerald-500/40'
                   }`}
                 >
-                  <span className="material-symbols-outlined text-[15px]">{mode.icon}</span>
+                  <span className="material-symbols-outlined text-[14px]">{mode.icon}</span>
                   <span>{mode.label}</span>
                   {mode.countBadge && pendingOrdersCount > 0 && (
                     <span className="bg-amber-400 text-slate-950 text-[9px] font-black px-1.5 py-0.2 rounded-full font-mono animate-pulse">
@@ -159,158 +128,252 @@ export default function GlobalNavBar() {
         </div>
       </div>
 
-      {/* ══════════ THANH 2: NAVBAR ĐIỀU HƯỚNG CHÍNH ══════════ */}
-      <nav className={`backdrop-blur-md border-b px-3 sm:px-4 py-2.5 flex items-center justify-between gap-2 sm:gap-4 relative transition-colors ${
-        isStaffPortal ? 'bg-[#0c1322]/98 border-amber-500/30' : 'bg-[#070d1e]/90 border-white/10'
-      }`}>
-        
-        {/* Brand Logo */}
-        <Link href="/" className="flex items-center gap-2.5 group flex-shrink-0">
-          <div className={`w-9 h-9 rounded-xl flex items-center justify-center font-black text-lg transition-transform group-hover:scale-105 shadow-md ${
-            isStaffPortal
-              ? 'bg-gradient-to-r from-amber-500 to-orange-600 text-black shadow-[0_0_15px_rgba(245,158,11,0.4)]'
-              : 'bg-gradient-to-br from-emerald-400 via-teal-400 to-cyan-500 text-black shadow-lg shadow-emerald-500/20'
-          }`}>
-            {isStaffPortal ? 'OPS' : 'CZ'}
-          </div>
-          <div className="flex flex-col leading-none">
-            <span className="font-gaming font-black text-base sm:text-lg tracking-wider text-white">
-              {isStaffPortal ? (
-                <>CYBER<span className="text-amber-400">OPS</span></>
-              ) : (
-                <>CYBER<span className="text-emerald-400">ZONE</span></>
-              )}
+      {/* ══════════ THANH 2: TOP ANNOUNCEMENT BAR (Chuẩn Ảnh Mẫu) ══════════ */}
+      <div className="bg-black/90 border-b border-white/10 text-[11px] text-slate-400 py-1.5 px-4 font-mono">
+        <div className="max-w-7xl mx-auto flex flex-wrap justify-between items-center gap-2">
+          <div className="flex items-center gap-4">
+            <span className="inline-flex items-center gap-1.5 text-emerald-400 font-bold">
+              <span className="w-2 h-2 rounded-full bg-emerald-400 animate-pulse"></span>
+              ĐANG MỞ CỬA 24/7
             </span>
-            <span className={`text-[8px] sm:text-[9px] font-mono uppercase tracking-widest font-bold ${
-              isStaffPortal ? 'text-amber-400' : 'text-cyan-400'
-            }`}>
-              {isStaffPortal ? 'BẾP & VẬN HÀNH' : 'eSports & Complex'}
+            <span className="hidden sm:inline text-slate-300">
+              📍 182 Lê Duẩn, TP. Vinh (Gần ĐH Vinh)
             </span>
           </div>
-        </Link>
 
-        {/* Scrollable Navigation Tabs */}
-        <div className="relative flex-1 max-w-2xl mx-1 sm:mx-2 flex items-center">
-          <button
-            onClick={() => scrollNav('left')}
-            className="hidden md:flex w-7 h-7 rounded-lg bg-slate-800/90 hover:bg-slate-700 text-slate-300 hover:text-cyan-400 border border-slate-700/80 items-center justify-center mr-1 shadow-md z-10 flex-shrink-0 transition"
-            title="Cuộn sang trái"
-          >
-            <span className="material-symbols-outlined text-[18px]">chevron_left</span>
-          </button>
-
-          <div
-            ref={navContainerRef}
-            onMouseDown={handleMouseDown}
-            onMouseMove={handleMouseMove}
-            onMouseUp={handleMouseUp}
-            onMouseLeave={handleMouseLeave}
-            className={`flex items-center gap-1.5 sm:gap-2 overflow-x-auto select-none py-1 px-1 rounded-xl scrollbar-none transition-colors ${
-              isDragging ? 'cursor-grabbing' : 'cursor-grab'
-            }`}
-            style={{ scrollbarWidth: 'none', msOverflowStyle: 'none' }}
-          >
-            {currentNavLinks.map((link) => {
-              const isActive = pathname === link.href;
-
-              return (
-                <Link
-                  key={link.href}
-                  href={link.href}
-                  onClick={(e) => {
-                    if (hasMoved) e.preventDefault();
-                  }}
-                  className={`flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-bold transition-all duration-200 flex-shrink-0 whitespace-nowrap ${
-                    isActive
-                      ? isStaffPortal
-                        ? 'bg-gradient-to-r from-amber-500 to-orange-600 text-black font-black shadow-[0_0_15px_rgba(245,158,11,0.4)]'
-                        : 'bg-gradient-to-r from-emerald-400 via-teal-400 to-cyan-500 text-black font-black shadow-[0_0_15px_rgba(16,185,129,0.4)]'
-                      : 'bg-slate-900/80 hover:bg-slate-800 text-slate-300 hover:text-white border border-white/10 hover:border-emerald-500/40'
-                  }`}
-                >
-                  <span className="material-symbols-outlined text-[16px]">{link.icon}</span>
-                  <span>{link.label}</span>
-
-                  {link.badge && (
-                    <span className={`${link.badgeBg || 'bg-rose-500 text-white'} text-[9px] font-black px-1.5 py-0.2 rounded font-mono shadow-sm`}>
-                      {link.badge}
-                    </span>
-                  )}
-
-                  {link.countBadge && pendingOrdersCount > 0 && (
-                    <span className="bg-amber-400 text-black text-[9px] font-black px-1.5 py-0.2 rounded-full font-mono animate-pulse">
-                      {pendingOrdersCount}
-                    </span>
-                  )}
-
-                  {link.liveBadge && (
-                    <span className="w-2 h-2 rounded-full bg-emerald-400 inline-block animate-ping"></span>
-                  )}
-                </Link>
-              );
-            })}
+          <div className="flex items-center gap-4">
+            <span className="hidden md:inline text-amber-300 font-semibold">
+              ⚡ Tặng 100% nạp lần đầu cho Tân thủ
+            </span>
+            <a href="tel:19008888" className="text-cyan-400 hover:text-white transition font-bold flex items-center gap-1">
+              📞 Hotline: 1900 8888
+            </a>
           </div>
-
-          <button
-            onClick={() => scrollNav('right')}
-            className="hidden md:flex w-7 h-7 rounded-lg bg-slate-800/90 hover:bg-slate-700 text-slate-300 hover:text-cyan-400 border border-slate-700/80 items-center justify-center ml-1 shadow-md z-10 flex-shrink-0 transition"
-            title="Cuộn sang phải"
-          >
-            <span className="material-symbols-outlined text-[18px]">chevron_right</span>
-          </button>
         </div>
+      </div>
 
-        {/* Cụm phải: Số dư ví máy & Chuyển đổi nhanh Cổng */}
-        <div className="flex items-center gap-2 flex-shrink-0">
-          {!isStaffPortal ? (
-            <>
-              {/* Ví người chơi */}
-              <Link
-                href="/auth"
-                className="flex items-center gap-1.5 sm:gap-2 bg-slate-800 border border-slate-700 px-2 sm:px-2.5 py-1.5 rounded-lg hover:border-cyan-400 transition-colors"
+      {/* ══════════ THANH 3: NAVBAR CHÍNH (Đầy Đủ Nút Đăng Nhập / Đăng Ký) ══════════ */}
+      <nav className="border-b border-white/10 bg-[#070d1e]/95 backdrop-blur-md px-4 py-2.5">
+        <div className="max-w-7xl mx-auto flex items-center justify-between gap-4">
+          
+          {/* Logo Thương Hiệu */}
+          <Link href="/" className="flex items-center gap-3 group flex-shrink-0">
+            <div className="w-10 h-10 rounded-xl bg-gradient-to-br from-emerald-400 via-teal-400 to-cyan-500 flex items-center justify-center text-black font-black text-xl shadow-lg shadow-emerald-500/20 group-hover:scale-105 transition">
+              CZ
+            </div>
+            <div className="flex flex-col leading-none">
+              <span className="text-lg sm:text-xl font-black tracking-wider text-white font-gaming block">
+                CYBER<span className="text-emerald-400">ZONE</span>
+              </span>
+              <span className="text-[9px] text-cyan-400 tracking-widest font-mono uppercase block mt-0.5 font-bold">
+                ESPORTS &amp; COMPLEX
+              </span>
+            </div>
+          </Link>
+
+          {/* Menu Điều Hướng Trung Tâm (Giống Ảnh Mẫu Của Bạn) */}
+          <div className="hidden lg:flex items-center gap-5 text-xs font-mono font-bold uppercase tracking-wider text-slate-300">
+            <Link
+              href="/"
+              className={`transition hover:text-emerald-400 ${pathname === '/' ? 'text-emerald-400 font-black' : ''}`}
+            >
+              TRANG CHỦ
+            </Link>
+
+            {/* Dropdown: Khu máy & Dịch vụ */}
+            <div className="relative" ref={dropdownRef}>
+              <button
+                type="button"
+                onClick={() => setIsServiceDropdownOpen(!isServiceDropdownOpen)}
+                className="flex items-center gap-1 hover:text-emerald-400 transition py-2"
               >
-                <span className="material-symbols-outlined text-emerald-400 text-[16px]">account_balance_wallet</span>
-                <div className="flex flex-col leading-none text-left">
-                  <span className="text-[8px] sm:text-[9px] text-slate-400 font-semibold uppercase">Ví Máy: {wallet.pcName}</span>
-                  <span className="font-mono text-xs font-bold text-emerald-400">
-                    {wallet.balance.toLocaleString('vi-VN')}đ
-                  </span>
+                <span>Khu máy &amp; Dịch vụ</span>
+                <span className="material-symbols-outlined text-[16px]">expand_more</span>
+              </button>
+
+              {isServiceDropdownOpen && (
+                <div className="absolute left-0 top-full w-72 pt-2 z-50">
+                  <div className="p-3 bg-slate-900/95 border border-white/10 rounded-2xl shadow-2xl backdrop-blur-xl space-y-1">
+                    <Link
+                      href="/#phan-khu"
+                      onClick={() => setIsServiceDropdownOpen(false)}
+                      className="flex items-center gap-3 p-2 rounded-xl hover:bg-white/5 text-slate-300 hover:text-emerald-400 transition"
+                    >
+                      <span className="material-symbols-outlined text-emerald-400 text-lg">desktop_windows</span>
+                      <div>
+                        <div className="font-bold text-white normal-case">Đấu Trường Esports</div>
+                        <div className="text-[10px] text-slate-400 normal-case">RTX 5090 &amp; Màn hình 540Hz</div>
+                      </div>
+                    </Link>
+                    <Link
+                      href="/#phan-khu"
+                      onClick={() => setIsServiceDropdownOpen(false)}
+                      className="flex items-center gap-3 p-2 rounded-xl hover:bg-white/5 text-slate-300 hover:text-cyan-400 transition"
+                    >
+                      <span className="material-symbols-outlined text-cyan-400 text-lg">sports</span>
+                      <div>
+                        <div className="font-bold text-white normal-case">Billiards Lounge</div>
+                        <div className="text-[10px] text-slate-400 normal-case">10 Bàn Aileex King &amp; Min Carom</div>
+                      </div>
+                    </Link>
+                    <Link
+                      href="/#phan-khu"
+                      onClick={() => setIsServiceDropdownOpen(false)}
+                      className="flex items-center gap-3 p-2 rounded-xl hover:bg-white/5 text-slate-300 hover:text-purple-400 transition"
+                    >
+                      <span className="material-symbols-outlined text-purple-400 text-lg">sports_esports</span>
+                      <div>
+                        <div className="font-bold text-white normal-case">Console Suite</div>
+                        <div className="text-[10px] text-slate-400 normal-case">PS5 Pro &amp; OLED 75 inch</div>
+                      </div>
+                    </Link>
+                    <Link
+                      href="/#showroom"
+                      onClick={() => setIsServiceDropdownOpen(false)}
+                      className="flex items-center gap-3 p-2 rounded-xl hover:bg-white/5 text-slate-300 hover:text-amber-400 transition"
+                    >
+                      <span className="material-symbols-outlined text-amber-400 text-lg">storefront</span>
+                      <div>
+                        <div className="font-bold text-white normal-case">Showroom &amp; Gear Shop</div>
+                        <div className="text-[10px] text-slate-400 normal-case">Gaming gear &amp; Mod phím</div>
+                      </div>
+                    </Link>
+                    <Link
+                      href="/games"
+                      onClick={() => setIsServiceDropdownOpen(false)}
+                      className="flex items-center gap-3 p-2 rounded-xl hover:bg-white/5 text-slate-300 hover:text-emerald-400 transition border-t border-white/5 mt-1 pt-2"
+                    >
+                      <span className="material-symbols-outlined text-emerald-400 text-lg">stadia_controller</span>
+                      <div>
+                        <div className="font-bold text-white normal-case">Kho 16 Trò Chơi Bản Quyền</div>
+                        <div className="text-[10px] text-slate-400 normal-case">Steam, Riot Games, Blizzard</div>
+                      </div>
+                    </Link>
+                  </div>
                 </div>
-              </Link>
+              )}
+            </div>
 
-              {/* Nút nhảy sang Bếp */}
-              <Link
-                href="/kds"
-                className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-amber-500/20 hover:bg-amber-500/30 text-amber-300 hover:text-amber-200 border border-amber-500/40 text-xs font-bold transition font-mono shadow-[0_0_12px_rgba(245,158,11,0.25)] cursor-pointer"
-                title="Dành cho Nhân viên / Bếp: Quản lý đơn & Doanh thu"
-              >
-                <span className="material-symbols-outlined text-[16px] text-amber-400">soup_kitchen</span>
-                <span className="hidden sm:inline">Cổng Bếp</span>
-                {pendingOrdersCount > 0 && (
-                  <span className="bg-amber-500 text-black text-[9px] font-black px-1.5 py-0.2 rounded-full font-mono animate-pulse">
-                    {pendingOrdersCount}
-                  </span>
-                )}
-                <span className="material-symbols-outlined text-[14px]">arrow_forward</span>
-              </Link>
-            </>
-          ) : (
-            <>
-              {/* Nút quay lại Cổng Khách Hàng */}
-              <Link
-                href="/"
-                className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-cyan-500/20 hover:bg-cyan-500/30 text-cyan-300 hover:text-cyan-200 border border-cyan-500/40 text-xs font-bold transition font-mono shadow-[0_0_12px_rgba(0,240,255,0.25)] cursor-pointer"
-                title="Quay lại Cổng Khách Hàng"
-              >
-                <span className="material-symbols-outlined text-[16px] text-cyan-400">sports_esports</span>
-                <span className="hidden sm:inline">Cổng Người Chơi</span>
-                <span className="material-symbols-outlined text-[14px]">arrow_forward</span>
-              </Link>
-            </>
-          )}
+            <Link
+              href="/#bang-gia"
+              className="hover:text-emerald-400 transition"
+            >
+              BẢNG GIÁ MÁY
+            </Link>
+
+            <Link
+              href="/#khach-hang"
+              className="hover:text-emerald-400 transition"
+            >
+              KHÁCH VIP
+            </Link>
+
+            <Link
+              href="/#showroom"
+              className="hover:text-emerald-400 transition"
+            >
+              SHOWROOM
+            </Link>
+
+            <Link
+              href="/booking"
+              className={`transition hover:text-emerald-400 ${pathname === '/booking' ? 'text-emerald-400 font-black' : ''}`}
+            >
+              SƠ ĐỒ MÁY
+            </Link>
+
+            <Link
+              href="/menu"
+              className={`transition hover:text-emerald-400 flex items-center gap-1 ${pathname === '/menu' ? 'text-emerald-400 font-black' : ''}`}
+            >
+              <span>MENU BẾP</span>
+              <span className="px-1.5 py-0.2 rounded bg-rose-500 text-white text-[9px] font-bold">HOT</span>
+            </Link>
+          </div>
+
+          {/* Cụm Bên Phải: Hotline, Nút Đặt Máy Trước & ĐĂNG NHẬP / ĐĂNG KÝ */}
+          <div className="flex items-center gap-2 sm:gap-3 flex-shrink-0">
+            <a
+              href="tel:19008888"
+              className="hidden xl:flex items-center gap-1.5 text-xs font-mono font-bold text-slate-300 hover:text-white px-2 py-1.5 rounded-lg transition"
+            >
+              <span className="text-emerald-400">📞</span> 1900 8888
+            </a>
+
+            {/* Nút Đặt Máy Trước */}
+            <Link
+              href="/#dat-cho"
+              className="px-3.5 sm:px-4 py-2 bg-emerald-400 hover:bg-emerald-300 text-black font-extrabold text-xs rounded-xl shadow-lg shadow-emerald-500/25 transition uppercase font-sans flex items-center gap-1"
+            >
+              <span>ĐẶT MÁY TRƯỚC</span>
+            </Link>
+
+            {/* CỤM ĐĂNG NHẬP / ĐĂNG KÝ HOẶC THÔNG TIN TÀI KHOẢN */}
+            {currentUser ? (
+              /* ĐÃ ĐĂNG NHẬP */
+              <div className="flex items-center gap-2">
+                <Link
+                  href="/auth"
+                  className="flex items-center gap-2 px-3 py-1.5 rounded-xl bg-slate-900 border border-emerald-500/50 hover:border-emerald-400 transition"
+                >
+                  <div className="text-right font-mono text-[11px] hidden sm:block">
+                    <span className="text-white font-bold block truncate max-w-[120px]">
+                      {currentUser.fullName}
+                    </span>
+                    <span className="text-emerald-400 font-bold block">
+                      {wallet.balance.toLocaleString('vi-VN')}đ
+                    </span>
+                  </div>
+                  <div className="w-8 h-8 rounded-lg bg-emerald-500/20 text-emerald-400 flex items-center justify-center font-bold text-sm border border-emerald-400">
+                    <span className="material-symbols-outlined text-[18px]">person</span>
+                  </div>
+                </Link>
+
+                <button
+                  type="button"
+                  onClick={handleLogout}
+                  className="w-8 h-8 rounded-lg bg-rose-500/10 hover:bg-rose-500/20 border border-rose-500/30 text-rose-400 flex items-center justify-center text-xs transition"
+                  title="Đăng xuất tài khoản"
+                >
+                  <span className="material-symbols-outlined text-[16px]">power_settings_new</span>
+                </button>
+              </div>
+            ) : (
+              /* CHƯA ĐĂNG NHẬP: HIỆN 2 NÚT ĐĂNG NHẬP & ĐĂNG KÝ (ĐÚNG NHƯ ẢNH MẪU CỦA BẠN) */
+              <div className="flex items-center gap-2">
+                <button
+                  type="button"
+                  onClick={() => handleOpenAuth('login')}
+                  className="px-3.5 py-1.5 rounded-xl bg-white/5 hover:bg-white/10 border border-white/10 text-slate-300 hover:text-white font-semibold text-xs transition flex items-center gap-1.5 cursor-pointer"
+                >
+                  <span className="material-symbols-outlined text-cyan-400 text-[16px]">login</span>
+                  <span>Đăng nhập</span>
+                </button>
+
+                <button
+                  type="button"
+                  onClick={() => handleOpenAuth('register')}
+                  className="hidden sm:inline-flex px-3.5 py-1.5 rounded-xl bg-emerald-500/20 hover:bg-emerald-500/30 border border-emerald-500/40 text-emerald-300 font-bold text-xs transition cursor-pointer"
+                >
+                  Đăng ký
+                </button>
+              </div>
+            )}
+
+          </div>
+
         </div>
-
       </nav>
+
+      {/* MODAL AUTH DÙNG CHUNG TOÀN HỆ THỐNG */}
+      <AuthModal
+        isOpen={isAuthModalOpen}
+        defaultTab={authModalTab}
+        onClose={() => setIsAuthModalOpen(false)}
+        onSuccess={(user) => {
+          setCurrentUser(user);
+        }}
+      />
     </header>
   );
 }

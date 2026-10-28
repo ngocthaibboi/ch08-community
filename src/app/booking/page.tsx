@@ -10,6 +10,8 @@ import {
   SeatBooking,
   BOOKING_STORAGE_EVENT,
 } from '@/lib/bookingStore';
+import { getLoggedInUser, AuthUser, AUTH_EVENT_NAME } from '@/lib/authStore';
+import AuthModal from '@/components/auth/AuthModal';
 
 const FLOOR1_SEATS_CONFIG = ALL_SEATS_CONFIG.filter((s) => s.floor === 1);
 const FLOOR2_SEATS_CONFIG = ALL_SEATS_CONFIG.filter((s) => s.floor === 2);
@@ -18,6 +20,11 @@ export default function BookingSeatMap() {
   const [selectedSeat, setSelectedSeat] = useState<string>('VIP-08');
   const [activeFloor, setActiveFloor] = useState<'floor1' | 'floor2'>('floor2');
   const [bookings, setBookings] = useState<SeatBooking[]>([]);
+
+  // Auth state
+  const [currentUser, setCurrentUser] = useState<AuthUser | null>(null);
+  const [showAuthModal, setShowAuthModal] = useState(false);
+  const [authModalMessage, setAuthModalMessage] = useState<string | undefined>(undefined);
 
   // State modal đặt máy tại chỗ
   const [showBookingModal, setShowBookingModal] = useState(false);
@@ -33,11 +40,29 @@ export default function BookingSeatMap() {
     };
     update();
 
+    const user = getLoggedInUser();
+    setCurrentUser(user);
+    if (user) {
+      setFormName(user.fullName);
+      setFormPhone(user.phone);
+    }
+
+    const handleAuthChange = () => {
+      const u = getLoggedInUser();
+      setCurrentUser(u);
+      if (u) {
+        setFormName(u.fullName);
+        setFormPhone(u.phone);
+      }
+    };
+
     window.addEventListener(BOOKING_STORAGE_EVENT, update);
+    window.addEventListener(AUTH_EVENT_NAME, handleAuthChange);
     window.addEventListener('storage', update);
 
     return () => {
       window.removeEventListener(BOOKING_STORAGE_EVENT, update);
+      window.removeEventListener(AUTH_EVENT_NAME, handleAuthChange);
       window.removeEventListener('storage', update);
     };
   }, []);
@@ -67,28 +92,43 @@ export default function BookingSeatMap() {
   const activeBooking = currentSeatObj.booking;
 
   const handleOpenBooking = () => {
+    const user = getLoggedInUser();
+    if (!user) {
+      setAuthModalMessage(`Bạn cần đăng nhập tài khoản Cyber Zone để đặt giữ chỗ máy ${currentSeatObj.id}!`);
+      setShowAuthModal(true);
+      return;
+    }
+    setFormName(user.fullName);
+    setFormPhone(user.phone);
     setShowBookingModal(true);
   };
 
   const handleSubmitBooking = (e: React.FormEvent) => {
     e.preventDefault();
+
+    const user = getLoggedInUser();
+    if (!user) {
+      setShowBookingModal(false);
+      setAuthModalMessage(`Bạn cần đăng nhập tài khoản Cyber Zone để đặt giữ chỗ máy ${currentSeatObj.id}!`);
+      setShowAuthModal(true);
+      return;
+    }
+
     if (!formName.trim()) return;
 
     const newBooking = saveBooking({
       seatId: currentSeatObj.id,
       customerName: formName.trim(),
-      phone: formPhone.trim() || '0988.888.888',
+      phone: formPhone.trim() || user.phone || '0988.888.888',
       timeSlot: formTime,
       date: new Date().toISOString().split('T')[0],
       zone: currentSeatObj.zoneName,
-      branch: 'Zone 01: 128 Nguyễn Trãi, Q.1, TP.HCM',
+      branch: 'Zone 01: 182 Lê Duẩn, TP. Vinh (Flagship Complex)',
       status: 'RESERVED',
       notes: 'Đặt trực tiếp trên sơ đồ máy Cyber Zone',
     });
 
     setShowBookingModal(false);
-    setFormName('');
-    setFormPhone('');
     setSuccessToast(`Đã giữ chỗ máy ${newBooking.seatId} cho game thủ ${newBooking.customerName} (${newBooking.bookingCode})!`);
     setTimeout(() => setSuccessToast(null), 5000);
   };
@@ -505,6 +545,20 @@ export default function BookingSeatMap() {
           </div>
         </div>
       )}
+
+      {/* MODAL YÊU CẦU ĐĂNG NHẬP */}
+      <AuthModal
+        isOpen={showAuthModal}
+        defaultTab="login"
+        message={authModalMessage}
+        onClose={() => setShowAuthModal(false)}
+        onSuccess={(user) => {
+          setCurrentUser(user);
+          setFormName(user.fullName);
+          setFormPhone(user.phone);
+          setShowBookingModal(true);
+        }}
+      />
     </div>
   );
 }
