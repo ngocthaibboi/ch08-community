@@ -2,7 +2,7 @@
 
 export interface WalletTransaction {
   id: string;
-  type: 'TOPUP' | 'FNB_PAYMENT';
+  type: 'TOPUP' | 'FNB_PAYMENT' | 'PLAY_TIME';
   amount: number;
   description: string;
   method?: string;
@@ -31,24 +31,24 @@ export const BASELINE_TOPUP_REVENUE = 0;
 export const INITIAL_TRANSACTIONS: WalletTransaction[] = [];
 
 export const INITIAL_WALLET: UserWallet = {
-  userName: 'Nguyễn Văn A',
+  userName: 'Nguyễn Văn Thái',
   pcName: 'VIP-08',
   zoneName: 'PHÒNG RIÊNG VIP TẦNG 2',
-  userTier: 'HỘI VIÊN TÂN THỦ',
-  balance: 0,
-  hourlyRate: 20000,
+  userTier: 'HỘI VIÊN VÀNG ⭐',
+  balance: 150000,
+  hourlyRate: 30000,
   transactions: [],
 };
 
 /**
- * Format balance into play time string (HH:MM:SS)
+ * Format balance into play time string (HH:MM:SS) based on custom hourly rate
  */
-export function calculateRemainingPlayTime(balance: number, hourlyRate: number = 20000): string {
-  if (balance <= 0) return '00:00:00';
+export function calculateRemainingPlayTime(balance: number, hourlyRate: number = 30000): string {
+  if (balance <= 0 || hourlyRate <= 0) return '00:00:00';
   const totalHours = balance / hourlyRate;
   const hours = Math.floor(totalHours);
   const minutes = Math.floor((totalHours - hours) * 60);
-  const seconds = 0;
+  const seconds = Math.floor((((totalHours - hours) * 60) - minutes) * 60);
   return `${String(hours).padStart(2, '0')}:${String(minutes).padStart(2, '0')}:${String(seconds).padStart(2, '0')}`;
 }
 
@@ -137,6 +137,59 @@ export function deductWallet(
     amount,
     description,
     pcName: current.pcName || 'VIP-08',
+    timestamp: new Date().toLocaleTimeString('vi-VN'),
+    dateIso: new Date().toISOString(),
+  };
+
+  const updated: UserWallet = {
+    ...current,
+    balance: newBalance,
+    transactions: [tx, ...(current.transactions || [])],
+    lastTransaction: tx,
+  };
+
+  broadcastWalletUpdate(updated);
+  return { success: true, wallet: updated };
+}
+
+/**
+ * Cập nhật máy ngồi và đơn giá giờ chơi khi đổi phòng máy
+ */
+export function updateStationAndRate(
+  pcName: string,
+  zoneName: string,
+  hourlyRate: number
+): UserWallet {
+  const current = getStoredWallet();
+  const updated: UserWallet = {
+    ...current,
+    pcName,
+    zoneName,
+    hourlyRate: Math.max(1000, hourlyRate),
+  };
+  broadcastWalletUpdate(updated);
+  return updated;
+}
+
+/**
+ * Trừ tiền giờ chơi máy theo giá tiền máy đã setup
+ */
+export function deductPlayTimeFee(
+  amount: number,
+  pcName: string,
+  description: string
+): { success: boolean; wallet: UserWallet } {
+  const current = getStoredWallet();
+  if (current.balance < amount) {
+    return { success: false, wallet: current };
+  }
+  const newBalance = Math.max(0, current.balance - amount);
+  const tx: WalletTransaction = {
+    id: `tx-${Date.now()}`,
+    type: 'PLAY_TIME',
+    amount,
+    description: description || `Tiền giờ chơi máy ${pcName}`,
+    pcName: pcName || current.pcName || 'VIP-08',
     timestamp: new Date().toLocaleTimeString('vi-VN'),
     dateIso: new Date().toISOString(),
   };
