@@ -35,15 +35,15 @@ export const INITIAL_WALLET: UserWallet = {
   pcName: 'VIP-08',
   zoneName: 'PHÒNG RIÊNG VIP TẦNG 2',
   userTier: 'HỘI VIÊN VÀNG ⭐',
-  balance: 150000,
-  hourlyRate: 30000,
+  balance: 200000,
+  hourlyRate: 22000,
   transactions: [],
 };
 
 /**
  * Format balance into play time string (HH:MM:SS) based on custom hourly rate
  */
-export function calculateRemainingPlayTime(balance: number, hourlyRate: number = 30000): string {
+export function calculateRemainingPlayTime(balance: number, hourlyRate: number = 22000): string {
   if (balance <= 0 || hourlyRate <= 0) return '00:00:00';
   const totalHours = balance / hourlyRate;
   const hours = Math.floor(totalHours);

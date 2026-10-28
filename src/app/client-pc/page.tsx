@@ -11,6 +11,7 @@ import {
   deductPlayTimeFee,
   topupWallet,
   calculateRemainingPlayTime,
+  broadcastWalletUpdate,
 } from '@/lib/walletStore';
 import { getLoggedInUser, loginUser, logoutUser, AUTH_EVENT_NAME, AuthUser } from '@/lib/authStore';
 import { createStaffRequest } from '@/lib/staffRequestStore';
@@ -34,13 +35,37 @@ const STATION_PRESETS: StationPreset[] = [
     id: 'VIP-08',
     name: 'Máy Trạm VIP-08',
     zone: 'Phòng Riêng VIP Tầng 2',
-    hourlyRate: 30000,
+    hourlyRate: 22000,
     cpu: 'Intel Core i7 14700K (20 Cores)',
     gpu: 'NVIDIA RTX 4070 Ti Super 16GB',
     screen: 'ASUS ROG Swift 27" 240Hz Fast-IPS',
     gear: 'Zowie EC2-CW + Akko Custom Lube',
     chair: 'Ghế bọc da Nappa ngả 160°',
     badge: 'ULTRA VIP',
+  },
+  {
+    id: 'PRO-01',
+    name: 'Khu Thi Đấu PRO-01',
+    zone: 'Khu Máy FPS 540Hz Tầng 2',
+    hourlyRate: 18000,
+    cpu: 'AMD Ryzen 7 7800X3D Gaming King',
+    gpu: 'NVIDIA RTX 4080 Super 16GB',
+    screen: 'BenQ Zowie XL2566K 540Hz DyAc+',
+    gear: 'Razer Viper V3 Pro + Huntsman V3',
+    chair: 'Ghế công thái học Herman Miller Embody',
+    badge: 'CYBER PRO',
+  },
+  {
+    id: 'STD-01',
+    name: 'Máy Tiêu Chuẩn STD-01',
+    zone: 'Khu Tiêu Chuẩn Standard Tầng 1',
+    hourlyRate: 12000,
+    cpu: 'Intel Core i5 13400F (10 Cores)',
+    gpu: 'NVIDIA RTX 4060 Ti 8GB OC',
+    screen: 'ASUS TUF 24.5" Fast-IPS 280Hz',
+    gear: 'Logitech G102 Lightsync + DareU EK87',
+    chair: 'Ghế bọc da đúc chống mỏi lưng',
+    badge: 'STANDARD',
   },
   {
     id: 'ARENA-A1',
@@ -55,34 +80,34 @@ const STATION_PRESETS: StationPreset[] = [
     badge: 'ARENA 5VS5',
   },
   {
-    id: 'PRO-01',
-    name: 'Khu Thi Đấu PRO-01',
-    zone: 'Khu Máy FPS 540Hz Tầng 1',
-    hourlyRate: 22000,
-    cpu: 'AMD Ryzen 7 7800X3D Gaming King',
-    gpu: 'NVIDIA RTX 4080 Super 16GB',
-    screen: 'BenQ Zowie XL2566K 360Hz DyAc+',
-    gear: 'Razer Viper V3 Pro + Huntsman V3',
-    chair: 'Ghế công thái học Herman Miller Embody',
-    badge: 'CYBER PRO',
+    id: 'STREAM-01',
+    name: 'Phòng Stream STREAM-01',
+    zone: 'Stream Studio Tầng 2 (Cách Âm)',
+    hourlyRate: 35000,
+    cpu: 'Dual PC Core i7 14700K + RTX 4080',
+    gpu: 'Card Capture 4K60 Pro HDR',
+    screen: 'Dual Monitor ROG 27" 2K 240Hz',
+    gear: 'GoXLR + Shure SM7B + Sony Cam 4K',
+    chair: 'Ghế Streamer Corsair T3 Rush',
+    badge: 'STREAM STUDIO',
   },
   {
     id: 'COUPLE-01',
     name: 'Phòng Đôi COUPLE-01',
     zone: 'Couple Suite Tầng 2 (Phòng Riêng)',
-    hourlyRate: 35000,
-    cpu: 'Intel Core i7 14700K',
-    gpu: 'NVIDIA RTX 4070 Super 12GB',
-    screen: 'Samsung Odyssey G7 27" 240Hz Cong',
+    hourlyRate: 45000,
+    cpu: 'Intel Core i7 14700K Dual System',
+    gpu: 'NVIDIA RTX 4070 Super 12GB x2',
+    screen: '2x Samsung Odyssey G7 27" 240Hz Cong',
     gear: 'Sofa Da Nappa Đôi + 2 Tai Nghe Kép',
-    chair: 'Sofa giường đôi công thái học êm ái',
+    chair: 'Sofa giường đôi công thái học ngả 180°',
     badge: 'COUPLE SUITE',
   },
   {
     id: 'CONSOLE-01',
     name: 'Phòng CONSOLE-01',
     zone: 'Console Lounge PS5 Pro Tầng 2',
-    hourlyRate: 40000,
+    hourlyRate: 79000,
     cpu: 'PlayStation 5 Pro + Switch OLED',
     gpu: 'Custom RDNA 3 67WGP Pro Architecture',
     screen: 'LG OLED G3 75" 4K 120Hz Dolby Vision',
@@ -102,19 +127,15 @@ const STATION_PRESETS: StationPreset[] = [
     chair: 'Ghế quầy bar quan sát cao cấp bọc nỉ',
     badge: 'BILLIARDS CLUB',
   },
-  {
-    id: 'STD-10',
-    name: 'Máy Tiêu Chuẩn STD-10',
-    zone: 'Khu Public Standard Tầng 1',
-    hourlyRate: 15000,
-    cpu: 'Intel Core i5 13400F (10 Cores)',
-    gpu: 'NVIDIA RTX 4060 Ti 8GB OC',
-    screen: 'ASUS TUF 24.5" Fast-IPS 180Hz',
-    gear: 'Logitech G102 Lightsync + DareU EK87',
-    chair: 'Ghế bọc da đúc chống mỏi lưng',
-    badge: 'STANDARD',
-  },
 ];
+
+function formatSecondsToHMS(totalSecs: number): string {
+  if (totalSecs <= 0) return '00:00:00';
+  const h = Math.floor(totalSecs / 3600);
+  const m = Math.floor((totalSecs % 3600) / 60);
+  const s = totalSecs % 60;
+  return `${String(h).padStart(2, '0')}:${String(m).padStart(2, '0')}:${String(s).padStart(2, '0')}`;
+}
 
 export default function ClientPcPage() {
   const [currentUser, setCurrentUser] = useState<AuthUser | null>(null);
@@ -125,7 +146,10 @@ export default function ClientPcPage() {
 
   // Trạm máy hiện tại & Giá tiền
   const [currentStation, setCurrentStation] = useState<StationPreset>(STATION_PRESETS[0]);
-  const [customRate, setCustomRate] = useState<number>(30000);
+  const [customRate, setCustomRate] = useState<number>(22000);
+
+  // Đếm ngược thời gian chơi tính bằng giây (HH:MM:SS)
+  const [remainingSeconds, setRemainingSeconds] = useState<number>(0);
 
   // Form Đăng nhập tại màn hình khóa
   const [loginUsername, setLoginUsername] = useState('');
@@ -135,7 +159,7 @@ export default function ClientPcPage() {
   // Modal đổi máy & modal setup giá
   const [showStationModal, setShowStationModal] = useState(false);
   const [showRateModal, setShowRateModal] = useState(false);
-  const [newRateInput, setNewRateInput] = useState('30000');
+  const [newRateInput, setNewRateInput] = useState('22000');
 
   // Gọi nhân viên
   const [showCallModal, setShowCallModal] = useState(false);
@@ -152,8 +176,15 @@ export default function ClientPcPage() {
     // Tìm máy hiện tại theo wallet hoặc mặc định VIP-08
     const matched = STATION_PRESETS.find((s) => s.id === storedWallet.pcName) || STATION_PRESETS[0];
     setCurrentStation(matched);
-    setCustomRate(storedWallet.hourlyRate || matched.hourlyRate);
-    setNewRateInput(String(storedWallet.hourlyRate || matched.hourlyRate));
+    const initialRate = storedWallet.hourlyRate || matched.hourlyRate;
+    setCustomRate(initialRate);
+    setNewRateInput(String(initialRate));
+
+    // Khởi tạo số giây chơi còn lại
+    if (storedWallet.balance > 0 && initialRate > 0) {
+      const secs = Math.floor((storedWallet.balance / initialRate) * 3600);
+      setRemainingSeconds(secs);
+    }
 
     // Nếu đã đăng nhập và có tiền ví > 0 thì mở khóa máy
     if (user && storedWallet.balance > 0) {
@@ -180,6 +211,23 @@ export default function ClientPcPage() {
     };
   }, []);
 
+  // Đếm ngược từng giây khi máy trạm đã mở khóa
+  useEffect(() => {
+    if (isLocked) return;
+
+    const timer = setInterval(() => {
+      setRemainingSeconds((prev) => {
+        if (prev <= 1) {
+          setIsLocked(true);
+          return 0;
+        }
+        return prev - 1;
+      });
+    }, 1000);
+
+    return () => clearInterval(timer);
+  }, [isLocked]);
+
   // Xử lý đăng nhập mở máy tại chỗ
   const handleClientLogin = (e: React.FormEvent) => {
     e.preventDefault();
@@ -189,7 +237,7 @@ export default function ClientPcPage() {
     }
 
     const currentW = getStoredWallet();
-    const balanceToUse = currentW.balance > 0 ? currentW.balance : 150000;
+    const balanceToUse = currentW.balance > 0 ? currentW.balance : 200000;
 
     const userObj: AuthUser = {
       id: `usr-${Date.now()}`,
@@ -203,14 +251,16 @@ export default function ClientPcPage() {
     loginUser(userObj);
     updateStationAndRate(currentStation.id, currentStation.zone, customRate);
 
+    const secs = Math.floor((balanceToUse / customRate) * 3600);
+    setRemainingSeconds(secs);
     setIsLocked(false);
     setLoginError(null);
-    setAlertSuccess(`Chào mừng ${userObj.fullName}! Máy ${currentStation.id} đã mở khóa thành công.`);
+    setAlertSuccess(`Chào mừng ${userObj.fullName}! Máy ${currentStation.id} đã mở khóa thành công. Thời gian: ${formatSecondsToHMS(secs)}`);
     setTimeout(() => setAlertSuccess(null), 4000);
   };
 
   // Nút đăng nhập nhanh cho Thái diễn tập
-  const handleQuickDemoLogin = (name: string, demoBalance: number = 150000) => {
+  const handleQuickDemoLogin = (name: string, demoBalance: number = 200000) => {
     const userObj: AuthUser = {
       id: `demo-${Date.now()}`,
       username: 'thaibboi',
@@ -221,11 +271,14 @@ export default function ClientPcPage() {
     };
 
     loginUser(userObj);
-    topupWallet(demoBalance - wallet.balance, 'MÔ PHỎNG NẠP MÁY');
+    const updatedWallet = topupWallet(demoBalance - wallet.balance, 'MÔ PHỎNG NẠP MÁY');
+    setWallet(updatedWallet);
     updateStationAndRate(currentStation.id, currentStation.zone, customRate);
 
+    const secs = Math.floor((demoBalance / (customRate || currentStation.hourlyRate)) * 3600);
+    setRemainingSeconds(secs);
     setIsLocked(false);
-    setAlertSuccess(`Đã mở khóa máy ${currentStation.id} với tài khoản Trưởng nhóm Thái (${demoBalance.toLocaleString('vi-VN')}đ)!`);
+    setAlertSuccess(`Đã mở khóa máy ${currentStation.id} với tài khoản Trưởng nhóm Thái (${demoBalance.toLocaleString('vi-VN')}đ • ${formatSecondsToHMS(secs)})!`);
     setTimeout(() => setAlertSuccess(null), 4000);
   };
 
@@ -237,16 +290,43 @@ export default function ClientPcPage() {
     }
   };
 
-  // Xử lý đổi phòng máy
+  // Xử lý chuyển đổi phòng máy với công thức quy đổi tiền và giờ tỷ lệ thuận
   const handleChangeStation = (preset: StationPreset) => {
+    const oldStation = currentStation;
+    const oldRate = customRate > 0 ? customRate : oldStation.hourlyRate;
+
+    // 1. Số tiền còn lại tại thời điểm bấm chuyển phòng
+    const currentMoney = remainingSeconds > 0
+      ? (remainingSeconds / 3600) * oldRate
+      : wallet.balance;
+
+    // 2. Tính số giây tương ứng tại phòng máy mới
+    const newRate = preset.hourlyRate;
+    const newSeconds = Math.max(0, Math.floor((currentMoney / newRate) * 3600));
+
+    // 3. Cập nhật state máy, đơn giá và số giây đếm ngược mới
     setCurrentStation(preset);
-    setCustomRate(preset.hourlyRate);
-    setNewRateInput(String(preset.hourlyRate));
-    updateStationAndRate(preset.id, preset.zone, preset.hourlyRate);
+    setCustomRate(newRate);
+    setNewRateInput(String(newRate));
+    setRemainingSeconds(newSeconds);
+
+    // 4. Cập nhật đồng bộ vào walletStore và localStorage
+    const updatedWallet = updateStationAndRate(preset.id, preset.zone, newRate);
+    const roundedMoney = Math.round(currentMoney);
+    if (updatedWallet.balance !== roundedMoney) {
+      updatedWallet.balance = roundedMoney;
+      broadcastWalletUpdate(updatedWallet);
+    }
+    setWallet(updatedWallet);
     setShowStationModal(false);
 
-    setAlertSuccess(`Đã chuyển sang ${preset.name} (${preset.zone}). Đơn giá mới: ${preset.hourlyRate.toLocaleString('vi-VN')}đ/h!`);
-    setTimeout(() => setAlertSuccess(null), 5000);
+    // 5. Hiển thị thông báo chi tiết
+    const oldTimeStr = formatSecondsToHMS(remainingSeconds);
+    const newTimeStr = formatSecondsToHMS(newSeconds);
+    setAlertSuccess(
+      `⚡ ĐỔI PHÒNG THÀNH CÔNG: Chuyển từ [${oldStation.id}] (${oldRate.toLocaleString('vi-VN')}đ/h) sang [${preset.id}] (${newRate.toLocaleString('vi-VN')}đ/h). Số tiền bảo lưu: ${roundedMoney.toLocaleString('vi-VN')}đ. Giờ chơi chuyển đổi: ${oldTimeStr} ➔ ${newTimeStr}!`
+    );
+    setTimeout(() => setAlertSuccess(null), 7000);
   };
 
   // Xử lý setup giá tiền mới
@@ -258,31 +338,45 @@ export default function ClientPcPage() {
       return;
     }
 
+    const oldRate = customRate > 0 ? customRate : currentStation.hourlyRate;
+    const currentMoney = remainingSeconds > 0 ? (remainingSeconds / 3600) * oldRate : wallet.balance;
+    const newSeconds = Math.max(0, Math.floor((currentMoney / rateNum) * 3600));
+
     setCustomRate(rateNum);
+    setRemainingSeconds(newSeconds);
     updateStationAndRate(currentStation.id, currentStation.zone, rateNum);
     setShowRateModal(false);
 
-    setAlertSuccess(`Đã setup lại giá tiền giờ cho máy ${currentStation.id}: ${rateNum.toLocaleString('vi-VN')}đ/giờ!`);
-    setTimeout(() => setAlertSuccess(null), 5000);
+    const oldTimeStr = formatSecondsToHMS(remainingSeconds);
+    const newTimeStr = formatSecondsToHMS(newSeconds);
+    setAlertSuccess(
+      `⚡ ĐÃ SETUP ĐƠN GIÁ MỚI: ${rateNum.toLocaleString('vi-VN')}đ/h. Giờ chơi tự động quy đổi: ${oldTimeStr} ➔ ${newTimeStr}!`
+    );
+    setTimeout(() => setAlertSuccess(null), 6000);
   };
 
   // Mô phỏng trừ tiền theo thời gian chơi (Để Thái trình bày thuyết trình)
   const handleSimulatePlayTime = (minutes: number) => {
-    const fee = Math.round((customRate / 60) * minutes);
-    if (wallet.balance < fee) {
-      alert(`Số dư ví (${wallet.balance.toLocaleString('vi-VN')}đ) không đủ để trả cho ${minutes} phút chơi (${fee.toLocaleString('vi-VN')}đ)! Vui lòng nạp thêm tiền.`);
+    const deductSeconds = minutes * 60;
+    if (remainingSeconds < deductSeconds) {
+      alert(`Thời gian chơi còn lại không đủ ${minutes} phút! Vui lòng nạp thêm tiền.`);
       return;
     }
 
+    const fee = Math.round((customRate / 60) * minutes);
     const res = deductPlayTimeFee(
       fee,
       currentStation.id,
       `Trừ tiền chơi ${minutes} phút tại ${currentStation.id} (${customRate.toLocaleString('vi-VN')}đ/h)`
     );
 
+    const newSecs = Math.max(0, remainingSeconds - deductSeconds);
+    setRemainingSeconds(newSecs);
+
     if (res.success) {
+      setWallet(res.wallet);
       setAlertSuccess(
-        `⚡ ĐÃ TRỪ TIỀN GIỜ CHƠI: -${fee.toLocaleString('vi-VN')}đ (${minutes} phút tại giá ${customRate.toLocaleString('vi-VN')}đ/h). Số dư mới: ${res.wallet.balance.toLocaleString('vi-VN')}đ`
+        `⚡ ĐÃ TRỪ GIỜ CHƠI: -${minutes} phút (-${fee.toLocaleString('vi-VN')}đ tại ${customRate.toLocaleString('vi-VN')}đ/h). Thời gian mới: ${formatSecondsToHMS(newSecs)}`
       );
       setTimeout(() => setAlertSuccess(null), 6000);
     }
@@ -292,8 +386,12 @@ export default function ClientPcPage() {
   const handleQuickAddMoney = (amount: number) => {
     const updated = topupWallet(amount, 'Nạp Nhanh Diễn Tập');
     setWallet(updated);
-    setAlertSuccess(`+ Đã nạp thành công +${amount.toLocaleString('vi-VN')}đ vào tài khoản! Giờ chơi đã tự động cộng thêm.`);
-    setTimeout(() => setAlertSuccess(null), 4000);
+    const addedSeconds = Math.floor((amount / (customRate || currentStation.hourlyRate)) * 3600);
+    setRemainingSeconds((prev) => prev + addedSeconds);
+    setAlertSuccess(
+      `+ ĐÃ NẠP +${amount.toLocaleString('vi-VN')}đ! Cộng thêm +${formatSecondsToHMS(addedSeconds)} vào đồng hồ đếm ngược.`
+    );
+    setTimeout(() => setAlertSuccess(null), 5000);
   };
 
   // Xử lý gọi nhân viên
@@ -314,8 +412,8 @@ export default function ClientPcPage() {
     }
   };
 
-  // Tính chuỗi thời gian chơi còn lại dựa theo số dư và đơn giá máy hiện tại
-  const remainingTimeStr = calculateRemainingPlayTime(wallet.balance, customRate);
+  // Tính số dư khả dụng thực tế theo thời gian đếm ngược
+  const liveBalance = Math.max(0, Math.round((remainingSeconds / 3600) * (customRate || currentStation.hourlyRate)));
 
   // ════════════════════════════════════════════════════════════════════════════
   // GIAO DIỆN 1: MÀN HÌNH KHÓA MÁY TRẠM (CYBER CLIENT LOCK SCREEN)
@@ -420,11 +518,11 @@ export default function ClientPcPage() {
               </span>
               <button
                 type="button"
-                onClick={() => handleQuickDemoLogin('Nguyễn Văn Thái (Trưởng Nhóm)', 150000)}
+                onClick={() => handleQuickDemoLogin('Nguyễn Văn Thái (Trưởng Nhóm)', 200000)}
                 className="w-full py-2.5 bg-slate-800 hover:bg-slate-700 text-emerald-400 border border-emerald-500/40 font-bold rounded-xl transition text-xs font-mono flex items-center justify-center gap-2 cursor-pointer shadow-md"
               >
                 <span className="material-symbols-outlined text-[16px]">verified</span>
-                <span>Mở máy nhanh với TK Thái (Ví: 150.000đ)</span>
+                <span>Mở máy nhanh với TK Thái (Ví: 200.000đ)</span>
               </button>
             </div>
 
@@ -555,7 +653,7 @@ export default function ClientPcPage() {
                 THỜI GIAN CÒN LẠI ({customRate.toLocaleString('vi-VN')}đ/H)
               </span>
               <span className="text-xl md:text-2xl font-black text-amber-300 font-mono tracking-widest drop-shadow-[0_0_10px_rgba(251,191,36,0.3)]">
-                {remainingTimeStr}
+                {formatSecondsToHMS(remainingSeconds)}
               </span>
             </div>
             <button
@@ -577,7 +675,7 @@ export default function ClientPcPage() {
                 </span>
               </div>
               <div className="text-emerald-400 font-extrabold text-xs">
-                Ví khả dụng: {wallet.balance.toLocaleString('vi-VN')}đ
+                Ví khả dụng: {liveBalance.toLocaleString('vi-VN')}đ
               </div>
             </div>
 
@@ -1036,7 +1134,7 @@ export default function ClientPcPage() {
               <div className="p-3 rounded-xl bg-black/40 border border-white/5 text-[11px] text-slate-400">
                 Khi đổi giá, thời gian chơi còn lại sẽ được tính lại tức thì:
                 <div className="text-cyan-300 font-bold mt-1">
-                  Thời gian mới = {wallet.balance.toLocaleString('vi-VN')}đ / {parseInt(newRateInput || '0').toLocaleString('vi-VN')}đ/h
+                  Thời gian mới = {liveBalance.toLocaleString('vi-VN')}đ / {parseInt(newRateInput || '0').toLocaleString('vi-VN')}đ/h
                 </div>
               </div>
 

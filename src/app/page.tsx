@@ -11,7 +11,7 @@ export default function Home() {
 
   // Form Booking State
   const [branch, setBranch] = useState('Zone 01: 182 Lê Duẩn, TP. Vinh (Flagship Complex)');
-  const [zoneCategory, setZoneCategory] = useState('Gaming Zone (Đấu trường mở)');
+  const [zoneCategory, setZoneCategory] = useState('Standard Zone Tiêu Chuẩn (STD-01..10) - 12.000đ/h');
   const [quantity, setQuantity] = useState('1');
   const [bookingDate, setBookingDate] = useState('2026-10-28');
   const [timeSlot, setTimeSlot] = useState('Ngay bây giờ (Tức thì)');
@@ -67,10 +67,12 @@ export default function Home() {
     }
 
     // Tìm máy/bàn phù hợp theo phân khu được chọn
-    let targetSeatId = 'ARENA-A1';
-    if (zoneCategory.includes('Billiards')) targetSeatId = 'BIDA-01';
+    let targetSeatId = 'REG-01';
+    if (zoneCategory.includes('Standard')) targetSeatId = 'REG-01';
+    else if (zoneCategory.includes('Billiards')) targetSeatId = 'BIDA-01';
     else if (zoneCategory.includes('VIP')) targetSeatId = 'VIP-01';
     else if (zoneCategory.includes('Pro')) targetSeatId = 'PRO-01';
+    else if (zoneCategory.includes('Arena')) targetSeatId = 'ARENA-A1';
     else if (zoneCategory.includes('Stream')) targetSeatId = 'STREAM-01';
     else if (zoneCategory.includes('Couple')) targetSeatId = 'COUPLE-01';
     else if (zoneCategory.includes('Console')) targetSeatId = 'CONSOLE-01';
@@ -255,85 +257,111 @@ export default function Home() {
 
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
             
-            {/* Zone 1: Esports Arena */}
+            {/* Zone 1: Standard Zone (Khớp sơ đồ máy STD-01..10) */}
             <div className="rounded-2xl bg-slate-900/80 border border-white/10 hover:border-emerald-500/50 transition duration-300 overflow-hidden flex flex-col group">
               <div className="h-48 overflow-hidden relative">
                 <img
                   src="https://images.unsplash.com/photo-1542751371-adc38448a05e?auto=format&fit=crop&w=700&q=80"
-                  alt="Esports Arena"
+                  alt="Standard Zone"
                   className="w-full h-full object-cover group-hover:scale-105 transition duration-500"
                 />
                 <span className="absolute top-3 left-3 px-2.5 py-1 rounded bg-black/80 backdrop-blur-md text-emerald-400 font-mono text-[10px] font-bold border border-emerald-500/40">
-                  01 • ESPORTS ARENA
+                  01 • STANDARD ZONE (12.000đ/h)
                 </span>
               </div>
               <div className="p-6 flex-1 flex flex-col justify-between space-y-4">
                 <div>
-                  <h3 className="text-lg font-bold text-white font-gaming">Gaming Zone Chuẩn Thi Đấu</h3>
+                  <h3 className="text-lg font-bold text-white font-gaming">Standard Zone Tiêu Chuẩn</h3>
                   <p className="text-xs text-slate-400 mt-2 leading-relaxed">
-                    Đấu trường mở tối ưu thi đấu đối kháng CS2, Valorant, LMHT. Ghế công thái học Herman Miller x Logitech, phím cơ custom lube switch mượt mà.
+                    Khu máy công cộng tiêu chuẩn (mã máy STD-01..10). Tối ưu thi đấu đối kháng CS2, Valorant, LMHT, FO4. Ghế da đúc công thái học, phím cơ DareU, chuột Logitech G102.
                   </p>
                 </div>
                 <div className="pt-4 border-t border-white/10 font-mono text-xs space-y-1.5">
-                  <div className="flex justify-between text-slate-400"><span>Cấu hình:</span><span className="text-emerald-400 font-bold">i7-14700K • RTX 4070Ti Super</span></div>
-                  <div className="flex justify-between text-slate-400"><span>Màn hình:</span><span className="text-white">Zowie XL2566K 360Hz DyAc+</span></div>
+                  <div className="flex justify-between text-slate-400"><span>Cấu hình:</span><span className="text-emerald-400 font-bold">i5-13400F • RTX 4060Ti 8GB OC</span></div>
+                  <div className="flex justify-between text-slate-400"><span>Màn hình:</span><span className="text-white">ASUS TUF 24.5" Fast-IPS 280Hz</span></div>
                 </div>
               </div>
             </div>
 
-            {/* Zone 2: Ultra VIP Suite */}
+            {/* Zone 2: Cyber Pro 540Hz (Khớp sơ đồ máy PRO-01..04) */}
             <div className="rounded-2xl bg-slate-900/80 border border-white/10 hover:border-cyan-500/50 transition duration-300 overflow-hidden flex flex-col group">
+              <div className="h-48 overflow-hidden relative">
+                <img
+                  src="https://images.unsplash.com/photo-1511512578047-dfb367046420?auto=format&fit=crop&w=700&q=80"
+                  alt="Cyber Pro 540Hz"
+                  className="w-full h-full object-cover group-hover:scale-105 transition duration-500"
+                />
+                <span className="absolute top-3 left-3 px-2.5 py-1 rounded bg-black/80 backdrop-blur-md text-cyan-400 font-mono text-[10px] font-bold border border-cyan-500/40">
+                  02 • CYBER PRO 540HZ (18.000đ/h)
+                </span>
+              </div>
+              <div className="p-6 flex-1 flex flex-col justify-between space-y-4">
+                <div>
+                  <h3 className="text-lg font-bold text-white font-gaming">Cyber Pro 540Hz Try-Hard</h3>
+                  <p className="text-xs text-slate-400 mt-2 leading-relaxed">
+                    Khu vực máy thi đấu FPS cao cấp (mã PRO-01..04). Màn hình Zowie 540Hz phá vỡ mọi giới hạn tốc độ, phím Wooting 60HE Hall Effect Rapid Trigger, ghế Herman Miller Embody.
+                  </p>
+                </div>
+                <div className="pt-4 border-t border-white/10 font-mono text-xs space-y-1.5">
+                  <div className="flex justify-between text-slate-400"><span>Cấu hình:</span><span className="text-cyan-400 font-bold">Ryzen 7 7800X3D • RTX 4080 Super</span></div>
+                  <div className="flex justify-between text-slate-400"><span>Màn hình:</span><span className="text-white">BenQ Zowie XL2566K 540Hz DyAc+</span></div>
+                </div>
+              </div>
+            </div>
+
+            {/* Zone 3: Ultra VIP Suite (Khớp sơ đồ máy VIP-01..08) */}
+            <div className="rounded-2xl bg-slate-900/80 border border-white/10 hover:border-purple-500/50 transition duration-300 overflow-hidden flex flex-col group">
               <div className="h-48 overflow-hidden relative">
                 <img
                   src="https://images.unsplash.com/photo-1587202372775-e229f172b9d7?auto=format&fit=crop&w=700&q=80"
                   alt="Ultra VIP Suite"
                   className="w-full h-full object-cover group-hover:scale-105 transition duration-500"
                 />
-                <span className="absolute top-3 left-3 px-2.5 py-1 rounded bg-black/80 backdrop-blur-md text-cyan-400 font-mono text-[10px] font-bold border border-cyan-500/40">
-                  02 • ULTRA VIP SUITE
+                <span className="absolute top-3 left-3 px-2.5 py-1 rounded bg-black/80 backdrop-blur-md text-purple-400 font-mono text-[10px] font-bold border border-purple-500/40">
+                  03 • ULTRA VIP SUITE (22.000đ/h)
                 </span>
               </div>
               <div className="p-6 flex-1 flex flex-col justify-between space-y-4">
                 <div>
-                  <h3 className="text-lg font-bold text-white font-gaming">Khu VIP Độc Quyền</h3>
+                  <h3 className="text-lg font-bold text-white font-gaming">Phòng Riêng Ultra VIP Tầng 2</h3>
                   <p className="text-xs text-slate-400 mt-2 leading-relaxed">
-                    Không gian sang trọng tĩnh lặng tuyệt đối. Ghế bọc da chỉnh điện, phục vụ đồ ăn nước uống tại bàn qua màn hình gọi món cảm ứng.
+                    Dãy phòng VIP riêng biệt (mã VIP-01..08 bao gồm máy bạn trải nghiệm VIP-08). Cách âm 45dB, ghế bọc da Nappa ngả 160°, chuột Zowie EC2-CW không dây, bàn phím Akko Custom Lube.
                   </p>
                 </div>
                 <div className="pt-4 border-t border-white/10 font-mono text-xs space-y-1.5">
-                  <div className="flex justify-between text-slate-400"><span>Cấu hình:</span><span className="text-cyan-400 font-bold">Ryzen 9 7950X3D • RTX 4090 OC</span></div>
-                  <div className="flex justify-between text-slate-400"><span>Màn hình:</span><span className="text-white">ASUS ROG Swift 32" 4K OLED 240Hz</span></div>
+                  <div className="flex justify-between text-slate-400"><span>Cấu hình:</span><span className="text-purple-400 font-bold">Core i7-14700K • RTX 4070Ti Super</span></div>
+                  <div className="flex justify-between text-slate-400"><span>Màn hình:</span><span className="text-white">ASUS ROG Swift 27" 240Hz Fast-IPS</span></div>
                 </div>
               </div>
             </div>
 
-            {/* Zone 3: Stream Studio */}
-            <div className="rounded-2xl bg-slate-900/80 border border-white/10 hover:border-purple-500/50 transition duration-300 overflow-hidden flex flex-col group">
+            {/* Zone 4: Đấu Trường Arena 5vs5 (Khớp sơ đồ máy ARENA-A1..B5) */}
+            <div className="rounded-2xl bg-slate-900/80 border border-white/10 hover:border-amber-500/50 transition duration-300 overflow-hidden flex flex-col group">
               <div className="h-48 overflow-hidden relative">
                 <img
-                  src="https://images.unsplash.com/photo-1598550476439-6847785fcea6?auto=format&fit=crop&w=700&q=80"
-                  alt="Broadcast Studio"
+                  src="https://images.unsplash.com/photo-1542751110-97427bbecf20?auto=format&fit=crop&w=700&q=80"
+                  alt="Arena 5vs5"
                   className="w-full h-full object-cover group-hover:scale-105 transition duration-500"
                 />
-                <span className="absolute top-3 left-3 px-2.5 py-1 rounded bg-black/80 backdrop-blur-md text-purple-400 font-mono text-[10px] font-bold border border-purple-500/40">
-                  03 • BROADCAST STUDIO
+                <span className="absolute top-3 left-3 px-2.5 py-1 rounded bg-black/80 backdrop-blur-md text-amber-400 font-mono text-[10px] font-bold border border-amber-500/40">
+                  04 • ĐẤU TRƯỜNG ARENA 5VS5 (25.000đ/h)
                 </span>
               </div>
               <div className="p-6 flex-1 flex flex-col justify-between space-y-4">
                 <div>
-                  <h3 className="text-lg font-bold text-white font-gaming">Stream Studio 100% Soundproof</h3>
+                  <h3 className="text-lg font-bold text-white font-gaming">Đấu Trường 5vs5 Chuẩn IESF</h3>
                   <p className="text-xs text-slate-400 mt-2 leading-relaxed">
-                    Trang bị đầy đủ cho Content Creator &amp; Pro Caster: Micro Elgato Wave:3, Cam Sony A6700 4K, Key Light Air và hệ thống xử lý tiếng ồn chủ động.
+                    Sàn đấu thi đấu đối kháng chuyên nghiệp (ARENA-A1..A5 Đội Xanh vs ARENA-B1..B5 Đội Đỏ). Đường truyền cáp quang riêng biệt ≤ 1ms, chuẩn bị sẵn sàng cho giải đấu trường học &amp; clan.
                   </p>
                 </div>
                 <div className="pt-4 border-t border-white/10 font-mono text-xs space-y-1.5">
-                  <div className="flex justify-between text-slate-400"><span>Dual-PC:</span><span className="text-purple-400 font-bold">2x RTX 4080 Super Stream System</span></div>
-                  <div className="flex justify-between text-slate-400"><span>Hạ tầng:</span><span className="text-white">Capture Card 4K60 Pro + Stream Deck XL</span></div>
+                  <div className="flex justify-between text-slate-400"><span>Flagship:</span><span className="text-amber-400 font-bold">Core i9-14900K • RTX 4090 24GB</span></div>
+                  <div className="flex justify-between text-slate-400"><span>Màn hình:</span><span className="text-white">ROG Swift Pro OLED 540Hz Kỷ Lục</span></div>
                 </div>
               </div>
             </div>
 
-            {/* Zone 4: Couple Sanctuary */}
+            {/* Zone 5: Couple Sanctuary (Khớp sơ đồ máy COUPLE-01..02) */}
             <div className="rounded-2xl bg-slate-900/80 border border-white/10 hover:border-pink-500/50 transition duration-300 overflow-hidden flex flex-col group">
               <div className="h-48 overflow-hidden relative">
                 <img
@@ -342,50 +370,24 @@ export default function Home() {
                   className="w-full h-full object-cover group-hover:scale-105 transition duration-500"
                 />
                 <span className="absolute top-3 left-3 px-2.5 py-1 rounded bg-black/80 backdrop-blur-md text-pink-400 font-mono text-[10px] font-bold border border-pink-500/40">
-                  04 • COUPLE SANCTUARY
+                  05 • COUPLE SANCTUARY (45.000đ/h)
                 </span>
               </div>
               <div className="p-6 flex-1 flex flex-col justify-between space-y-4">
                 <div>
-                  <h3 className="text-lg font-bold text-white font-gaming">Khu Couple Zone Riêng Tư</h3>
+                  <h3 className="text-lg font-bold text-white font-gaming">Couple Suite Phòng Đôi Riêng Tư</h3>
                   <p className="text-xs text-slate-400 mt-2 leading-relaxed">
-                    Không gian hẹn hò gaming lãng mạn cho các cặp đôi. Ghế sofa đôi êm ái, rèm ngăn cách âm nhẹ, hệ thống đèn chuyển màu theo cảm xúc.
+                    Phòng đôi hẹn hò gaming riêng tư cách âm (COUPLE-01..02). Ghế sofa đôi Nappa ngả 180°, 2 tai nghe độc lập, ánh sáng LED RGB chuyển sắc theo cảm xúc.
                   </p>
                 </div>
                 <div className="pt-4 border-t border-white/10 font-mono text-xs space-y-1.5">
-                  <div className="flex justify-between text-slate-400"><span>Cấu hình:</span><span className="text-pink-400 font-bold">Core i5-14600KF • RTX 4070 Super</span></div>
-                  <div className="flex justify-between text-slate-400"><span>Trải nghiệm:</span><span className="text-white">Màn cong 27" 2K 240Hz + Menu VIP</span></div>
+                  <div className="flex justify-between text-slate-400"><span>Cấu hình đôi:</span><span className="text-pink-400 font-bold">2x Core i7-14700K • 2x RTX 4070</span></div>
+                  <div className="flex justify-between text-slate-400"><span>Màn hình:</span><span className="text-white">2x Samsung Odyssey G7 27" Cong</span></div>
                 </div>
               </div>
             </div>
 
-            {/* Zone 5: Billiards Lounge */}
-            <div className="rounded-2xl bg-slate-900/80 border border-white/10 hover:border-emerald-500/50 transition duration-300 overflow-hidden flex flex-col group">
-              <div className="h-48 overflow-hidden relative">
-                <img
-                  src="https://images.unsplash.com/photo-1615671524827-c1fe3973b648?auto=format&fit=crop&w=700&q=80"
-                  alt="Billiards Lounge"
-                  className="w-full h-full object-cover group-hover:scale-105 transition duration-500"
-                />
-                <span className="absolute top-3 left-3 px-2.5 py-1 rounded bg-black/80 backdrop-blur-md text-emerald-400 font-mono text-[10px] font-bold border border-emerald-500/40">
-                  05 • BILLIARDS LOUNGE
-                </span>
-              </div>
-              <div className="p-6 flex-1 flex flex-col justify-between space-y-4">
-                <div>
-                  <h3 className="text-lg font-bold text-white font-gaming">Billiards Club Tiêu Chuẩn</h3>
-                  <p className="text-xs text-slate-400 mt-2 leading-relaxed">
-                    10 bàn bi-a Aileex và Min nhập khẩu chính hãng. Nỉ Simonis 860 siêu mướt, bóng Aramith Tournament Pro, dịch vụ cơ thủ hỗ trợ chuyên nghiệp.
-                  </p>
-                </div>
-                <div className="pt-4 border-t border-white/10 font-mono text-xs space-y-1.5">
-                  <div className="flex justify-between text-slate-400"><span>Quy mô:</span><span className="text-emerald-400 font-bold">10 Bàn Pool &amp; Carom tiêu chuẩn</span></div>
-                  <div className="flex justify-between text-slate-400"><span>Tiện ích:</span><span className="text-white">Quầy Bar Mocktail &amp; Finger Food 24/7</span></div>
-                </div>
-              </div>
-            </div>
-
-            {/* Zone 6: Console Living */}
+            {/* Zone 6: Console Lounge & PS5 Pro (Khớp sơ đồ máy CONSOLE-01..02) */}
             <div className="rounded-2xl bg-slate-900/80 border border-white/10 hover:border-blue-500/50 transition duration-300 overflow-hidden flex flex-col group">
               <div className="h-48 overflow-hidden relative">
                 <img
@@ -394,19 +396,19 @@ export default function Home() {
                   className="w-full h-full object-cover group-hover:scale-105 transition duration-500"
                 />
                 <span className="absolute top-3 left-3 px-2.5 py-1 rounded bg-black/80 backdrop-blur-md text-blue-400 font-mono text-[10px] font-bold border border-blue-500/40">
-                  06 • CONSOLE LIVING
+                  06 • CONSOLE LOUNGE &amp; PS5 PRO (79.000đ/h)
                 </span>
               </div>
               <div className="p-6 flex-1 flex flex-col justify-between space-y-4">
                 <div>
-                  <h3 className="text-lg font-bold text-white font-gaming">Console Lounge &amp; PS5 Pro</h3>
+                  <h3 className="text-lg font-bold text-white font-gaming">Console Lounge PS5 Pro &amp; Bida</h3>
                   <p className="text-xs text-slate-400 mt-2 leading-relaxed">
-                    Phòng riêng tư cho hội bạn chiến FIFA/FC25, Mortal Kombat, Mario Kart. TV 65-inch OLED 120Hz Dolby Vision, dàn âm thanh vòm Dolby Atmos.
+                    Phòng riêng hội bạn chiến FC25, Mortal Kombat, Mario Kart (CONSOLE-01..02) và Billiards Club 10 bàn Aileex King. TV 75" 4K OLED 120Hz Dolby Vision, 4 tay cầm DualSense Edge.
                   </p>
                 </div>
                 <div className="pt-4 border-t border-white/10 font-mono text-xs space-y-1.5">
                   <div className="flex justify-between text-slate-400"><span>Hệ máy:</span><span className="text-blue-400 font-bold">PS5 Pro + Nintendo Switch OLED</span></div>
-                  <div className="flex justify-between text-slate-400"><span>Hiển thị:</span><span className="text-white">LG OLED G3 65" 120Hz G-Sync</span></div>
+                  <div className="flex justify-between text-slate-400"><span>Hiển thị:</span><span className="text-white">LG OLED G3 75" 4K 120Hz Dolby Atmos</span></div>
                 </div>
               </div>
             </div>
@@ -672,13 +674,14 @@ export default function Home() {
                     onChange={(e) => setZoneCategory(e.target.value)}
                     className="w-full bg-slate-900 border border-slate-700 rounded-lg p-2.5 text-white focus:border-emerald-400 outline-none"
                   >
-                    <option value="Gaming Zone (Đấu trường mở)">Gaming Zone (Đấu trường mở)</option>
-                    <option value="Billiards Lounge (10 Bàn Aileex King & Min)">Billiards Lounge (10 Bàn Aileex King &amp; Min)</option>
-                    <option value="Ultra VIP Suite (RTX 4090)">Ultra VIP Suite (RTX 4090)</option>
-                    <option value="Cyber Pro 540Hz">Cyber Pro 540Hz</option>
-                    <option value="Console Lounge & PS5 Pro">Console Lounge &amp; PS5 Pro</option>
-                    <option value="Couple Zone (Phòng Đôi)">Couple Zone (Phòng Đôi)</option>
-                    <option value="Streamer Studio Dual-PC">Streamer Studio Dual-PC</option>
+                    <option value="Standard Zone Tiêu Chuẩn (STD-01..10) - 12.000đ/h">Standard Zone Tiêu Chuẩn (STD-01..10) - 12.000đ/h</option>
+                    <option value="Cyber Pro 540Hz (PRO-01..04) - 18.000đ/h">Cyber Pro 540Hz (PRO-01..04) - 18.000đ/h</option>
+                    <option value="Ultra VIP Suite (VIP-01..08) - 22.000đ/h">Ultra VIP Suite (VIP-01..08) - 22.000đ/h</option>
+                    <option value="Đấu Trường Arena 5vs5 (ARENA-A1..B5) - 25.000đ/h">Đấu Trường Arena 5vs5 (ARENA-A1..B5) - 25.000đ/h</option>
+                    <option value="Stream Studio Soundproof (STREAM-01..02) - 35.000đ/h">Stream Studio Soundproof (STREAM-01..02) - 35.000đ/h</option>
+                    <option value="Couple Sanctuary (COUPLE-01..02) - 45.000đ/h">Couple Sanctuary (COUPLE-01..02) - 45.000đ/h</option>
+                    <option value="Console Lounge & PS5 Pro (CONSOLE-01..02) - 79.000đ/h">Console Lounge &amp; PS5 Pro (CONSOLE-01..02) - 79.000đ/h</option>
+                    <option value="Billiards Club (BIDA-01..10) - 79.000đ/h">Billiards Club 10 Bàn (BIDA-01..10) - 79.000đ/h</option>
                   </select>
                 </div>
               </div>

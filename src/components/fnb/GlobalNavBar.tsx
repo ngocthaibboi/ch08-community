@@ -197,7 +197,7 @@ export default function GlobalNavBar() {
         </div>
       </div>
 
-      {/* ══════════ THANH 3: NAVBAR CHÍNH (Đầy Đủ Nút Đăng Nhập / Đăng Ký) ══════════ */}
+      {/* ══════════ THANH 3: NAVBAR CHÍNH (Đầy Đủ Nút Đăng Nhập / Đăng Ký - Không Có Menu Bếp) ══════════ */}
       <nav className="border-b border-white/10 bg-[#070d1e]/95 backdrop-blur-md px-4 py-2.5">
         <div className="max-w-7xl mx-auto flex items-center justify-between gap-4">
           
@@ -216,7 +216,7 @@ export default function GlobalNavBar() {
             </div>
           </Link>
 
-          {/* Menu Điều Hướng Trung Tâm */}
+          {/* Menu Điều Hướng Trung Tâm: Phù Hợp Đúng Sơ Đồ Máy & Không Có Menu Bếp */}
           <div className="hidden lg:flex items-center gap-5 text-xs font-mono font-bold uppercase tracking-wider text-slate-300">
             <Link
               href="/"
@@ -225,7 +225,7 @@ export default function GlobalNavBar() {
               TRANG CHỦ
             </Link>
 
-            {/* Dropdown: Khu máy & Dịch vụ */}
+            {/* Dropdown: Khu máy & Dịch vụ chuẩn khớp Sơ đồ máy */}
             <div className="relative" ref={dropdownRef}>
               <button
                 type="button"
@@ -237,17 +237,17 @@ export default function GlobalNavBar() {
               </button>
 
               {isServiceDropdownOpen && (
-                <div className="absolute left-0 top-full w-72 pt-2 z-50">
+                <div className="absolute left-0 top-full w-80 pt-2 z-50">
                   <div className="p-3 bg-slate-900/95 border border-white/10 rounded-2xl shadow-2xl backdrop-blur-xl space-y-1">
                     <Link
                       href="/#phan-khu"
                       onClick={() => setIsServiceDropdownOpen(false)}
                       className="flex items-center gap-3 p-2 rounded-xl hover:bg-white/5 text-slate-300 hover:text-emerald-400 transition"
                     >
-                      <span className="material-symbols-outlined text-emerald-400 text-lg">desktop_windows</span>
+                      <span className="material-symbols-outlined text-emerald-400 text-lg">computer</span>
                       <div>
-                        <div className="font-bold text-white normal-case">Đấu Trường Esports</div>
-                        <div className="text-[10px] text-slate-400 normal-case">RTX 5090 &amp; Màn hình 540Hz</div>
+                        <div className="font-bold text-white normal-case">Standard Zone (12.000đ/h)</div>
+                        <div className="text-[10px] text-slate-400 normal-case">Màn Fast-IPS 280Hz • RTX 4060Ti</div>
                       </div>
                     </Link>
                     <Link
@@ -255,10 +255,21 @@ export default function GlobalNavBar() {
                       onClick={() => setIsServiceDropdownOpen(false)}
                       className="flex items-center gap-3 p-2 rounded-xl hover:bg-white/5 text-slate-300 hover:text-cyan-400 transition"
                     >
-                      <span className="material-symbols-outlined text-cyan-400 text-lg">sports</span>
+                      <span className="material-symbols-outlined text-cyan-400 text-lg">speed</span>
                       <div>
-                        <div className="font-bold text-white normal-case">Billiards Lounge</div>
-                        <div className="text-[10px] text-slate-400 normal-case">10 Bàn Aileex King &amp; Min Carom</div>
+                        <div className="font-bold text-white normal-case">Cyber Pro 540Hz (18.000đ/h)</div>
+                        <div className="text-[10px] text-slate-400 normal-case">Ryzen 7 7800X3D • Màn 540Hz</div>
+                      </div>
+                    </Link>
+                    <Link
+                      href="/#phan-khu"
+                      onClick={() => setIsServiceDropdownOpen(false)}
+                      className="flex items-center gap-3 p-2 rounded-xl hover:bg-white/5 text-slate-300 hover:text-emerald-400 transition"
+                    >
+                      <span className="material-symbols-outlined text-emerald-400 text-lg">workspace_premium</span>
+                      <div>
+                        <div className="font-bold text-white normal-case">Ultra VIP Suite (22.000đ/h)</div>
+                        <div className="text-[10px] text-slate-400 normal-case">i7 14700K / i9 • RTX 4090 • Màn 240Hz</div>
                       </div>
                     </Link>
                     <Link
@@ -266,32 +277,54 @@ export default function GlobalNavBar() {
                       onClick={() => setIsServiceDropdownOpen(false)}
                       className="flex items-center gap-3 p-2 rounded-xl hover:bg-white/5 text-slate-300 hover:text-purple-400 transition"
                     >
-                      <span className="material-symbols-outlined text-purple-400 text-lg">sports_esports</span>
+                      <span className="material-symbols-outlined text-purple-400 text-lg">podium</span>
                       <div>
-                        <div className="font-bold text-white normal-case">Console Suite</div>
-                        <div className="text-[10px] text-slate-400 normal-case">PS5 Pro &amp; OLED 75 inch</div>
+                        <div className="font-bold text-white normal-case">Đấu Trường Arena (25.000đ/h)</div>
+                        <div className="text-[10px] text-slate-400 normal-case">5vs5 Thi đấu chuẩn IESF Major</div>
+                      </div>
+                    </Link>
+                    <Link
+                      href="/#phan-khu"
+                      onClick={() => setIsServiceDropdownOpen(false)}
+                      className="flex items-center gap-3 p-2 rounded-xl hover:bg-white/5 text-slate-300 hover:text-pink-400 transition"
+                    >
+                      <span className="material-symbols-outlined text-pink-400 text-lg">favorite</span>
+                      <div>
+                        <div className="font-bold text-white normal-case">Couple Sanctuary (45.000đ/h)</div>
+                        <div className="text-[10px] text-slate-400 normal-case">Sofa đôi Nappa ngả 180° cách âm</div>
+                      </div>
+                    </Link>
+                    <Link
+                      href="/#phan-khu"
+                      onClick={() => setIsServiceDropdownOpen(false)}
+                      className="flex items-center gap-3 p-2 rounded-xl hover:bg-white/5 text-slate-300 hover:text-blue-400 transition"
+                    >
+                      <span className="material-symbols-outlined text-blue-400 text-lg">sports_esports</span>
+                      <div>
+                        <div className="font-bold text-white normal-case">Console Lounge (79.000đ/h)</div>
+                        <div className="text-[10px] text-slate-400 normal-case">PS5 Pro + TV 75" 4K OLED 120Hz</div>
+                      </div>
+                    </Link>
+                    <Link
+                      href="/#phan-khu"
+                      onClick={() => setIsServiceDropdownOpen(false)}
+                      className="flex items-center gap-3 p-2 rounded-xl hover:bg-white/5 text-slate-300 hover:text-amber-400 transition"
+                    >
+                      <span className="material-symbols-outlined text-amber-400 text-lg">sports</span>
+                      <div>
+                        <div className="font-bold text-white normal-case">Billiards Club (79.000đ/h)</div>
+                        <div className="text-[10px] text-slate-400 normal-case">10 Bàn Aileex King 9020 &amp; Min Carom</div>
                       </div>
                     </Link>
                     <Link
                       href="/#showroom"
                       onClick={() => setIsServiceDropdownOpen(false)}
-                      className="flex items-center gap-3 p-2 rounded-xl hover:bg-white/5 text-slate-300 hover:text-amber-400 transition"
+                      className="flex items-center gap-3 p-2 rounded-xl hover:bg-white/5 text-slate-300 hover:text-amber-400 transition border-t border-white/5 mt-1 pt-2"
                     >
                       <span className="material-symbols-outlined text-amber-400 text-lg">storefront</span>
                       <div>
-                        <div className="font-bold text-white normal-case">Showroom &amp; Gear Shop</div>
-                        <div className="text-[10px] text-slate-400 normal-case">Gaming gear &amp; Mod phím</div>
-                      </div>
-                    </Link>
-                    <Link
-                      href="/games"
-                      onClick={() => setIsServiceDropdownOpen(false)}
-                      className="flex items-center gap-3 p-2 rounded-xl hover:bg-white/5 text-slate-300 hover:text-emerald-400 transition border-t border-white/5 mt-1 pt-2"
-                    >
-                      <span className="material-symbols-outlined text-emerald-400 text-lg">stadia_controller</span>
-                      <div>
-                        <div className="font-bold text-white normal-case">Kho 16 Trò Chơi Bản Quyền</div>
-                        <div className="text-[10px] text-slate-400 normal-case">Steam, Riot Games, Blizzard</div>
+                        <div className="font-bold text-white normal-case">Showroom Gear &amp; Mod Phím</div>
+                        <div className="text-[10px] text-slate-400 normal-case">Chuột 8000Hz, lót chuột Artisan</div>
                       </div>
                     </Link>
                   </div>
@@ -325,14 +358,6 @@ export default function GlobalNavBar() {
               className={`transition hover:text-emerald-400 ${pathname === '/booking' ? 'text-emerald-400 font-black' : ''}`}
             >
               SƠ ĐỒ MÁY
-            </Link>
-
-            <Link
-              href="/menu"
-              className={`transition hover:text-emerald-400 flex items-center gap-1 ${pathname === '/menu' ? 'text-emerald-400 font-black' : ''}`}
-            >
-              <span>MENU BẾP</span>
-              <span className="px-1.5 py-0.2 rounded bg-rose-500 text-white text-[9px] font-bold">HOT</span>
             </Link>
           </div>
 
