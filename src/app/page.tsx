@@ -654,7 +654,7 @@ export default function Home() {
 
             <div className="group rounded-2xl overflow-hidden border border-white/10 relative h-72">
               <img
-                src="https://images.unsplash.com/photo-1579888944880-d98341245702?auto=format&fit=crop&w=800&q=80"
+                src="/images/billiards-lounge.jpg"
                 alt="Billiards Lounge"
                 className="w-full h-full object-cover group-hover:scale-105 transition duration-500"
               />
