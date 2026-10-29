@@ -3,6 +3,7 @@
 import React, { useState, useMemo, useEffect } from 'react';
 import Link from 'next/link';
 import { getStoredWallet, WALLET_EVENT_NAME, UserWallet, INITIAL_WALLET } from '@/lib/walletStore';
+import { createStaffRequest } from '@/lib/staffRequestStore';
 
 interface GameItem {
   id: string;
@@ -160,12 +161,14 @@ export default function GameMenuPage() {
   const [selectedCategory, setSelectedCategory] = useState<string>('all');
   const [searchQuery, setSearchQuery] = useState('');
   const [launchingGame, setLaunchingGame] = useState<string | null>(null);
+  const [activePlayingGame, setActivePlayingGame] = useState<string | null>(null);
+  const [inGameSeconds, setInGameSeconds] = useState(0);
   const [launchProgress, setLaunchProgress] = useState(0);
   const [launchStatus, setLaunchStatus] = useState('ĐANG KẾT NỐI SERVER...');
   const [ramOptimized, setRamOptimized] = useState(false);
   const [wallet, setWallet] = useState<UserWallet>(INITIAL_WALLET);
+  const [serviceAlert, setServiceAlert] = useState<string | null>(null);
 
-  // Synchronize wallet state
   useEffect(() => {
     setWallet(getStoredWallet());
     const handleWalletUpdate = () => {
@@ -179,7 +182,20 @@ export default function GameMenuPage() {
     };
   }, []);
 
-  // Hotkey F2 to search games
+  useEffect(() => {
+    let interval: NodeJS.Timeout | null = null;
+    if (activePlayingGame) {
+      interval = setInterval(() => {
+        setInGameSeconds((prev) => prev + 1);
+      }, 1000);
+    } else {
+      setInGameSeconds(0);
+    }
+    return () => {
+      if (interval) clearInterval(interval);
+    };
+  }, [activePlayingGame]);
+
   useEffect(() => {
     const handleKeyDown = (e: KeyboardEvent) => {
       if (e.key === 'F2') {
@@ -194,19 +210,17 @@ export default function GameMenuPage() {
     return () => window.removeEventListener('keydown', handleKeyDown);
   }, []);
 
-  // Exact categories counts matching the 16 games
   const categoryCounts = useMemo(() => {
     return {
-      all: GAMES_LIST.length, // 16
-      esports: GAMES_LIST.filter((g) => g.categories.includes('esports')).length, // 6
-      fps: GAMES_LIST.filter((g) => g.categories.includes('fps')).length, // 5
-      moba: GAMES_LIST.filter((g) => g.categories.includes('moba')).length, // 3
-      'battle-royale': GAMES_LIST.filter((g) => g.categories.includes('battle-royale')).length, // 4
-      rpg: GAMES_LIST.filter((g) => g.categories.includes('rpg')).length, // 4
+      all: GAMES_LIST.length,
+      esports: GAMES_LIST.filter((g) => g.categories.includes('esports')).length,
+      fps: GAMES_LIST.filter((g) => g.categories.includes('fps')).length,
+      moba: GAMES_LIST.filter((g) => g.categories.includes('moba')).length,
+      'battle-royale': GAMES_LIST.filter((g) => g.categories.includes('battle-royale')).length,
+      rpg: GAMES_LIST.filter((g) => g.categories.includes('rpg')).length,
     };
   }, []);
 
-  // Filtered games
   const filteredGames = useMemo(() => {
     return GAMES_LIST.filter((game) => {
       const matchSearch =
@@ -223,106 +237,159 @@ export default function GameMenuPage() {
   const handleLaunchGame = (gameName: string) => {
     setLaunchingGame(gameName);
     setLaunchProgress(20);
-    setLaunchStatus('ĐANG ĐỒNG BỘ CLOUD SAVE...');
+    setLaunchStatus('ĐANG TẢI DỮ LIỆU CLOUD...');
 
     setTimeout(() => {
       setLaunchProgress(65);
-      setLaunchStatus('TỐI ƯU CẤU HÌNH 240Hz & ANTI-CHEAT...');
-    }, 600);
+      setLaunchStatus('ĐỒNG BỘ 240Hz & ANTI-CHEAT...');
+    }, 500);
 
     setTimeout(() => {
       setLaunchProgress(100);
-      setLaunchStatus('VÀO GAME THÀNH CÔNG!');
-    }, 1400);
+      setLaunchStatus('KHỞI CHẠY THÀNH CÔNG!');
+    }, 1100);
+  };
 
-    setTimeout(() => {
+  const handleEnterGameNow = () => {
+    if (launchingGame) {
+      setActivePlayingGame(launchingGame);
       setLaunchingGame(null);
       setLaunchProgress(0);
-    }, 2100);
+    }
+  };
+
+  const handleCloseActiveGame = () => {
+    setActivePlayingGame(null);
+    setInGameSeconds(0);
+  };
+
+  const handleCallQuickService = (title: string, details: string) => {
+    createStaffRequest({
+      pcName: wallet.pcName || 'VIP-08',
+      type: 'EXTRA_SERVICE',
+      title,
+      details,
+    });
+    setServiceAlert(`Đã gửi yêu cầu "${title}" tới nhân viên trực tầng!`);
+    setTimeout(() => setServiceAlert(null), 4000);
   };
 
   const handleOptimizeRam = () => {
     setRamOptimized(true);
-    setTimeout(() => setRamOptimized(false), 2500);
+    setTimeout(() => setRamOptimized(false), 2000);
+  };
+
+  const formatHMS = (secs: number) => {
+    const h = Math.floor(secs / 3600);
+    const m = Math.floor((secs % 3600) / 60);
+    const s = secs % 60;
+    return `${String(h).padStart(2, '0')}:${String(m).padStart(2, '0')}:${String(s).padStart(2, '0')}`;
   };
 
   return (
-    <div className="min-h-screen bg-[#030712] text-slate-100 font-sans flex flex-col select-none">
-      {/* Sub-header Telemetry Bar - Synchronized with Cyber Zone Hardware */}
-      <div className="bg-[#070d1e]/90 border-b border-white/10 px-4 py-2 flex flex-wrap items-center justify-between gap-3 text-xs font-mono">
+    <div className="min-h-screen bg-[#070a12] text-slate-100 font-sans flex flex-col select-none">
+      
+      
+      <div className="bg-[#0b101d] border-b border-white/10 px-4 py-2.5 flex flex-wrap items-center justify-between gap-3 text-xs font-mono">
         <div className="flex items-center gap-3">
-          <div className="flex items-center gap-1.5 bg-slate-900 border border-emerald-500/40 px-3 py-1 rounded-lg">
+          <Link
+            href="/client-pc"
+            className="flex items-center gap-1.5 bg-slate-900 hover:bg-slate-800 text-slate-200 border border-slate-700 hover:border-cyan-400 px-3 py-1 rounded-lg transition"
+            title="Quay lại giao diện máy trạm"
+          >
+            <span className="material-symbols-outlined text-[16px] text-cyan-400">desktop_windows</span>
+            <span className="font-gaming font-black text-white">{wallet.pcName || 'VIP-08'}</span>
+            <span className="text-[10px] text-slate-400">&larr; Máy Trạm</span>
+          </Link>
+
+          <div className="hidden sm:flex items-center gap-1 text-slate-400">
             <span className="w-2 h-2 rounded-full bg-emerald-400 animate-pulse"></span>
-            <span className="font-gaming font-black text-emerald-400">VỊ TRÍ: {wallet.pcName}</span>
-            <span className="text-slate-400">• TẦNG 2 VIP</span>
-          </div>
-
-          <div className="flex items-center gap-1 bg-slate-900 border border-slate-800 px-2.5 py-1 rounded-lg text-slate-300">
-            <span className="material-symbols-outlined text-emerald-400 text-[16px]">wifi</span>
-            <span>Ping:</span>
-            <span className="text-emerald-400 font-bold">1ms</span>
-          </div>
-
-          <div className="hidden sm:flex items-center gap-1 bg-slate-900 border border-slate-800 px-2.5 py-1 rounded-lg text-slate-300">
-            <span className="material-symbols-outlined text-cyan-400 text-[16px]">speed</span>
-            <span>Diskless:</span>
-            <span className="text-cyan-400 font-bold">10 Gbps</span>
-          </div>
-
-          <div className="hidden md:flex items-center gap-1 bg-slate-900 border border-slate-800 px-2.5 py-1 rounded-lg text-slate-300">
-            <span className="material-symbols-outlined text-purple-400 text-[16px]">memory</span>
-            <span>RTX 4070 Ti Super:</span>
-            <span className="text-emerald-400 font-bold">52°C</span>
-          </div>
-
-          <div className="hidden lg:flex items-center gap-1 bg-slate-900 border border-slate-800 px-2.5 py-1 rounded-lg text-slate-300">
-            <span className="material-symbols-outlined text-amber-400 text-[16px]">desktop_windows</span>
-            <span>Màn Hình:</span>
-            <span className="text-amber-400 font-bold">240Hz</span>
+            <span>Ping 1ms • 240Hz G-Sync</span>
           </div>
         </div>
 
-        {/* Quick Tools & RAM Optimizer */}
         <div className="flex items-center gap-2">
-          <div className="hidden lg:flex items-center gap-1 bg-slate-900 border border-slate-800 p-0.5 rounded-lg">
-            <button
-              onClick={() => alert('Đang mở ứng dụng voice chat Discord trên máy trạm...')}
-              className="px-2.5 py-1 rounded hover:bg-slate-800 text-slate-300 hover:text-white transition flex items-center gap-1 text-[11px] font-bold"
-            >
-              <span className="material-symbols-outlined text-[15px] text-[#5865F2]">forum</span> Discord
-            </button>
-            <button
-              onClick={() => alert('Đang mở TeamSpeak 3 kết nối room thi đấu...')}
-              className="px-2.5 py-1 rounded hover:bg-slate-800 text-slate-300 hover:text-white transition flex items-center gap-1 text-[11px] font-bold"
-            >
-              <span className="material-symbols-outlined text-[15px] text-cyan-400">record_voice_over</span> TS3
-            </button>
-            <button
-              onClick={() => alert('Đang mở Logitech G-Hub tùy chỉnh DPI chuột và tai nghe...')}
-              className="px-2.5 py-1 rounded hover:bg-slate-800 text-slate-300 hover:text-white transition flex items-center gap-1 text-[11px] font-bold"
-            >
-              <span className="material-symbols-outlined text-[15px] text-purple-400">mouse</span> G-Hub
-            </button>
-          </div>
+          <Link
+            href={`/menu?seat=${wallet.pcName || 'VIP-08'}`}
+            className="px-3.5 py-1.5 bg-gradient-to-r from-amber-500 via-orange-500 to-amber-500 hover:brightness-110 text-slate-950 font-black rounded-lg text-xs flex items-center gap-1.5 shadow-[0_0_15px_rgba(245,158,11,0.4)] transition active:scale-95"
+          >
+            <span className="material-symbols-outlined text-[18px]">restaurant_menu</span>
+            <span>ĐẶT MÓN F&amp;B TẬN MÁY</span>
+          </Link>
+
+          <button
+            onClick={() => handleCallQuickService('Thêm đá & nước lọc', 'Khách đang chơi game gọi thêm đá lạnh')}
+            className="px-2.5 py-1.5 bg-slate-800 hover:bg-slate-700 text-slate-300 rounded-lg text-xs font-bold border border-slate-700 flex items-center gap-1 transition cursor-pointer"
+          >
+            <span className="material-symbols-outlined text-[15px] text-cyan-400">local_drink</span>
+            <span className="hidden md:inline">Thêm Đá</span>
+          </button>
 
           <button
             onClick={handleOptimizeRam}
-            className="flex items-center gap-1 bg-gradient-to-r from-emerald-400 to-cyan-500 hover:brightness-110 text-black px-3.5 py-1.5 rounded-lg font-black text-xs shadow-[0_0_12px_rgba(16,185,129,0.3)] transition active:scale-95 cursor-pointer font-mono"
+            className="flex items-center gap-1 bg-slate-800 hover:bg-slate-700 text-emerald-400 px-2.5 py-1.5 rounded-lg font-bold text-xs border border-emerald-500/30 transition cursor-pointer"
           >
-            <span className={`material-symbols-outlined text-[16px] ${ramOptimized ? 'animate-spin' : ''}`}>
-              bolt
-            </span>
-            <span>{ramOptimized ? 'ĐÃ GIẢI PHÓNG 3.2GB RAM!' : 'TỐI ƯU RAM'}</span>
+            <span className={`material-symbols-outlined text-[15px] ${ramOptimized ? 'animate-spin' : ''}`}>bolt</span>
+            <span>{ramOptimized ? 'Đã giải phóng!' : 'Tối ưu RAM'}</span>
           </button>
         </div>
       </div>
 
-      {/* Search HUD & Platform Filter Bar */}
-      <div className="bg-[#070d1e]/90 border-b border-white/10 px-4 py-3">
+      {serviceAlert && (
+        <div className="bg-emerald-950/90 border-b border-emerald-400 text-emerald-200 px-4 py-2 text-xs font-mono flex items-center justify-between">
+          <div className="flex items-center gap-2">
+            <span className="material-symbols-outlined text-[16px] text-emerald-400">check_circle</span>
+            <span>{serviceAlert}</span>
+          </div>
+          <button onClick={() => setServiceAlert(null)} className="text-slate-400 hover:text-white">✕</button>
+        </div>
+      )}
+
+      
+      {activePlayingGame && (
+        <div className="bg-gradient-to-r from-[#17080f] via-[#210c17] to-[#120712] border-b-2 border-rose-500 px-4 py-2.5 shadow-[0_4px_25px_rgba(244,63,94,0.35)] flex flex-wrap items-center justify-between gap-3 z-30">
+          <div className="flex items-center gap-3">
+            <div className="w-8 h-8 rounded-lg bg-rose-500/20 border border-rose-500/50 flex items-center justify-center text-rose-400">
+              <span className="material-symbols-outlined text-[20px] animate-pulse">sports_esports</span>
+            </div>
+            <div>
+              <div className="flex items-center gap-2">
+                <span className="text-[10px] font-bold uppercase tracking-wider text-rose-400 bg-rose-950/60 px-2 py-0.5 rounded border border-rose-500/30">
+                  ĐANG TRONG TRẬN
+                </span>
+                <span className="font-gaming font-black text-white text-base">{activePlayingGame}</span>
+              </div>
+              <div className="text-[11px] text-slate-300 font-mono mt-0.5">
+                Thời gian trận đấu: <strong className="text-amber-400">{formatHMS(inGameSeconds)}</strong>
+              </div>
+            </div>
+          </div>
+
+          <div className="flex items-center gap-2">
+            <Link
+              href={`/menu?seat=${wallet.pcName || 'VIP-08'}`}
+              className="px-4 py-2 bg-gradient-to-r from-amber-400 to-orange-500 hover:brightness-110 text-slate-950 font-black rounded-xl text-xs flex items-center gap-1.5 shadow-[0_0_15px_rgba(251,191,36,0.5)] transition active:scale-95 uppercase tracking-wide"
+            >
+              <span className="material-symbols-outlined text-[18px]">restaurant</span>
+              <span>ĐẶT MÓN ĂN / NƯỚC CHO TRẬN NÀY &rarr;</span>
+            </Link>
+
+            <button
+              onClick={handleCloseActiveGame}
+              className="px-3 py-2 bg-slate-800 hover:bg-rose-950/50 hover:text-rose-300 text-slate-300 rounded-xl text-xs font-mono font-bold border border-slate-700 transition"
+              title="Thoát phiên game này"
+            >
+              Thoát Game ✕
+            </button>
+          </div>
+        </div>
+      )}
+
+      
+      <div className="bg-[#0b101d]/90 border-b border-white/10 px-4 py-3">
         <div className="max-w-7xl mx-auto space-y-3">
           <div className="flex flex-col md:flex-row items-center justify-between gap-3">
-            {/* Search Input */}
-            <div className="relative w-full md:w-96">
+            <div className="relative w-full md:w-80">
               <span className="material-symbols-outlined absolute left-3 top-1/2 -translate-y-1/2 text-cyan-400 text-[18px]">
                 search
               </span>
@@ -330,31 +397,30 @@ export default function GameMenuPage() {
                 id="gameSearchInputReal"
                 value={searchQuery}
                 onChange={(e) => setSearchQuery(e.target.value)}
-                placeholder="Tìm nhanh tựa game (nhấn F2)..."
+                placeholder="Tìm tựa game (F2)..."
                 type="text"
-                className="w-full bg-slate-800 border border-slate-700 text-white rounded-lg pl-9 pr-14 py-2 text-xs focus:border-cyan-400 focus:outline-none placeholder:text-slate-500 font-mono transition"
+                className="w-full bg-slate-900 border border-slate-700 text-white rounded-lg pl-9 pr-12 py-2 text-xs focus:border-cyan-400 focus:outline-none placeholder:text-slate-500 font-mono transition"
               />
-              <kbd className="absolute right-2.5 top-1/2 -translate-y-1/2 px-1.5 py-0.5 text-[10px] font-mono bg-slate-900 text-cyan-400 rounded border border-slate-700">
+              <kbd className="absolute right-2.5 top-1/2 -translate-y-1/2 px-1.5 py-0.5 text-[10px] font-mono bg-slate-950 text-cyan-400 rounded border border-slate-700">
                 F2
               </kbd>
             </div>
 
-            {/* Platform Filter Chips */}
             <div className="flex items-center gap-1.5 overflow-x-auto w-full md:w-auto scrollbar-none">
               {[
                 { id: 'all', label: 'Tất cả' },
                 { id: 'riot', label: 'Riot Games' },
                 { id: 'steam', label: 'Steam' },
                 { id: 'garena', label: 'Garena' },
-                { id: 'other', label: 'Battle.net / Khác' },
+                { id: 'other', label: 'Khác' },
               ].map((p) => (
                 <button
                   key={p.id}
                   onClick={() => setSelectedPlatform(p.id)}
                   className={`px-3 py-1.5 rounded-lg text-xs font-bold font-mono transition whitespace-nowrap cursor-pointer ${
                     selectedPlatform === p.id
-                      ? 'bg-cyan-500 text-black shadow-[0_0_12px_rgba(0,240,255,0.4)]'
-                      : 'bg-slate-800 hover:bg-slate-700 text-slate-300 border border-slate-700'
+                      ? 'bg-cyan-500 text-slate-950 font-black shadow-[0_0_12px_rgba(0,240,255,0.4)]'
+                      : 'bg-slate-900 hover:bg-slate-800 text-slate-300 border border-slate-800'
                   }`}
                 >
                   {p.label}
@@ -363,23 +429,22 @@ export default function GameMenuPage() {
             </div>
           </div>
 
-          {/* Quick Categories with EXACT COUNTS (16 total) */}
-          <div className="flex items-center gap-2 overflow-x-auto scrollbar-none pt-2 border-t border-slate-800/80">
+          <div className="flex items-center gap-2 overflow-x-auto scrollbar-none pt-2 border-t border-slate-800">
             {[
               { id: 'all', label: `TẤT CẢ (${categoryCounts.all})` },
-              { id: 'esports', label: `ESPORTS THI ĐẤU (${categoryCounts.esports})` },
-              { id: 'fps', label: `BẮN SÚNG FPS (${categoryCounts.fps})` },
-              { id: 'moba', label: `CHIẾN THUẬT MOBA (${categoryCounts.moba})` },
-              { id: 'battle-royale', label: `SINH TỒN BATTLE ROYALE (${categoryCounts['battle-royale']})` },
-              { id: 'rpg', label: `NHẬP VAI RPG / AAA (${categoryCounts.rpg})` },
+              { id: 'esports', label: `ESPORTS (${categoryCounts.esports})` },
+              { id: 'fps', label: `FPS (${categoryCounts.fps})` },
+              { id: 'moba', label: `MOBA (${categoryCounts.moba})` },
+              { id: 'battle-royale', label: `BATTLE ROYALE (${categoryCounts['battle-royale']})` },
+              { id: 'rpg', label: `RPG / AAA (${categoryCounts.rpg})` },
             ].map((cat) => (
               <button
                 key={cat.id}
                 onClick={() => setSelectedCategory(cat.id)}
                 className={`px-3 py-1.5 rounded-lg text-xs font-bold font-mono whitespace-nowrap transition cursor-pointer ${
                   selectedCategory === cat.id
-                    ? 'bg-gradient-to-r from-emerald-400 via-teal-400 to-cyan-500 text-black font-black shadow-[0_0_12px_rgba(16,185,129,0.35)]'
-                    : 'bg-slate-900/80 hover:bg-slate-800 text-slate-300 border border-white/10'
+                    ? 'bg-gradient-to-r from-amber-400 to-orange-400 text-slate-950 font-black shadow-[0_0_12px_rgba(251,191,36,0.35)]'
+                    : 'bg-slate-900/80 hover:bg-slate-800 text-slate-400 border border-white/5'
                 }`}
               >
                 {cat.label}
@@ -389,20 +454,17 @@ export default function GameMenuPage() {
         </div>
       </div>
 
-      {/* Main Game Grid (16 Games) */}
-      <main className="flex-1 max-w-7xl w-full mx-auto p-4 lg:p-6">
+      
+      <main className="flex-1 max-w-7xl w-full mx-auto p-4 lg:p-6 pb-24">
         <div className="flex justify-between items-center mb-4">
           <div className="flex items-center gap-2">
-            <span className="material-symbols-outlined text-cyan-400 text-2xl">sports_esports</span>
-            <h2 className="text-xl font-black text-white font-gaming tracking-wide uppercase">
-              KHO GAME CÀI SẴN TẠI MÁY
+            <span className="material-symbols-outlined text-amber-400 text-2xl">sports_esports</span>
+            <h2 className="text-lg font-black text-white font-gaming tracking-wide uppercase">
+              KHO 16 GAME BẢN QUYỀN SẴN SÀNG
             </h2>
-            <span className="bg-cyan-500/20 text-cyan-400 border border-cyan-500/40 text-[10px] font-mono px-2 py-0.5 rounded font-bold">
-              100% BẢN QUYỀN
-            </span>
           </div>
           <span className="text-xs text-slate-400 font-mono">
-            Hiển thị: <strong className="text-cyan-400">{filteredGames.length} / 16</strong> game
+            {filteredGames.length} game
           </span>
         </div>
 
@@ -410,7 +472,6 @@ export default function GameMenuPage() {
           <div className="p-12 text-center bg-slate-900 border border-slate-800 rounded-xl">
             <span className="material-symbols-outlined text-4xl text-slate-600 mb-2">search_off</span>
             <p className="font-bold text-slate-300">Không tìm thấy game phù hợp</p>
-            <p className="text-xs text-slate-500 mt-1">Thử đổi từ khóa hoặc chọn "TẤT CẢ"</p>
           </div>
         ) : (
           <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-6 xl:grid-cols-8 gap-3">
@@ -418,9 +479,9 @@ export default function GameMenuPage() {
               <div
                 key={game.id}
                 onClick={() => handleLaunchGame(game.name)}
-                className="group relative flex flex-col bg-slate-900 rounded-xl overflow-hidden border border-slate-800 hover:border-cyan-400 transition-all cursor-pointer shadow-lg hover:-translate-y-1.5 duration-200"
+                className="group relative flex flex-col bg-[#0b101d] rounded-xl overflow-hidden border border-slate-800 hover:border-amber-400 transition-all cursor-pointer shadow-lg hover:-translate-y-1 duration-200"
               >
-                <div className="relative aspect-[3/4] w-full overflow-hidden bg-slate-800">
+                <div className="relative aspect-[3/4] w-full overflow-hidden bg-slate-900">
                   <div
                     className="w-full h-full bg-cover bg-center group-hover:scale-110 transition-transform duration-500 ease-out"
                     style={{ backgroundImage: `url('${game.image}')` }}
@@ -432,20 +493,20 @@ export default function GameMenuPage() {
                   </span>
 
                   {game.badge && (
-                    <span className="absolute top-2 right-2 px-1.5 py-0.5 rounded bg-rose-500/20 text-rose-400 font-mono text-[9px] font-bold border border-rose-500/40">
+                    <span className="absolute top-2 right-2 px-1.5 py-0.5 rounded bg-rose-500/30 text-rose-300 font-mono text-[9px] font-bold border border-rose-500/50">
                       {game.badge}
                     </span>
                   )}
 
-                  <div className="absolute inset-0 flex items-center justify-center opacity-0 group-hover:opacity-100 transition-all bg-slate-950/60 backdrop-blur-[2px]">
-                    <button className="flex items-center gap-1 bg-cyan-500 hover:bg-cyan-400 text-black px-3 py-1.5 rounded-lg font-bold text-xs shadow-lg font-mono">
+                  <div className="absolute inset-0 flex items-center justify-center opacity-0 group-hover:opacity-100 transition-all bg-slate-950/70 backdrop-blur-[2px]">
+                    <button className="flex items-center gap-1 bg-amber-400 hover:bg-amber-300 text-slate-950 px-3 py-1.5 rounded-lg font-black text-xs shadow-lg font-mono">
                       <span className="material-symbols-outlined text-[16px]">play_arrow</span> CHƠI
                     </button>
                   </div>
                 </div>
 
-                <div className="p-2.5 text-center bg-slate-900 border-t border-slate-800">
-                  <h3 className="font-bold text-xs text-white truncate group-hover:text-cyan-400 transition-colors">
+                <div className="p-2.5 text-center bg-[#0e1424] border-t border-slate-800">
+                  <h3 className="font-bold text-xs text-white truncate group-hover:text-amber-400 transition-colors">
                     {game.name}
                   </h3>
                 </div>
@@ -455,37 +516,68 @@ export default function GameMenuPage() {
         )}
       </main>
 
-      {/* Interactive Game Launch Modal */}
+      
+      <Link
+        href={`/menu?seat=${wallet.pcName || 'VIP-08'}`}
+        className="fixed bottom-6 right-6 z-40 bg-gradient-to-r from-amber-500 via-orange-500 to-amber-500 text-slate-950 font-black px-4 py-3 rounded-2xl shadow-[0_0_25px_rgba(245,158,11,0.6)] flex items-center gap-3 hover:scale-105 transition-transform border border-amber-300 cursor-pointer"
+      >
+        <div className="w-9 h-9 rounded-xl bg-slate-950 text-amber-400 flex items-center justify-center">
+          <span className="material-symbols-outlined text-xl">restaurant_menu</span>
+        </div>
+        <div className="text-left leading-tight">
+          <div className="text-[10px] uppercase font-bold text-slate-900">ĐÓI BỤNG KHI COMBAT?</div>
+          <div className="text-xs font-black">GỌI MÓN MÁY {wallet.pcName || 'VIP-08'} &rarr;</div>
+        </div>
+      </Link>
+
+      
       {launchingGame && (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/80 backdrop-blur-md p-4 animate-fade-in">
-          <div className="w-full max-w-md bg-slate-900 border border-cyan-500/40 p-6 rounded-2xl shadow-[0_0_50px_rgba(0,240,255,0.3)] flex flex-col items-center text-center gap-4 relative overflow-hidden">
-            <div className="w-16 h-16 rounded-full bg-cyan-500/20 border-2 border-cyan-400 flex items-center justify-center shadow-[0_0_20px_rgba(0,240,255,0.4)] animate-pulse">
-              <span className="material-symbols-outlined text-cyan-400 text-3xl">sports_esports</span>
+          <div className="w-full max-w-md bg-[#0c1220] border-2 border-amber-400/60 p-6 rounded-2xl shadow-[0_0_50px_rgba(245,158,11,0.3)] flex flex-col items-center text-center gap-4 relative overflow-hidden">
+            <div className="w-16 h-16 rounded-full bg-amber-500/20 border-2 border-amber-400 flex items-center justify-center shadow-[0_0_20px_rgba(245,158,11,0.4)] animate-pulse text-amber-400">
+              <span className="material-symbols-outlined text-3xl">sports_esports</span>
             </div>
+            
             <div>
               <h3 className="text-lg font-black text-white font-gaming uppercase tracking-wide">
-                ĐANG KHỞI CHẠY: {launchingGame.toUpperCase()}
+                {launchingGame.toUpperCase()}
               </h3>
-              <p className="text-xs text-slate-400 mt-1">Đang đồng bộ Cloud Save & tối ưu tần số quét 240Hz / RTX 4070 Ti Super...</p>
+              <p className="text-xs text-slate-400 mt-1">{launchStatus}</p>
             </div>
 
-            {/* Progress bar */}
-            <div className="w-full bg-slate-800 h-2 rounded-full overflow-hidden border border-slate-700">
+            <div className="w-full bg-slate-900 h-2 rounded-full overflow-hidden border border-slate-700">
               <div
-                className="h-full bg-gradient-to-r from-cyan-500 to-purple-600 rounded-full transition-all duration-300"
+                className="h-full bg-gradient-to-r from-amber-400 via-orange-500 to-rose-500 rounded-full transition-all duration-300"
                 style={{ width: `${launchProgress}%` }}
               ></div>
             </div>
 
-            <div className="flex items-center justify-between w-full text-[11px] font-mono text-slate-400">
-              <span className="text-emerald-400 flex items-center gap-1">
-                <span className="w-1.5 h-1.5 rounded-full bg-emerald-400 animate-ping"></span> DISKLESS 10GBPS
-              </span>
-              <span className="text-cyan-400 font-bold">{launchStatus}</span>
-            </div>
+            {launchProgress >= 100 ? (
+              <div className="w-full space-y-2 pt-2">
+                <button
+                  onClick={handleEnterGameNow}
+                  className="w-full py-3 bg-gradient-to-r from-emerald-400 to-cyan-500 hover:brightness-110 text-slate-950 font-black rounded-xl text-xs uppercase shadow-lg transition"
+                >
+                  VÀO TRẬN ĐẤU NGAY
+                </button>
+                <Link
+                  href={`/menu?seat=${wallet.pcName || 'VIP-08'}`}
+                  className="w-full py-2.5 bg-amber-500/20 hover:bg-amber-500/30 text-amber-300 border border-amber-400/50 font-bold rounded-xl text-xs uppercase flex items-center justify-center gap-1.5 transition"
+                >
+                  <span className="material-symbols-outlined text-[16px]">restaurant_menu</span>
+                  <span>ĐẶT MÓN ĂN &amp; NƯỚC UỐNG CHO MÁY</span>
+                </Link>
+              </div>
+            ) : (
+              <div className="flex items-center justify-between w-full text-[11px] font-mono text-slate-400">
+                <span className="text-emerald-400">Diskless 10Gbps</span>
+                <span className="text-cyan-400 font-bold">{launchProgress}%</span>
+              </div>
+            )}
           </div>
         </div>
       )}
+
     </div>
   );
 }

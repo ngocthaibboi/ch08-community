@@ -25,7 +25,6 @@ import {
   TierInfo,
 } from '@/lib/gamerPass';
 
-// Cấu hình các loại phòng máy và giao diện màu sắc độc quyền tương ứng
 export interface StationTheme {
   name: string;
   badgeText: string;
@@ -278,32 +277,25 @@ export default function ClientPcPage() {
   const [currentUser, setCurrentUser] = useState<AuthUser | null>(null);
   const [wallet, setWallet] = useState<UserWallet>(INITIAL_WALLET);
   
-  // Trạng thái khóa màn hình: Chưa đăng nhập = Khóa màn hình máy trạm
   const [isLocked, setIsLocked] = useState(true);
 
-  // Trạm máy hiện tại & Giá tiền
   const [currentStation, setCurrentStation] = useState<StationPreset>(STATION_PRESETS[0]);
   const [customRate, setCustomRate] = useState<number>(22000);
 
-  // Đếm ngược thời gian chơi tính bằng giây (HH:MM:SS)
   const [remainingSeconds, setRemainingSeconds] = useState<number>(0);
 
-  // Form Đăng nhập tại màn hình khóa
   const [loginUsername, setLoginUsername] = useState('');
   const [loginPassword, setLoginPassword] = useState('');
   const [loginError, setLoginError] = useState<string | null>(null);
 
-  // Modal đổi máy & modal setup giá
   const [showStationModal, setShowStationModal] = useState(false);
   const [showRateModal, setShowRateModal] = useState(false);
   const [newRateInput, setNewRateInput] = useState('22000');
 
-  // Gọi nhân viên
   const [showCallModal, setShowCallModal] = useState(false);
   const [alertSuccess, setAlertSuccess] = useState<string | null>(null);
   const [customStaffNote, setCustomStaffNote] = useState('');
 
-  // Modal Gamer Pass và chúc mừng thăng hạng
   const [showGamerPassModal, setShowGamerPassModal] = useState(false);
   const [showUpgradeSuccessModal, setShowUpgradeSuccessModal] = useState(false);
   const [newUpgradedTierName, setNewUpgradedTierName] = useState('');
@@ -311,7 +303,6 @@ export default function ClientPcPage() {
   const [activeBroadcast, setActiveBroadcast] = useState<string | null>(null);
   const [directAdminMessage, setDirectAdminMessage] = useState<string | null>(null);
 
-  // Khởi tạo và đồng bộ
   useEffect(() => {
     const user = getLoggedInUser();
     const storedWallet = getStoredWallet();
@@ -319,20 +310,17 @@ export default function ClientPcPage() {
     setWallet(storedWallet);
     setCurrentUser(user);
 
-    // Tìm máy hiện tại theo wallet hoặc mặc định VIP-08
     const matched = STATION_PRESETS.find((s) => s.id === storedWallet.pcName) || STATION_PRESETS[0];
     setCurrentStation(matched);
     const initialRate = storedWallet.hourlyRate || matched.hourlyRate;
     setCustomRate(initialRate);
     setNewRateInput(String(initialRate));
 
-    // Khởi tạo số giây chơi còn lại
     if (storedWallet.balance > 0 && initialRate > 0) {
       const secs = Math.floor((storedWallet.balance / initialRate) * 3600);
       setRemainingSeconds(secs);
     }
 
-    // Nếu đã đăng nhập và có tiền ví > 0 thì mở khóa máy
     if (user && storedWallet.balance > 0) {
       setIsLocked(false);
     } else {
@@ -381,7 +369,6 @@ export default function ClientPcPage() {
     };
   }, []);
 
-  // Đếm ngược từng giây khi máy trạm đã mở khóa
   useEffect(() => {
     if (isLocked) return;
 
@@ -398,7 +385,6 @@ export default function ClientPcPage() {
     return () => clearInterval(timer);
   }, [isLocked]);
 
-  // Xử lý đăng nhập mở máy tại chỗ
   const handleClientLogin = (e: React.FormEvent) => {
     e.preventDefault();
     if (!loginUsername.trim() || !loginPassword.trim()) {
@@ -429,7 +415,6 @@ export default function ClientPcPage() {
     setTimeout(() => setAlertSuccess(null), 4000);
   };
 
-  // Nút đăng nhập nhanh cho Thái diễn tập
   const handleQuickDemoLogin = (name: string, demoBalance: number = 200000) => {
     const userObj: AuthUser = {
       id: `demo-${Date.now()}`,
@@ -452,7 +437,6 @@ export default function ClientPcPage() {
     setTimeout(() => setAlertSuccess(null), 4000);
   };
 
-  // Khóa máy / Đăng xuất
   const handleLockClient = () => {
     if (confirm(`Bạn có chắc muốn đăng xuất và khóa máy trạm ${currentStation.id}?`)) {
       setIsLocked(true);
@@ -460,27 +444,22 @@ export default function ClientPcPage() {
     }
   };
 
-  // Xử lý chuyển đổi phòng máy với công thức quy đổi tiền và giờ tỷ lệ thuận
   const handleChangeStation = (preset: StationPreset) => {
     const oldStation = currentStation;
     const oldRate = customRate > 0 ? customRate : oldStation.hourlyRate;
 
-    // 1. Số tiền còn lại tại thời điểm bấm chuyển phòng
     const currentMoney = remainingSeconds > 0
       ? (remainingSeconds / 3600) * oldRate
       : wallet.balance;
 
-    // 2. Tính số giây tương ứng tại phòng máy mới
     const newRate = preset.hourlyRate;
     const newSeconds = Math.max(0, Math.floor((currentMoney / newRate) * 3600));
 
-    // 3. Cập nhật state máy, đơn giá và số giây đếm ngược mới
     setCurrentStation(preset);
     setCustomRate(newRate);
     setNewRateInput(String(newRate));
     setRemainingSeconds(newSeconds);
 
-    // 4. Cập nhật đồng bộ vào walletStore và localStorage
     const updatedWallet = updateStationAndRate(preset.id, preset.zone, newRate);
     const roundedMoney = Math.round(currentMoney);
     if (updatedWallet.balance !== roundedMoney) {
@@ -490,7 +469,6 @@ export default function ClientPcPage() {
     setWallet(updatedWallet);
     setShowStationModal(false);
 
-    // 5. Hiển thị thông báo chi tiết
     const oldTimeStr = formatSecondsToHMS(remainingSeconds);
     const newTimeStr = formatSecondsToHMS(newSeconds);
     setAlertSuccess(
@@ -499,7 +477,6 @@ export default function ClientPcPage() {
     setTimeout(() => setAlertSuccess(null), 7000);
   };
 
-  // Xử lý setup giá tiền mới
   const handleSaveCustomRate = (e: React.FormEvent) => {
     e.preventDefault();
     const rateNum = parseInt(newRateInput, 10);
@@ -525,7 +502,6 @@ export default function ClientPcPage() {
     setTimeout(() => setAlertSuccess(null), 6000);
   };
 
-  // Mô phỏng trừ tiền theo thời gian chơi (Để Thái trình bày thuyết trình)
   const handleSimulatePlayTime = (minutes: number) => {
     const deductSeconds = minutes * 60;
     if (remainingSeconds < deductSeconds) {
@@ -552,7 +528,6 @@ export default function ClientPcPage() {
     }
   };
 
-  // Nạp nhanh tiền để demo & tự động phát hiện thăng hạng
   const handleQuickAddMoney = (amount: number) => {
     const prevTier = getTierByName(wallet.userTier);
     const updated = topupWallet(amount, 'Nạp Nhanh Diễn Tập');
@@ -574,7 +549,6 @@ export default function ClientPcPage() {
     }
   };
 
-  // Xử lý gọi nhân viên
   const handleCallStaff = (reason: string) => {
     try {
       createStaffRequest({
@@ -592,21 +566,16 @@ export default function ClientPcPage() {
     }
   };
 
-  // Tính số dư khả dụng thực tế theo thời gian đếm ngược
   const liveBalance = Math.max(0, Math.round((remainingSeconds / 3600) * (customRate || currentStation.hourlyRate)));
 
-  // ════════════════════════════════════════════════════════════════════════════
-  // GIAO DIỆN 1: MÀN HÌNH KHÓA MÁY TRẠM (CYBER CLIENT LOCK SCREEN)
-  // Bắt buộc phải đăng nhập thì mới mở khóa được máy
-  // ════════════════════════════════════════════════════════════════════════════
   if (isLocked) {
     return (
       <div className="min-h-screen bg-[#020617] text-slate-100 flex flex-col justify-between p-4 sm:p-8 relative overflow-hidden font-sans select-none">
-        {/* Nền hiệu ứng Cyberpunk */}
+        
         <div className="absolute inset-0 bg-[radial-gradient(ellipse_at_top,_var(--tw-gradient-stops))] from-cyan-950/40 via-slate-950 to-black pointer-events-none"></div>
         <div className="absolute top-1/4 left-1/2 -translate-x-1/2 w-96 h-96 bg-emerald-500/10 rounded-full blur-3xl pointer-events-none"></div>
 
-        {/* Header Màn hình khóa */}
+        
         <div className="relative z-10 max-w-6xl mx-auto w-full flex justify-between items-center pb-4 border-b border-white/10">
           <div className="flex items-center gap-3">
             <div className="w-10 h-10 rounded-xl bg-gradient-to-br from-emerald-400 to-cyan-500 flex items-center justify-center text-black font-black text-xl shadow-lg shadow-emerald-500/20">
@@ -636,7 +605,7 @@ export default function ClientPcPage() {
           </div>
         </div>
 
-        {/* Nội dung trung tâm: Cửa sổ Đăng nhập mở máy */}
+        
         <div className="relative z-10 max-w-md w-full mx-auto my-auto py-8">
           <div className="bg-[#070e22]/95 border-2 border-emerald-500/50 rounded-3xl p-6 sm:p-8 shadow-[0_0_40px_rgba(16,185,129,0.2)] backdrop-blur-xl space-y-5">
             
@@ -691,7 +660,7 @@ export default function ClientPcPage() {
               </button>
             </form>
 
-            {/* Cụm Diễn tập Nhanh Cho Buổi Thuyết Trình */}
+            
             <div className="pt-3 border-t border-white/10 space-y-2">
               <span className="text-[10px] text-slate-400 block text-center uppercase tracking-wider font-mono">
                 DÀNH CHO BẠN THÁI DIỄN TẬP / DEMO THẦY CÔ
@@ -706,7 +675,7 @@ export default function ClientPcPage() {
               </button>
             </div>
 
-            {/* Thông số phần cứng tóm tắt */}
+            
             <div className="p-3 rounded-2xl bg-black/40 border border-white/5 text-[11px] font-mono text-slate-400 space-y-1">
               <div className="flex justify-between">
                 <span>Cấu hình:</span>
@@ -725,13 +694,13 @@ export default function ClientPcPage() {
           </div>
         </div>
 
-        {/* Footer Màn hình khóa */}
+        
         <div className="relative z-10 max-w-6xl mx-auto w-full flex flex-col sm:flex-row justify-between items-center gap-2 text-xs text-slate-500 font-mono pt-4 border-t border-white/10">
           <span>Trạm máy: <strong className="text-slate-300">{currentStation.name}</strong> • IP: 192.168.1.{currentStation.id.replace(/\D/g, '') || '8'}</span>
           <span>Hotline hỗ trợ nạp thẻ tại quầy: <strong className="text-emerald-400">1900 8888</strong></span>
         </div>
 
-        {/* MODAL ĐỔI PHÒNG MÁY / TRẠM MÁY */}
+        
         {showStationModal && (
           <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/85 backdrop-blur-md">
             <div className="w-full max-w-2xl bg-slate-900 border border-cyan-500/50 rounded-3xl p-6 shadow-2xl space-y-4 font-sans">
@@ -776,16 +745,13 @@ export default function ClientPcPage() {
     );
   }
 
-  // ════════════════════════════════════════════════════════════════════════════
-  // GIAO DIỆN 2: MÀN HÌNH MÁY TRẠM ĐÃ ĐĂNG NHẬP THÀNH CÔNG (LIVE CLIENT PC)
-  // ════════════════════════════════════════════════════════════════════════════
   return (
     <div className={`min-h-screen ${currentStation.theme.bgGradient} text-slate-100 font-sans selection:bg-emerald-400 selection:text-black pb-16 transition-colors duration-700 relative`}>
       
-      {/* Hiệu ứng hào quang ánh sáng độc quyền của phòng */}
+      
       <div className={`absolute top-0 left-1/2 -translate-x-1/2 w-full max-w-5xl h-80 ${currentStation.theme.glowAura} rounded-full blur-3xl pointer-events-none opacity-30 transition-all duration-700`}></div>
 
-      {/* THÔNG BÁO PHÁT LOA TỪ QUẦY LỄ TÂN */}
+      
       {activeBroadcast && (
         <div className="bg-gradient-to-r from-purple-600 via-pink-600 to-cyan-500 text-white py-2 px-4 shadow-xl flex items-center justify-between animate-fadeIn z-50">
           <div className="max-w-7xl mx-auto w-full flex items-center justify-between gap-3 text-xs font-mono font-bold">
@@ -803,7 +769,7 @@ export default function ClientPcPage() {
         </div>
       )}
 
-      {/* TIN NHẮN RIÊNG GỬI TRỰC TIẾP TỪ LỄ TÂN TỚI MÁY */}
+      
       {directAdminMessage && (
         <div className="bg-amber-400 text-slate-950 py-2.5 px-4 shadow-2xl flex items-center justify-between font-mono text-xs font-bold z-50 animate-bounce">
           <div className="max-w-7xl mx-auto w-full flex items-center justify-between gap-3">
@@ -821,11 +787,11 @@ export default function ClientPcPage() {
         </div>
       )}
 
-      {/* ══════════ 1. HUD THỜI GIAN THẬT TRÊN MÁY TRẠM ══════════ */}
+      
       <div className={`bg-slate-950/80 backdrop-blur-md ${currentStation.theme.hudGlow} py-3 px-4 sticky top-0 z-40 transition-all duration-500`}>
         <div className="max-w-7xl mx-auto flex flex-wrap items-center justify-between gap-4">
           
-          {/* Cụm trái: Thông tin máy & Nút đổi phòng máy */}
+          
           <div className="flex items-center gap-3">
             <div className={`w-10 h-10 rounded-xl ${currentStation.theme.stationTagBg} flex items-center justify-center font-black font-gaming text-lg shadow-lg`}>
               {currentStation.id.slice(-2)}
@@ -839,7 +805,7 @@ export default function ClientPcPage() {
                   <span className="w-1.5 h-1.5 rounded-full bg-emerald-400 animate-ping"></span> ONLINE
                 </span>
                 
-                {/* Nút Đổi Phòng Máy / Vị Trí */}
+                
                 <button
                   onClick={() => setShowStationModal(true)}
                   className="px-2 py-0.5 rounded-lg bg-cyan-500/20 hover:bg-cyan-500/30 text-cyan-300 border border-cyan-500/40 text-[10px] font-mono font-bold transition flex items-center gap-1 cursor-pointer"
@@ -864,7 +830,7 @@ export default function ClientPcPage() {
             </div>
           </div>
 
-          {/* Cụm giữa: ĐỒNG HỒ ĐẾM NGƯỢC THỜI GIAN CHƠI DỰA THEO ĐƠN GIÁ MÁY */}
+          
           <div className="flex items-center gap-3 bg-black/60 border border-white/10 px-4 py-2 rounded-2xl shadow-inner font-mono">
             <span className="material-symbols-outlined text-amber-400 text-[20px] animate-pulse">timer</span>
             <div className="text-center">
@@ -884,9 +850,25 @@ export default function ClientPcPage() {
             </button>
           </div>
 
-          {/* Cụm phải: Số dư ví, Hội viên & Nút gọi nhân viên / Khóa máy */}
-          <div className="flex items-center gap-3">
-            <div className="text-right hidden sm:block font-mono">
+          
+          <div className="flex items-center gap-2">
+            <Link
+              href={`/menu?seat=${currentStation.id}`}
+              className="px-3 py-1.5 rounded-xl bg-gradient-to-r from-amber-500 via-orange-500 to-amber-500 hover:brightness-110 text-slate-950 font-black text-xs font-mono flex items-center gap-1.5 shadow-[0_0_15px_rgba(245,158,11,0.4)] transition transform hover:scale-105 cursor-pointer"
+            >
+              <span className="material-symbols-outlined text-[16px]">restaurant_menu</span>
+              <span>GỌI MÓN F&amp;B</span>
+            </Link>
+
+            <Link
+              href="/games"
+              className="px-3 py-1.5 rounded-xl bg-slate-800 hover:bg-slate-700 text-cyan-300 hover:text-white border border-cyan-500/40 text-xs font-mono font-bold transition flex items-center gap-1.5 cursor-pointer"
+            >
+              <span className="material-symbols-outlined text-[16px] text-cyan-400">sports_esports</span>
+              <span>KHO GAME</span>
+            </Link>
+
+            <div className="text-right hidden xl:block font-mono">
               <div className="flex items-center justify-end gap-1.5 text-xs">
                 <span className="text-white font-bold">{currentUser?.fullName || wallet.userName}</span>
                 {(() => {
@@ -917,7 +899,7 @@ export default function ClientPcPage() {
               <span className="hidden md:inline">GỌI NHÂN VIÊN</span>
             </button>
 
-            {/* Nút Khóa máy / Đăng xuất */}
+            
             <button
               onClick={handleLockClient}
               className="px-2.5 py-2 rounded-xl bg-slate-800 hover:bg-slate-700 text-slate-300 hover:text-white border border-white/10 text-xs font-mono font-bold transition flex items-center gap-1 cursor-pointer"
@@ -931,7 +913,7 @@ export default function ClientPcPage() {
         </div>
       </div>
 
-      {/* THÔNG BÁO FLASH */}
+      
       {alertSuccess && (
         <div className="max-w-7xl mx-auto px-4 mt-4">
           <div className="p-3.5 rounded-2xl bg-emerald-500/20 border border-emerald-400 text-emerald-300 font-mono text-xs flex items-center justify-between shadow-xl animate-bounce">
@@ -944,10 +926,10 @@ export default function ClientPcPage() {
         </div>
       )}
 
-      {/* ══════════ 2. MÀN HÌNH KHÁCH TẠI MÁY (DESKTOP CLIENT GATEWAY) ══════════ */}
+      
       <div className="max-w-7xl mx-auto px-4 pt-8 space-y-8">
         
-        {/* BANNER CHÀO MỪNG GAME THỦ TẠI BÀN */}
+        
         <div className="relative rounded-3xl overflow-hidden p-6 sm:p-10 bg-gradient-to-r from-[#0c1833] via-[#081224] to-[#040812] border border-white/10 shadow-2xl">
           <div className="absolute right-0 top-0 bottom-0 w-1/2 opacity-20 pointer-events-none bg-[radial-gradient(circle_at_center,_var(--tw-gradient-stops))] from-cyan-400 via-transparent to-transparent"></div>
           
@@ -965,7 +947,7 @@ export default function ClientPcPage() {
             </h1>
 
             <p className="text-slate-300 text-xs sm:text-sm leading-relaxed font-sans">
-              Bạn đang sử dụng dàn máy thi đấu <strong className="text-emerald-400 font-bold">{currentStation.id}</strong> ({currentStation.name}) với cấu hình <strong className="text-white">{currentStation.cpu} &amp; {currentStation.gpu}</strong>. Đơn giá đang áp dụng: <strong className="text-amber-300 font-mono">{customRate.toLocaleString('vi-VN')}đ/h</strong>.
+              Dàn máy thi đấu cao cấp <strong className="text-emerald-400 font-bold">{currentStation.id}</strong> • Màn hình 240Hz Fast-IPS • Đơn giá: <strong className="text-amber-300 font-mono">{customRate.toLocaleString('vi-VN')}đ/h</strong>
             </p>
 
             <div className="flex flex-wrap items-center gap-3 pt-2 font-mono text-xs">
@@ -987,7 +969,7 @@ export default function ClientPcPage() {
           </div>
         </div>
 
-        {/* ══════════ 3. BẢNG MÔ PHỎNG TRỪ TIỀN GIỜ CHƠI DÀNH CHO THUYẾT TRÌNH (DIỄN TẬP ĐIỂM 10) ══════════ */}
+        
         <div className="p-6 rounded-3xl bg-gradient-to-r from-[#07132a] via-[#091834] to-[#07132a] border border-cyan-400/50 shadow-2xl relative overflow-hidden">
           <div className="flex flex-col lg:flex-row justify-between items-start lg:items-center gap-4 pb-4 border-b border-white/10">
             <div>
@@ -1000,7 +982,7 @@ export default function ClientPcPage() {
                 </h3>
               </div>
               <p className="text-xs text-slate-300 font-mono mt-1">
-                Bấm các nút dưới đây để chứng minh hệ thống tự động trừ tiền ví và tính toán lại thời gian chơi theo giá tiền máy bạn đã setup!
+                Mô phỏng trừ cước giờ chơi theo đơn giá phòng máy trực tuyến.
               </p>
             </div>
 
@@ -1067,10 +1049,10 @@ export default function ClientPcPage() {
           </div>
         </div>
 
-        {/* ══════════ 4. 4 NÚT TIỆN ÍCH TRỌNG TÂM CỦA MÁY ══════════ */}
+        
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
           
-          {/* Card 1: Gọi Món Bếp F&B */}
+          
           <Link
             href="/menu"
             className="group p-5 rounded-2xl bg-[#070d1e]/90 border border-white/10 hover:border-emerald-500/60 transition-all shadow-xl hover:-translate-y-1 flex flex-col justify-between"
@@ -1097,7 +1079,7 @@ export default function ClientPcPage() {
             </div>
           </Link>
 
-          {/* Card 2: Kho 16 Game Bản Quyền */}
+          
           <Link
             href="/games"
             className="group p-5 rounded-2xl bg-[#070d1e]/90 border border-white/10 hover:border-cyan-500/60 transition-all shadow-xl hover:-translate-y-1 flex flex-col justify-between"
@@ -1118,13 +1100,26 @@ export default function ClientPcPage() {
                 Khởi động siêu tốc LMHT, Valorant, CS2, Black Myth Wukong, FC Online, PUBG. Bản quyền Steam &amp; Riot cài sẵn.
               </p>
             </div>
-            <div className="mt-4 pt-3 border-t border-white/10 flex justify-between items-center text-xs font-mono text-cyan-400 font-bold">
-              <span>Mở Launcher Game</span>
-              <span>&rarr;</span>
+            <div className="mt-4 pt-3 border-t border-white/10 flex items-center justify-between gap-2 text-xs font-mono">
+              <span className="text-cyan-400 font-bold flex items-center gap-1">
+                <span>Mở Launcher Game</span>
+                <span>&rarr;</span>
+              </span>
+              <span
+                onClick={(e) => {
+                  e.stopPropagation();
+                  window.location.href = `/menu?seat=${currentStation.id}`;
+                }}
+                className="px-2.5 py-1 rounded-lg bg-amber-500/20 hover:bg-amber-500/30 text-amber-300 border border-amber-400/50 text-[10px] font-bold flex items-center gap-1 cursor-pointer transition"
+                title="Gọi đồ ăn kèm khi chơi game"
+              >
+                <span className="material-symbols-outlined text-[12px]">restaurant_menu</span>
+                <span>+ Đặt Món Ăn Kèm</span>
+              </span>
             </div>
           </Link>
 
-          {/* Card 3: Nạp Giờ Chơi & Ví Thẻ */}
+          
           <Link
             href="/auth"
             className="group p-5 rounded-2xl bg-[#070d1e]/90 border border-white/10 hover:border-amber-500/60 transition-all shadow-xl hover:-translate-y-1 flex flex-col justify-between"
@@ -1151,7 +1146,7 @@ export default function ClientPcPage() {
             </div>
           </Link>
 
-          {/* Card 4: Nút Bấm Gọi Nhân Viên Phục Vụ */}
+          
           <div
             onClick={() => setShowCallModal(true)}
             className="group p-5 rounded-2xl bg-[#070d1e]/90 border border-white/10 hover:border-rose-500/60 transition-all shadow-xl hover:-translate-y-1 flex flex-col justify-between cursor-pointer"
@@ -1180,10 +1175,10 @@ export default function ClientPcPage() {
 
         </div>
 
-        {/* ══════════ 5. BẢNG THÔNG SỐ PHẦN CỨNG & ĐẶC QUYỀN HẠNG VÀNG ══════════ */}
+        
         <div className="grid grid-cols-1 lg:grid-cols-12 gap-6">
           
-          {/* Cột trái: Cấu hình phần cứng máy */}
+          
           <div className="lg:col-span-7 bg-[#070d1e]/80 border border-white/10 rounded-3xl p-6 space-y-4">
             <div className="flex justify-between items-center border-b border-white/10 pb-4">
               <div>
@@ -1227,7 +1222,7 @@ export default function ClientPcPage() {
             </div>
           </div>
 
-          {/* Cột phải: Thẻ Gamer Pass Trực Tiếp Theo Hạng Thực Tế Của Hội Viên */}
+          
           {(() => {
             const currentTier = getTierByName(currentUser?.userTier || wallet.userTier);
             const cumulative = getCumulativeTopupAmount(wallet);
@@ -1268,7 +1263,7 @@ export default function ClientPcPage() {
                     </span>
                   </div>
 
-                  {/* Thanh tiến trình thăng hạng Gamer Pass */}
+                  
                   <div className="p-3 rounded-xl bg-black/50 border border-white/10 space-y-2">
                     <div className="flex justify-between text-[11px]">
                       <span className="text-slate-400">
@@ -1324,7 +1319,7 @@ export default function ClientPcPage() {
 
       </div>
 
-      {/* ══════════ MODAL ĐỔI PHÒNG MÁY / TRẠM MÁY ══════════ */}
+      
       {showStationModal && (
         <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/85 backdrop-blur-md">
           <div className="w-full max-w-2xl bg-slate-900 border border-cyan-500/50 rounded-3xl p-6 shadow-2xl space-y-4 font-sans">
@@ -1372,7 +1367,7 @@ export default function ClientPcPage() {
         </div>
       )}
 
-      {/* ══════════ MODAL SETUP ĐƠN GIÁ MÁY ══════════ */}
+      
       {showRateModal && (
         <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/85 backdrop-blur-md">
           <div className="w-full max-w-md bg-slate-900 border border-amber-500/50 rounded-3xl p-6 shadow-2xl space-y-4 font-sans">
@@ -1442,7 +1437,7 @@ export default function ClientPcPage() {
         </div>
       )}
 
-      {/* ══════════ MODAL GỌI NHÂN VIÊN PHỤC VỤ ══════════ */}
+      
       {showCallModal && (
         <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/80 backdrop-blur-sm animate-fadeIn">
           <div className="w-full max-w-md bg-slate-900 border border-rose-500/40 rounded-3xl p-6 shadow-2xl space-y-5">
@@ -1484,7 +1479,7 @@ export default function ClientPcPage() {
               ))}
             </div>
 
-            {/* Mục Khách Tự Nhập Yêu Cầu Riêng */}
+            
             <div className="pt-3 border-t border-white/10 space-y-2">
               <label className="text-[11px] text-slate-300 font-mono font-bold flex items-center gap-1.5">
                 <span className="material-symbols-outlined text-[15px] text-rose-400">edit_note</span>
@@ -1527,11 +1522,11 @@ export default function ClientPcPage() {
         </div>
       )}
 
-      {/* ══════════ MODAL XEM CHI TIẾT GAMER PASS & BẢNG QUYỀN LỢI ══════════ */}
+      
       {showGamerPassModal && (
         <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/85 backdrop-blur-md">
           <div className="w-full max-w-4xl bg-[#090f20] border border-cyan-500/50 rounded-3xl p-6 sm:p-8 shadow-2xl space-y-6 font-sans text-slate-100 max-h-[92vh] overflow-y-auto">
-            {/* Header Modal */}
+            
             <div className="flex justify-between items-center border-b border-white/10 pb-4">
               <div className="flex items-center gap-3">
                 <div className="w-12 h-12 rounded-2xl bg-gradient-to-tr from-cyan-400 to-amber-400 text-black flex items-center justify-center font-black text-xl shadow-lg">
@@ -1554,7 +1549,7 @@ export default function ClientPcPage() {
               </button>
             </div>
 
-            {/* Current user badge & progression */}
+            
             {(() => {
               const currentTier = getTierByName(currentUser?.userTier || wallet.userTier);
               const cumulative = getCumulativeTopupAmount(wallet);
@@ -1604,7 +1599,7 @@ export default function ClientPcPage() {
               );
             })()}
 
-            {/* 4-Tier Comparison Cards */}
+            
             <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
               {TIERS_ORDER.map((tierKey) => {
                 const tier = GAMER_PASS_TIERS[tierKey];
@@ -1682,7 +1677,7 @@ export default function ClientPcPage() {
               })}
             </div>
 
-            {/* Quick Demo Instant Upgrade Bar */}
+            
             <div className="p-4 rounded-2xl bg-slate-800/80 border border-amber-500/30 space-y-3 font-mono">
               <div className="flex items-center justify-between">
                 <div className="flex items-center gap-2">
@@ -1719,7 +1714,7 @@ export default function ClientPcPage() {
         </div>
       )}
 
-      {/* ══════════ MODAL CHÚC MỪNG THĂNG HẠNG HỘI VIÊN ══════════ */}
+      
       {showUpgradeSuccessModal && (
         <div className="fixed inset-0 z-[60] flex items-center justify-center p-4 bg-black/90 backdrop-blur-md animate-fadeIn">
           <div className="w-full max-w-md bg-gradient-to-b from-[#132347] to-[#070d1e] border-2 border-amber-400 rounded-3xl p-6 sm:p-8 text-center space-y-4 shadow-2xl relative">
@@ -1758,6 +1753,36 @@ export default function ClientPcPage() {
           </div>
         </div>
       )}
+
+      
+      <div className="fixed bottom-4 left-1/2 -translate-x-1/2 z-40 bg-[#080d19]/95 backdrop-blur-md border border-white/15 px-4 py-2 rounded-2xl shadow-[0_10px_40px_rgba(0,0,0,0.8)] flex items-center gap-3">
+        <div className="flex items-center gap-2 pr-3 border-r border-white/10 font-mono text-xs">
+          <span className="w-2 h-2 rounded-full bg-emerald-400 animate-pulse"></span>
+          <span className="text-white font-bold">{currentStation.id}</span>
+          <span className="text-amber-400 font-mono font-black">{formatSecondsToHMS(remainingSeconds)}</span>
+        </div>
+        <Link
+          href={`/menu?seat=${currentStation.id}`}
+          className="px-3.5 py-1.5 bg-gradient-to-r from-amber-500 to-orange-500 hover:brightness-110 text-slate-950 font-black text-xs rounded-xl flex items-center gap-1.5 shadow-[0_0_15px_rgba(245,158,11,0.5)] transition active:scale-95 cursor-pointer"
+        >
+          <span className="material-symbols-outlined text-[16px]">restaurant_menu</span>
+          <span>ĐẶT MÓN F&amp;B</span>
+        </Link>
+        <Link
+          href="/games"
+          className="px-3.5 py-1.5 bg-slate-800 hover:bg-slate-700 text-white font-bold text-xs rounded-xl flex items-center gap-1.5 border border-slate-700 transition cursor-pointer"
+        >
+          <span className="material-symbols-outlined text-[16px] text-cyan-400">sports_esports</span>
+          <span>KHO GAME</span>
+        </Link>
+        <button
+          onClick={() => setShowCallModal(true)}
+          className="px-3 py-1.5 bg-rose-500/20 hover:bg-rose-500/30 text-rose-300 border border-rose-500/40 font-bold text-xs rounded-xl flex items-center gap-1 transition cursor-pointer"
+        >
+          <span className="material-symbols-outlined text-[16px]">support_agent</span>
+          <span className="hidden sm:inline">GỌI NHÂN VIÊN</span>
+        </button>
+      </div>
 
     </div>
   );

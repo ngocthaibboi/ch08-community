@@ -1,5 +1,5 @@
 import os
-from flask import Flask, render_template  # <-- Thêm render_template vào đây
+from flask import Flask, render_template
 from flask_sqlalchemy import SQLAlchemy
 from flask_login import LoginManager
 from dotenv import load_dotenv
@@ -13,10 +13,23 @@ def create_app():
     app = Flask(__name__)
     app.config['SECRET_KEY'] = os.getenv('SECRET_KEY', 'default_secret')
     
-    # Kết nối Database Supabase qua SQLAlchemy
-    db_url = os.getenv('DATABASE_URL')
+    db_url = os.getenv('DATABASE_URL', 'sqlite:///cyber.db')
     if db_url and db_url.startswith("postgresql://"):
         db_url = db_url.replace("postgresql://", "postgresql+psycopg2://", 1)
+        if "pgbouncer=true" in db_url:
+            db_url = db_url.replace("pgbouncer=true", "")
+        db_url = db_url.rstrip('?&')
+        if "sslmode=" not in db_url:
+            db_url += ("&" if "?" in db_url else "?") + "sslmode=require"
+
+        try:
+            import psycopg2
+            clean_dsn = db_url.replace("postgresql+psycopg2://", "postgresql://")
+            conn = psycopg2.connect(clean_dsn, connect_timeout=2)
+            conn.close()
+        except Exception:
+            db_url = 'sqlite:///cyber.db'
+
     app.config['SQLALCHEMY_DATABASE_URI'] = db_url
     app.config['SQLALCHEMY_TRACK_MODIFICATIONS'] = False
 
@@ -24,12 +37,10 @@ def create_app():
     login_manager.init_app(app)
     login_manager.login_view = 'auth.login'
 
-    # ROUTE TRANG CHỦ (Landing Page)
     @app.route('/')
     def index():
         return render_template('index.html')
 
-    # Đăng ký Blueprint cho Thành viên 1
     from flask_app.blueprints.auth.routes import auth_bp
     app.register_blueprint(auth_bp, url_prefix='/auth')
 
