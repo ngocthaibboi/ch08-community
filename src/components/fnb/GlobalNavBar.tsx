@@ -15,22 +15,19 @@ export default function GlobalNavBar() {
   const [wallet, setWallet] = useState<UserWallet>(INITIAL_WALLET);
   const [currentUser, setCurrentUser] = useState<AuthUser | null>(null);
 
-  // Thanh Giao diện hệ thống: Trượt lên / Trượt xuống khi rê chuột
   const [isSystemDrawerOpen, setIsSystemDrawerOpen] = useState(false);
   const [isPinned, setIsPinned] = useState(false);
 
-  // Modal Auth
   const [isAuthModalOpen, setIsAuthModalOpen] = useState(false);
   const [authModalTab, setAuthModalTab] = useState<'login' | 'register'>('login');
 
-  // Dropdown Khu máy
   const [isServiceDropdownOpen, setIsServiceDropdownOpen] = useState(false);
   const dropdownRef = useRef<HTMLDivElement>(null);
 
-  // 5 Chế độ trải nghiệm hệ sinh thái Cyber Game
   const ecosystemModes = [
     { href: '/', label: '1. Cổng Khách Hàng (Trang Chủ)', icon: 'public' },
     { href: '/client-pc', label: '2. Khách Ngồi Tại Máy (VIP-08)', icon: 'desktop_windows' },
+    { href: '/client-app-draft', label: '⭐ Bản Nháp Cyber Client OS', icon: 'sports_esports' },
     { href: '/server', label: '3. Máy Chủ Phòng Máy (Server Tổng)', icon: 'dns' },
     { href: '/kds', label: '4. Màn Hình Bếp (KDS)', icon: 'soup_kitchen', countBadge: true },
     { href: '/dashboard', label: '5. Quản Lý Doanh Thu', icon: 'monitoring', liveBadge: true },
@@ -45,7 +42,6 @@ export default function GlobalNavBar() {
         setWallet(getStoredWallet());
         setCurrentUser(getLoggedInUser());
       } catch {
-        // Fallback
       }
     };
 
@@ -55,7 +51,6 @@ export default function GlobalNavBar() {
     window.addEventListener(AUTH_EVENT_NAME, updateAll);
     window.addEventListener('storage', updateAll);
 
-    // Click outside to close dropdown
     const handleClickOutside = (e: MouseEvent) => {
       if (dropdownRef.current && !dropdownRef.current.contains(e.target as Node)) {
         setIsServiceDropdownOpen(false);
@@ -87,7 +82,7 @@ export default function GlobalNavBar() {
   return (
     <header className="sticky top-0 z-50 flex flex-col shadow-2xl">
       
-      {/* ══════════ THANH 1: BỘ CHUYỂN ĐỔI 5 GÓC NHÌN (TRƯỢT LÊN / TRƯỢT XUỐNG KHI RÊ CHUỘT) ══════════ */}
+      
       <div
         onMouseEnter={() => setIsSystemDrawerOpen(true)}
         onMouseLeave={() => {
@@ -95,7 +90,7 @@ export default function GlobalNavBar() {
         }}
         className="relative z-50 transition-all duration-300"
       >
-        {/* Thanh nội dung trượt thông minh */}
+        
         <div
           className={`bg-[#020617]/98 backdrop-blur-xl border-b border-emerald-500/30 font-mono text-[10px] sm:text-[11px] overflow-hidden transition-all duration-300 ease-in-out shadow-2xl ${
             isSystemDrawerOpen || isPinned
@@ -138,7 +133,7 @@ export default function GlobalNavBar() {
                 );
               })}
 
-              {/* Nút ghim cố định nếu muốn */}
+              
               <button
                 type="button"
                 onClick={() => setIsPinned(!isPinned)}
@@ -156,7 +151,7 @@ export default function GlobalNavBar() {
           </div>
         </div>
 
-        {/* Tab Handle nhỏ gọn ở mép trên (hiện ra khi thanh bị thu gọn để người dùng lướt chuột vào là trượt xuống) */}
+        
         {!isPinned && (
           <div className="flex justify-center -mb-2 relative z-10 pointer-events-auto">
             <button
@@ -174,8 +169,10 @@ export default function GlobalNavBar() {
         )}
       </div>
 
-      {/* ══════════ THANH 2: TOP ANNOUNCEMENT BAR (Chuẩn Ảnh Mẫu) ══════════ */}
-      <div className="bg-black/90 border-b border-white/10 text-[11px] text-slate-400 py-1.5 px-4 font-mono">
+      
+      {pathname !== '/client-app-draft' && (
+        <>
+<div className="bg-black/90 border-b border-white/10 text-[11px] text-slate-400 py-1.5 px-4 font-mono">
         <div className="max-w-7xl mx-auto flex flex-wrap justify-between items-center gap-2">
           <div className="flex items-center gap-4">
             <span className="inline-flex items-center gap-1.5 text-emerald-400 font-bold">
@@ -198,11 +195,11 @@ export default function GlobalNavBar() {
         </div>
       </div>
 
-      {/* ══════════ THANH 3: NAVBAR CHÍNH (Đầy Đủ Nút Đăng Nhập / Đăng Ký - Không Có Menu Bếp) ══════════ */}
+      
       <nav className="border-b border-white/10 bg-[#070d1e]/95 backdrop-blur-md px-4 py-2.5">
         <div className="max-w-7xl mx-auto flex items-center justify-between gap-4">
           
-          {/* Logo Thương Hiệu */}
+          
           <Link href="/" className="flex items-center gap-3 group flex-shrink-0">
             <div className="w-10 h-10 rounded-xl bg-gradient-to-br from-emerald-400 via-teal-400 to-cyan-500 flex items-center justify-center text-black font-black text-xl shadow-lg shadow-emerald-500/20 group-hover:scale-105 transition">
               CZ
@@ -217,7 +214,7 @@ export default function GlobalNavBar() {
             </div>
           </Link>
 
-          {/* Menu Điều Hướng Trung Tâm: Phù Hợp Đúng Sơ Đồ Máy & Không Có Menu Bếp */}
+          
           <div className="hidden lg:flex items-center gap-5 text-xs font-mono font-bold uppercase tracking-wider text-slate-300">
             <Link
               href="/"
@@ -226,7 +223,7 @@ export default function GlobalNavBar() {
               TRANG CHỦ
             </Link>
 
-            {/* Dropdown: Khu máy & Dịch vụ chuẩn khớp Sơ đồ máy */}
+            
             <div className="relative" ref={dropdownRef}>
               <button
                 type="button"
@@ -355,7 +352,7 @@ export default function GlobalNavBar() {
             </Link>
           </div>
 
-          {/* Cụm Bên Phải: Hotline, Nút Đặt Máy Trước & ĐĂNG NHẬP / ĐĂNG KÝ */}
+          
           <div className="flex items-center gap-2 sm:gap-3 flex-shrink-0">
             <a
               href="tel:19008888"
@@ -364,7 +361,7 @@ export default function GlobalNavBar() {
               <span className="text-emerald-400">📞</span> 1900 8888
             </a>
 
-            {/* Nút Đặt Máy Trước (Dẫn trực tiếp đến 6 Phân Khu để chọn máy) */}
+            
             <Link
               href="/#phan-khu"
               className="px-3.5 sm:px-4 py-2 bg-emerald-400 hover:bg-emerald-300 text-black font-extrabold text-xs rounded-xl shadow-lg shadow-emerald-500/25 transition uppercase font-sans flex items-center gap-1"
@@ -372,9 +369,9 @@ export default function GlobalNavBar() {
               <span>ĐẶT MÁY TRƯỚC</span>
             </Link>
 
-            {/* CỤM ĐĂNG NHẬP / ĐĂNG KÝ HOẶC THÔNG TIN TÀI KHOẢN */}
+            
             {currentUser ? (
-              /* ĐÃ ĐĂNG NHẬP */
+              
               <div className="flex items-center gap-2">
                 <Link
                   href="/auth"
@@ -408,7 +405,7 @@ export default function GlobalNavBar() {
                 </button>
               </div>
             ) : (
-              /* CHƯA ĐĂNG NHẬP: HIỆN 2 NÚT ĐĂNG NHẬP & ĐĂNG KÝ */
+              
               <div className="flex items-center gap-2">
                 <button
                   type="button"
@@ -433,8 +430,10 @@ export default function GlobalNavBar() {
 
         </div>
       </nav>
+        </>
+      )}
 
-      {/* MODAL AUTH DÙNG CHUNG TOÀN HỆ THỐNG */}
+      
       <AuthModal
         isOpen={isAuthModalOpen}
         defaultTab={authModalTab}
