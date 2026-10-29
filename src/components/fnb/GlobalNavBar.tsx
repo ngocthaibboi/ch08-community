@@ -27,7 +27,6 @@ export default function GlobalNavBar() {
   const ecosystemModes = [
     { href: '/', label: '1. Cổng Khách Hàng (Trang Chủ)', icon: 'public' },
     { href: '/client-pc', label: '2. Khách Ngồi Tại Máy (VIP-08)', icon: 'desktop_windows' },
-    { href: '/client-app-draft', label: '⭐ Bản Nháp Cyber Client OS', icon: 'sports_esports' },
     { href: '/server', label: '3. Máy Chủ Phòng Máy (Server Tổng)', icon: 'dns' },
     { href: '/kds', label: '4. Màn Hình Bếp (KDS)', icon: 'soup_kitchen', countBadge: true },
     { href: '/dashboard', label: '5. Quản Lý Doanh Thu', icon: 'monitoring', liveBadge: true },
@@ -170,9 +169,7 @@ export default function GlobalNavBar() {
       </div>
 
       
-      {pathname !== '/client-app-draft' && (
-        <>
-<div className="bg-black/90 border-b border-white/10 text-[11px] text-slate-400 py-1.5 px-4 font-mono">
+      <div className="bg-black/90 border-b border-white/10 text-[11px] text-slate-400 py-1.5 px-4 font-mono">
         <div className="max-w-7xl mx-auto flex flex-wrap justify-between items-center gap-2">
           <div className="flex items-center gap-4">
             <span className="inline-flex items-center gap-1.5 text-emerald-400 font-bold">
@@ -430,8 +427,6 @@ export default function GlobalNavBar() {
 
         </div>
       </nav>
-        </>
-      )}
 
       
       <AuthModal
