@@ -20,6 +20,13 @@ import {
   TIERS_ORDER,
   TierInfo,
 } from '@/lib/gamerPass';
+import {
+  getLoggedInUser,
+  loginUser,
+  logoutUser,
+  AUTH_EVENT_NAME,
+  AuthUser,
+} from '@/lib/authStore';
 
 export default function AuthAndWallet() {
   const [activeTab, setActiveTab] = useState<'topup' | 'gamerpass' | 'login'>('topup');
@@ -37,21 +44,29 @@ export default function AuthAndWallet() {
   } | null>(null);
 
   const [wallet, setWallet] = useState<UserWallet>(INITIAL_WALLET);
+  const [currentUser, setCurrentUser] = useState<AuthUser | null>(null);
+  const [switchUsername, setSwitchUsername] = useState('');
+  const [switchPassword, setSwitchPassword] = useState('');
+  const [loginMsg, setLoginMsg] = useState<string | null>(null);
 
-  // Synchronize wallet state across tabs and components
   useEffect(() => {
-    setWallet(getStoredWallet());
-
-    const handleWalletUpdate = () => {
-      setWallet(getStoredWallet());
+    const syncAll = () => {
+      const u = getLoggedInUser();
+      const w = getStoredWallet();
+      setCurrentUser(u);
+      setWallet(w);
     };
 
-    window.addEventListener(WALLET_EVENT_NAME, handleWalletUpdate);
-    window.addEventListener('storage', handleWalletUpdate);
+    syncAll();
+
+    window.addEventListener(WALLET_EVENT_NAME, syncAll);
+    window.addEventListener(AUTH_EVENT_NAME, syncAll);
+    window.addEventListener('storage', syncAll);
 
     return () => {
-      window.removeEventListener(WALLET_EVENT_NAME, handleWalletUpdate);
-      window.removeEventListener('storage', handleWalletUpdate);
+      window.removeEventListener(WALLET_EVENT_NAME, syncAll);
+      window.removeEventListener(AUTH_EVENT_NAME, syncAll);
+      window.removeEventListener('storage', syncAll);
     };
   }, []);
 
@@ -70,14 +85,12 @@ export default function AuthAndWallet() {
     setTimeout(() => {
       const prevTier = getTierByName(wallet.userTier);
 
-      // Execute real topup logic and update shared wallet store
       const updated = topupWallet(numAmount, paymentMethod);
       setWallet(updated);
       setIsProcessing(false);
 
       const newTier = getTierByName(updated.userTier);
 
-      // Phát hiện thăng hạng tự động khi nạp
       if (newTier.minAmount > prevTier.minAmount) {
         setUpgradeToast({
           oldTier: prevTier.name,
@@ -86,7 +99,6 @@ export default function AuthAndWallet() {
         });
       }
 
-      // Show success notification
       setSuccessToast({
         added: numAmount,
         newBalance: updated.balance,
@@ -105,28 +117,64 @@ export default function AuthAndWallet() {
     }
   };
 
+  const handleSwitchLogin = (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!switchUsername.trim()) {
+      setLoginMsg('Vui lòng nhập tên tài khoản!');
+      return;
+    }
+
+    const uname = switchUsername.trim();
+    const newUser: AuthUser = {
+      id: `usr-${Date.now()}`,
+      username: uname,
+      fullName: uname.toLowerCase().includes('thai') ? 'Nguyễn Văn Thái' : uname,
+      phone: '0988.888.888',
+      userTier: wallet.userTier,
+      balance: wallet.balance,
+    };
+
+    loginUser(newUser);
+    setCurrentUser(newUser);
+    setSwitchUsername('');
+    setSwitchPassword('');
+    setLoginMsg(null);
+    setActiveTab('topup');
+    setSuccessToast({
+      added: 0,
+      newBalance: wallet.balance,
+    });
+    setTimeout(() => setSuccessToast(null), 3000);
+  };
+
+  const handleLogout = () => {
+    if (confirm('Bạn có chắc chắn muốn đăng xuất tài khoản này?')) {
+      logoutUser();
+      setCurrentUser(null);
+    }
+  };
+
   const remainingTimeStr = calculateRemainingPlayTime(wallet.balance, wallet.hourlyRate);
-  const currentTier = getTierByName(wallet.userTier);
+  const currentTier = getTierByName(currentUser?.userTier || wallet.userTier);
   const cumulativeAmount = getCumulativeTopupAmount(wallet);
   const progression = calculateTierProgression(cumulativeAmount);
+  const displayName = currentUser?.fullName || currentUser?.username || wallet.userName || 'Tài khoản Hội viên';
 
   return (
     <div className="min-h-screen bg-slate-950 text-slate-100 p-4 lg:p-8 flex flex-col items-center justify-center font-sans select-none">
       <div className="w-full max-w-2xl">
-        {/* Module Header Badge */}
         <div className="text-center mb-6">
           <span className="bg-gradient-to-r from-cyan-500 via-emerald-400 to-purple-600 text-black font-mono text-[10px] uppercase font-black px-3 py-1 rounded-full shadow-[0_0_12px_rgba(0,240,255,0.3)]">
-            HỆ THỐNG GAMER PASS &amp; CỔNG NẠP TIỀN ĐỒNG BỘ
+            HỆ THỐNG GAMER PASS & CỔNG NẠP TIỀN ĐỒNG BỘ
           </span>
           <h1 className="text-3xl sm:text-4xl font-black text-white mt-2 font-gaming tracking-wide">
-            CỔNG TÀI KHOẢN &amp; GAMER PASS
+            CỔNG TÀI KHOẢN & GAMER PASS
           </h1>
           <p className="text-slate-400 text-xs mt-1">
             Nạp tiền tích lũy để tự động thăng hạng hội viên, giảm giá giờ chơi và nhận siêu ưu đãi ẩm thực.
           </p>
         </div>
 
-        {/* Upgrade Congratulatory Alert */}
         {upgradeToast && (
           <div className="bg-gradient-to-r from-amber-500/20 via-yellow-500/20 to-purple-500/20 border-2 border-amber-400 text-amber-200 px-5 py-4 rounded-2xl mb-6 shadow-[0_0_25px_rgba(245,158,11,0.5)] flex flex-col sm:flex-row items-center justify-between gap-4 animate-bounce">
             <div className="flex items-center gap-3">
@@ -149,27 +197,25 @@ export default function AuthAndWallet() {
           </div>
         )}
 
-        {/* Success Alert Toast */}
         {successToast && (
           <div className="bg-emerald-950/90 border-2 border-emerald-400 text-emerald-200 px-4 py-3.5 rounded-xl mb-6 shadow-[0_0_20px_rgba(16,185,129,0.4)] flex items-center justify-between animate-fadeIn">
             <div className="flex items-center gap-3">
               <span className="material-symbols-outlined text-3xl text-emerald-400">check_circle</span>
               <div>
                 <div className="font-bold text-sm text-white">
-                  NẠP THÀNH CÔNG +{successToast.added.toLocaleString('vi-VN')}đ!
+                  {successToast.added > 0 ? `NẠP THÀNH CÔNG +${successToast.added.toLocaleString('vi-VN')}đ!` : 'ĐÃ ĐỒNG BỘ TÀI KHOẢN!'}
                 </div>
                 <div className="text-xs text-emerald-300 font-mono">
-                  Số dư mới: <strong className="text-white font-mono">{successToast.newBalance.toLocaleString('vi-VN')}đ</strong> (Đã cộng trực tiếp vào máy {wallet.pcName})
+                  Số dư ví: <strong className="text-white font-mono">{successToast.newBalance.toLocaleString('vi-VN')}đ</strong> (Đang kết nối trạm {wallet.pcName})
                 </div>
               </div>
             </div>
             <span className="bg-emerald-500 text-black text-[10px] font-black px-2 py-1 rounded font-mono uppercase">
-              ĐÃ CỘNG TIỀN
+              {successToast.added > 0 ? 'ĐÃ CỘNG TIỀN' : 'ONLINE'}
             </span>
           </div>
         )}
 
-        {/* User Account Card with Real-time Gamer Pass Progression */}
         <div className="bg-slate-900 border border-slate-800 rounded-2xl p-6 mb-6 shadow-2xl relative overflow-hidden">
           <div className="absolute top-0 right-0 w-32 h-32 bg-cyan-500/10 rounded-full blur-2xl pointer-events-none"></div>
 
@@ -179,7 +225,7 @@ export default function AuthAndWallet() {
                 <span className="material-symbols-outlined text-2xl">{currentTier.icon}</span>
               </div>
               <div>
-                <h3 className="text-white font-black text-base">{wallet.userName}</h3>
+                <h3 className="text-white font-black text-base">{displayName}</h3>
                 <div className="flex items-center gap-2 mt-0.5">
                   <span className={`text-[10px] px-2 py-0.5 rounded font-bold font-mono border ${currentTier.badgeClass}`}>
                     {currentTier.name}
@@ -217,7 +263,6 @@ export default function AuthAndWallet() {
             </div>
           </div>
 
-          {/* Tiến trình Gamer Pass */}
           <div className="mt-4 pt-3 border-t border-slate-800/80 space-y-1.5 font-mono">
             <div className="flex justify-between text-xs">
               <span className="text-slate-400">
@@ -253,7 +298,6 @@ export default function AuthAndWallet() {
           )}
         </div>
 
-        {/* Tab Switcher */}
         <div className="flex gap-2 mb-4 bg-slate-900 border border-slate-800 p-1.5 rounded-xl">
           <button
             onClick={() => setActiveTab('topup')}
@@ -292,159 +336,178 @@ export default function AuthAndWallet() {
           </button>
         </div>
 
-        {/* Tab 1: Form Nạp Tiền */}
         {activeTab === 'topup' && (
           <form onSubmit={handleTopup} className="bg-slate-900 border border-slate-800 rounded-2xl p-6 shadow-2xl space-y-4">
             <div>
               <div className="flex justify-between items-center mb-2">
                 <label className="text-white font-black text-sm">Chọn Mức Tiền Cần Nạp:</label>
-                <span className="text-[11px] text-amber-400 font-mono font-bold">
-                  Nạp ≥ 500k thăng hạng Vàng ⭐ | ≥ 1.5M lên Kim Cương 💎
-                </span>
+                <span className="text-[11px] font-mono text-cyan-400">100% tự động cộng giờ</span>
               </div>
-
-              <div className="grid grid-cols-3 sm:grid-cols-6 gap-2 mb-3">
-                {quickAmounts.map((amt) => (
+              <div className="grid grid-cols-3 gap-2">
+                {quickAmounts.map((q) => (
                   <button
-                    key={amt}
+                    key={q}
                     type="button"
-                    onClick={() => setAmount(amt)}
-                    className={`py-2 rounded-xl text-xs font-mono font-bold transition border cursor-pointer ${
-                      amount === amt
-                        ? 'bg-cyan-500 text-black border-cyan-400 shadow-[0_0_10px_rgba(0,240,255,0.3)]'
-                        : 'bg-slate-800 border-slate-700 text-slate-300 hover:border-slate-600'
+                    onClick={() => setAmount(q)}
+                    className={`py-3 rounded-xl border text-xs font-mono font-black transition cursor-pointer ${
+                      amount === q
+                        ? 'bg-cyan-500/20 border-cyan-400 text-cyan-300 shadow-[0_0_15px_rgba(0,240,255,0.3)]'
+                        : 'bg-slate-800/80 border-slate-700 text-slate-300 hover:border-slate-500'
                     }`}
                   >
-                    {parseInt(amt) >= 1000000
-                      ? `${parseInt(amt) / 1000000}M`
-                      : `${parseInt(amt) / 1000}k`}
+                    +{parseInt(q, 10).toLocaleString('vi-VN')}đ
                   </button>
                 ))}
               </div>
-
-              <input
-                type="number"
-                value={amount}
-                onChange={(e) => setAmount(e.target.value)}
-                placeholder="Nhập số tiền khác..."
-                className="bg-slate-800 border border-slate-700 text-white rounded-xl px-4 py-2.5 focus:border-cyan-400 focus:outline-none w-full text-sm font-mono"
-              />
             </div>
 
-            {/* Payment Mode Selector */}
             <div>
-              <label className="text-white font-black text-sm block mb-2">Phương Thức Thanh Toán:</label>
-              <div className="grid grid-cols-3 gap-2">
+              <label className="text-slate-400 text-xs block mb-1 font-mono">Hoặc nhập số tiền tùy chọn:</label>
+              <div className="relative">
+                <input
+                  type="number"
+                  value={amount}
+                  onChange={(e) => setAmount(e.target.value)}
+                  step="10000"
+                  min="10000"
+                  className="bg-slate-800 border border-slate-700 text-white font-mono text-lg font-bold rounded-xl px-4 py-3 focus:border-cyan-400 focus:outline-none w-full"
+                  placeholder="Nhập số tiền..."
+                />
+                <span className="absolute right-4 top-3.5 text-slate-400 font-mono text-sm">VNĐ</span>
+              </div>
+            </div>
+
+            <div>
+              <label className="text-white font-black text-sm block mb-2">Hình Thức Thanh Toán:</label>
+              <div className="grid grid-cols-3 gap-2 text-xs font-mono">
                 <button
                   type="button"
                   onClick={() => setPaymentMethod('qr')}
-                  className={`p-3 rounded-xl border text-center transition cursor-pointer ${
+                  className={`p-3 rounded-xl border flex flex-col items-center gap-1.5 transition cursor-pointer ${
                     paymentMethod === 'qr'
-                      ? 'bg-slate-800 border-cyan-400 text-cyan-400 shadow-[0_0_10px_rgba(0,240,255,0.2)]'
-                      : 'bg-slate-800/60 border-slate-700 text-slate-400'
+                      ? 'bg-emerald-500/20 border-emerald-400 text-emerald-300 shadow-[0_0_15px_rgba(16,185,129,0.3)]'
+                      : 'bg-slate-800/80 border-slate-700 text-slate-400 hover:text-white'
                   }`}
                 >
-                  <span className="material-symbols-outlined text-2xl block mb-1">qr_code_2</span>
-                  <span className="text-[11px] font-bold block">Quét QR VietQR</span>
+                  <span className="material-symbols-outlined text-2xl">qr_code_scanner</span>
+                  <span className="font-bold">VietQR Pro</span>
                 </button>
 
                 <button
                   type="button"
                   onClick={() => setPaymentMethod('atm')}
-                  className={`p-3 rounded-xl border text-center transition cursor-pointer ${
+                  className={`p-3 rounded-xl border flex flex-col items-center gap-1.5 transition cursor-pointer ${
                     paymentMethod === 'atm'
-                      ? 'bg-slate-800 border-cyan-400 text-cyan-400 shadow-[0_0_10px_rgba(0,240,255,0.2)]'
-                      : 'bg-slate-800/60 border-slate-700 text-slate-400'
+                      ? 'bg-cyan-500/20 border-cyan-400 text-cyan-300 shadow-[0_0_15px_rgba(0,240,255,0.3)]'
+                      : 'bg-slate-800/80 border-slate-700 text-slate-400 hover:text-white'
                   }`}
                 >
-                  <span className="material-symbols-outlined text-2xl block mb-1">credit_card</span>
-                  <span className="text-[11px] font-bold block">Thẻ ATM / Visa</span>
+                  <span className="material-symbols-outlined text-2xl">credit_card</span>
+                  <span className="font-bold">ATM / Thẻ</span>
                 </button>
 
                 <button
                   type="button"
                   onClick={() => setPaymentMethod('cash')}
-                  className={`p-3 rounded-xl border text-center transition cursor-pointer ${
+                  className={`p-3 rounded-xl border flex flex-col items-center gap-1.5 transition cursor-pointer ${
                     paymentMethod === 'cash'
-                      ? 'bg-slate-800 border-cyan-400 text-cyan-400 shadow-[0_0_10px_rgba(0,240,255,0.2)]'
-                      : 'bg-slate-800/60 border-slate-700 text-slate-400'
+                      ? 'bg-amber-500/20 border-amber-400 text-amber-300 shadow-[0_0_15px_rgba(245,158,11,0.3)]'
+                      : 'bg-slate-800/80 border-slate-700 text-slate-400 hover:text-white'
                   }`}
                 >
-                  <span className="material-symbols-outlined text-2xl block mb-1">payments</span>
-                  <span className="text-[11px] font-bold block">Tiền Mặt Tại Máy</span>
+                  <span className="material-symbols-outlined text-2xl">payments</span>
+                  <span className="font-bold">Tiền Mặt Quầy</span>
                 </button>
               </div>
             </div>
 
+            {paymentMethod === 'qr' && (
+              <div className="p-4 bg-slate-950/60 rounded-xl border border-dashed border-emerald-500/40 flex items-center gap-4">
+                <div className="w-20 h-20 bg-white rounded-lg p-1 flex items-center justify-center flex-shrink-0">
+                  <img
+                    src={`https://api.qrserver.com/v1/create-qr-code/?size=150x150&data=CYBERZONE_TOPUP_${amount}_PC_${wallet.pcName}`}
+                    alt="VietQR Topup"
+                    className="w-full h-full object-contain"
+                  />
+                </div>
+                <div className="font-mono text-xs space-y-1">
+                  <div className="text-emerald-400 font-bold flex items-center gap-1">
+                    <span className="w-2 h-2 rounded-full bg-emerald-400 animate-pulse"></span>
+                    QUÉT VIETQR CHUYỂN KHOẢN TỰ ĐỘNG
+                  </div>
+                  <div className="text-slate-300">
+                    Ngân hàng: <strong className="text-white">MB Bank (Quân Đội)</strong>
+                  </div>
+                  <div className="text-slate-300">
+                    Số TK: <strong className="text-cyan-400">0988888888</strong>
+                  </div>
+                  <div className="text-slate-400 text-[10px]">
+                    Nội dung: <strong className="text-amber-400">NAP {wallet.pcName} {displayName}</strong>
+                  </div>
+                </div>
+              </div>
+            )}
+
             <button
               type="submit"
               disabled={isProcessing}
-              className="w-full bg-gradient-to-r from-emerald-400 via-teal-400 to-cyan-500 hover:brightness-110 text-black font-extrabold py-3.5 rounded-xl transition-all shadow-[0_0_15px_rgba(16,185,129,0.4)] flex items-center justify-center gap-2 font-gaming text-sm tracking-wide active:scale-98 cursor-pointer"
+              className="w-full bg-gradient-to-r from-emerald-400 to-cyan-500 hover:from-emerald-300 hover:to-cyan-400 text-black font-black py-3.5 rounded-xl text-sm font-gaming uppercase tracking-wider shadow-[0_0_20px_rgba(16,185,129,0.4)] transition cursor-pointer disabled:opacity-50"
             >
-              <span className="material-symbols-outlined text-[18px]">
-                {isProcessing ? 'sync' : 'bolt'}
-              </span>
-              <span>
-                {isProcessing
-                  ? 'ĐANG XÁC THỰC VÀ CỘNG TIỀN...'
-                  : `XÁC NHẬN NẠP +${parseInt(amount || '0').toLocaleString('vi-VN')}đ VÀO VÍ`}
-              </span>
+              {isProcessing ? 'ĐANG XỬ LÝ NẠP TIỀN...' : `XÁC NHẬN NẠP +${parseInt(amount || '0', 10).toLocaleString('vi-VN')}Đ`}
             </button>
 
-            <div className="flex justify-between items-center pt-2 text-[11px] text-slate-500 font-mono">
-              <span>Tự động cập nhật hạng Gamer Pass ngay sau khi nạp</span>
+            <div className="flex justify-between items-center pt-2 text-[11px] font-mono text-slate-500">
               <button
                 type="button"
                 onClick={handleResetWallet}
-                className="text-slate-400 hover:text-rose-400 underline cursor-pointer"
+                className="hover:text-slate-300 underline cursor-pointer"
               >
-                Reset ví về 200k
+                Khôi phục số dư ví ban đầu
               </button>
+              <span>Hỗ trợ 24/7: 1900 8888</span>
             </div>
           </form>
         )}
 
-        {/* Tab 2: Thông Tin Đặc Quyền Gamer Pass Chi Tiết */}
         {activeTab === 'gamerpass' && (
           <div className="bg-slate-900 border border-slate-800 rounded-2xl p-6 shadow-2xl space-y-4">
-            <div className="flex justify-between items-center border-b border-white/10 pb-3">
-              <div>
-                <h3 className="text-white font-gaming font-black text-lg">
-                  CHI TIẾT ĐẶC QUYỀN HỘI VIÊN GAMER PASS
-                </h3>
-                <p className="text-xs text-slate-400 font-mono mt-0.5">
-                  Càng nạp tích lũy nhiều, thứ hạng càng cao và chiết khấu càng lớn
-                </p>
-              </div>
-              <span className="material-symbols-outlined text-amber-400 text-3xl">workspace_premium</span>
+            <div className="flex justify-between items-center">
+              <h3 className="text-white font-black text-sm">Hệ Thống Phân Hạng Hội Viên Gamer Pass</h3>
+              <span className="text-xs text-amber-400 font-mono">Tự động xét hạng vĩnh viễn</span>
             </div>
 
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
               {TIERS_ORDER.map((tierKey) => {
                 const tier = GAMER_PASS_TIERS[tierKey];
-                const isCurrent = currentTier.code === tierKey;
+                const isCurrent = currentTier.key === tier.key;
+
                 return (
                   <div
                     key={tierKey}
                     className={`p-4 rounded-xl border flex flex-col justify-between transition ${
                       isCurrent
-                        ? `bg-slate-800/90 ${tier.borderColor} ring-2 ring-emerald-400/50 shadow-lg`
-                        : 'bg-black/30 border-white/10 hover:border-white/20'
+                        ? `${tier.accentBg} ${tier.borderColor} shadow-[0_0_20px_rgba(245,158,11,0.2)] ring-1 ring-amber-400`
+                        : 'bg-slate-800/60 border-slate-700/80 hover:border-slate-600'
                     }`}
                   >
                     <div>
-                      <div className="flex justify-between items-center mb-1.5">
-                        <span className={`text-[10px] px-2 py-0.5 rounded font-bold font-mono border ${tier.badgeClass}`}>
-                          {tier.shortName}
-                        </span>
-                        <span className="material-symbols-outlined text-sm text-slate-400">{tier.icon}</span>
+                      <div className="flex items-center justify-between mb-2">
+                        <div className="flex items-center gap-2">
+                          <span className={`material-symbols-outlined text-2xl ${tier.textColor}`}>
+                            {tier.icon}
+                          </span>
+                          <div>
+                            <span className="text-white font-bold text-sm block">{tier.name}</span>
+                            <span className="text-[10px] text-slate-400 font-mono">
+                              {tier.minAmount === 0 ? 'Mặc định khi đăng ký' : `Tích lũy từ ${tier.minAmount.toLocaleString('vi-VN')}đ`}
+                            </span>
+                          </div>
+                        </div>
                       </div>
-                      <h4 className="text-white font-black text-sm">{tier.name}</h4>
-                      <span className="text-[10px] text-slate-400 font-mono block mb-2">{tier.tagline}</span>
 
-                      <div className="space-y-1 text-xs font-mono border-t border-white/10 pt-2 mb-2">
+                      <div className="bg-slate-950/60 rounded-lg p-2.5 space-y-1 mb-2 font-mono text-xs">
                         <div className="flex justify-between text-slate-300">
-                          <span>Giảm tiền giờ:</span>
+                          <span>Giảm giá giờ chơi:</span>
                           <span className="text-emerald-400 font-bold">
                             {tier.playDiscountPercent > 0 ? `-${tier.playDiscountPercent}%` : 'Chuẩn'}
                           </span>
@@ -492,36 +555,58 @@ export default function AuthAndWallet() {
           </div>
         )}
 
-        {/* Tab 3: Đổi Tài Khoản Máy */}
         {activeTab === 'login' && (
-          <div className="bg-slate-900 border border-slate-800 rounded-2xl p-6 shadow-2xl space-y-4 font-mono text-xs">
-            <h3 className="text-white font-black text-sm">Đăng Nhập Tài Khoản Hội Viên Cyber Zone</h3>
+          <form onSubmit={handleSwitchLogin} className="bg-slate-900 border border-slate-800 rounded-2xl p-6 shadow-2xl space-y-4 font-mono text-xs">
+            <div className="flex items-center justify-between">
+              <h3 className="text-white font-black text-sm">Đăng Nhập / Đổi Tài Khoản Máy</h3>
+              {currentUser && (
+                <button
+                  type="button"
+                  onClick={handleLogout}
+                  className="px-2.5 py-1 rounded bg-rose-500/20 text-rose-300 border border-rose-500/40 text-[10px] font-bold hover:bg-rose-500/30 transition cursor-pointer"
+                >
+                  Đăng xuất ({currentUser.fullName})
+                </button>
+              )}
+            </div>
+
+            {loginMsg && (
+              <div className="p-2.5 rounded-lg bg-rose-500/20 border border-rose-500/40 text-rose-300">
+                {loginMsg}
+              </div>
+            )}
+
             <div>
               <label className="text-slate-400 block mb-1">Tên tài khoản hoặc số điện thoại:</label>
               <input
                 type="text"
-                defaultValue={wallet.userName}
+                value={switchUsername}
+                onChange={(e) => setSwitchUsername(e.target.value)}
+                placeholder={displayName}
                 className="bg-slate-800 border border-slate-700 text-white rounded-xl px-4 py-2.5 focus:border-cyan-400 focus:outline-none w-full text-sm font-sans"
               />
             </div>
+
             <div>
               <label className="text-slate-400 block mb-1">Mật khẩu:</label>
               <input
                 type="password"
-                defaultValue="••••••••"
+                value={switchPassword}
+                onChange={(e) => setSwitchPassword(e.target.value)}
+                placeholder="••••••••"
                 className="bg-slate-800 border border-slate-700 text-white rounded-xl px-4 py-2.5 focus:border-cyan-400 focus:outline-none w-full text-sm font-sans"
               />
             </div>
+
             <button
-              type="button"
+              type="submit"
               className="w-full bg-cyan-500 text-black font-extrabold py-3 rounded-xl text-xs shadow-[0_0_12px_rgba(0,240,255,0.3)] hover:bg-cyan-400 transition cursor-pointer"
             >
-              ĐĂNG NHẬP MÁY TRẠM
+              ĐĂNG NHẬP ĐỒNG BỘ MÁY TRẠM
             </button>
-          </div>
+          </form>
         )}
 
-        {/* Back Link */}
         <div className="text-center mt-6">
           <Link href="/client-pc" className="text-xs text-cyan-400 hover:underline font-mono">
             &larr; Quay lại màn hình điều khiển máy trạm {wallet.pcName}

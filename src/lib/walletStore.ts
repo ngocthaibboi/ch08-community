@@ -25,21 +25,18 @@ export interface UserWallet {
   zoneName: string;
   userTier: string;
   balance: number;
-  hourlyRate: number; // e.g. 20,000đ/hour for VIP Room
+  hourlyRate: number;
   transactions: WalletTransaction[];
   lastTransaction?: WalletTransaction;
 }
 
 export const STORAGE_KEY_WALLET = 'cyber_user_wallet';
 export const WALLET_EVENT_NAME = 'cyber_wallet_updated';
-
-// DOANH THU BAN ĐẦU: 0Đ (Chỉ tăng khi nạp thẻ thật hoặc đặt món)
 export const BASELINE_TOPUP_REVENUE = 0;
-
 export const INITIAL_TRANSACTIONS: WalletTransaction[] = [];
 
 export const INITIAL_WALLET: UserWallet = {
-  userName: 'Nguyễn Văn Thái',
+  userName: 'Tài khoản Hội viên',
   pcName: 'VIP-08',
   zoneName: 'PHÒNG RIÊNG VIP TẦNG 2',
   userTier: 'HỘI VIÊN BẠC 🥈',
@@ -48,9 +45,6 @@ export const INITIAL_WALLET: UserWallet = {
   transactions: [],
 };
 
-/**
- * Format balance into play time string (HH:MM:SS) based on custom hourly rate
- */
 export function calculateRemainingPlayTime(balance: number, hourlyRate: number = 22000): string {
   if (balance <= 0 || hourlyRate <= 0) return '00:00:00';
   const totalHours = balance / hourlyRate;
@@ -60,9 +54,6 @@ export function calculateRemainingPlayTime(balance: number, hourlyRate: number =
   return `${String(hours).padStart(2, '0')}:${String(minutes).padStart(2, '0')}:${String(seconds).padStart(2, '0')}`;
 }
 
-/**
- * Tính tổng số tiền nạp tích lũy hoặc số dư thực tế làm căn cứ xét hạng
- */
 export function getCumulativeTopupAmount(wallet: UserWallet): number {
   if (!wallet) return 0;
   const topups = (wallet.transactions || []).filter((tx) => tx.type === 'TOPUP');
@@ -70,16 +61,24 @@ export function getCumulativeTopupAmount(wallet: UserWallet): number {
   return Math.max(sumFromTx, wallet.balance || 0);
 }
 
-/**
- * Get current wallet state from localStorage
- */
 export function getStoredWallet(): UserWallet {
   if (typeof window === 'undefined') return INITIAL_WALLET;
   try {
+    let authUser: any = null;
+    try {
+      const authRaw = localStorage.getItem('cyber_auth_current_user');
+      if (authRaw) authUser = JSON.parse(authRaw);
+    } catch {}
+
     const raw = localStorage.getItem(STORAGE_KEY_WALLET);
     if (!raw) {
-      localStorage.setItem(STORAGE_KEY_WALLET, JSON.stringify(INITIAL_WALLET));
-      return INITIAL_WALLET;
+      const init: UserWallet = {
+        ...INITIAL_WALLET,
+        userName: authUser?.fullName || authUser?.username || INITIAL_WALLET.userName,
+        userTier: authUser?.userTier || INITIAL_WALLET.userTier,
+      };
+      localStorage.setItem(STORAGE_KEY_WALLET, JSON.stringify(init));
+      return init;
     }
     const parsed = JSON.parse(raw);
     if (parsed && typeof parsed.balance === 'number') {
@@ -88,10 +87,12 @@ export function getStoredWallet(): UserWallet {
         ...parsed,
         transactions: Array.isArray(parsed.transactions) ? parsed.transactions : [],
       };
-      // Tự động kiểm tra và chuẩn hóa hạng thẻ nếu chưa đúng
+      if (authUser?.fullName || authUser?.username) {
+        merged.userName = authUser.fullName || authUser.username;
+        if (authUser.userTier) merged.userTier = authUser.userTier;
+      }
       const effectiveAmount = getCumulativeTopupAmount(merged);
       const matchedTier = determineTierByAmount(effectiveAmount);
-      // Chỉ tự động nâng nếu hạng hiện tại chưa đạt mức tương ứng
       const currentTierInfo = getTierByName(merged.userTier);
       if (matchedTier.minAmount > currentTierInfo.minAmount) {
         merged.userTier = matchedTier.name;
@@ -105,9 +106,6 @@ export function getStoredWallet(): UserWallet {
   }
 }
 
-/**
- * Broadcast wallet changes across components and browser tabs
- */
 export function broadcastWalletUpdate(wallet: UserWallet) {
   if (typeof window === 'undefined') return;
   try {
@@ -118,20 +116,14 @@ export function broadcastWalletUpdate(wallet: UserWallet) {
   }
 }
 
-/**
- * Top up money into wallet (Matching auth/page.tsx, client-pc)
- * Tự động tính toán thăng hạng hội viên Gamer Pass khi đạt mốc nạp tích lũy
- */
 export function topupWallet(amount: number, method: string = 'QR'): UserWallet {
   const current = getStoredWallet();
   const newBalance = Math.max(0, current.balance + amount);
 
-  // Tính lũy kế nạp
   const prevTopups = (current.transactions || []).filter((tx) => tx.type === 'TOPUP');
   const totalTopupAfter = prevTopups.reduce((sum, tx) => sum + tx.amount, 0) + amount;
   const effectiveAmount = Math.max(totalTopupAfter, newBalance);
 
-  // Xác định hạng mới tự động
   const newTierInfo = determineTierByAmount(effectiveAmount);
 
   const tx: WalletTransaction = {
@@ -148,12 +140,11 @@ export function topupWallet(amount: number, method: string = 'QR'): UserWallet {
   const updated: UserWallet = {
     ...current,
     balance: newBalance,
-    userTier: newTierInfo.name, // TỰ ĐỘNG THĂNG HẠNG!
+    userTier: newTierInfo.name,
     transactions: [tx, ...(current.transactions || [])],
     lastTransaction: tx,
   };
 
-  // Đồng bộ sang cyber_auth_current_user nếu đang đăng nhập
   if (typeof window !== 'undefined') {
     try {
       const authRaw = localStorage.getItem('cyber_auth_current_user');
@@ -167,7 +158,7 @@ export function topupWallet(amount: number, method: string = 'QR'): UserWallet {
         }
       }
     } catch (e) {
-      console.error('Lỗi sync auth state:', e);
+      console.error('Failed to sync auth state:', e);
     }
   }
 
@@ -175,9 +166,6 @@ export function topupWallet(amount: number, method: string = 'QR'): UserWallet {
   return updated;
 }
 
-/**
- * Deduct money for F&B payment (Matching menu/page.tsx)
- */
 export function deductWallet(
   amount: number,
   description: string = 'Thanh toán đồ ăn F&B'
@@ -204,13 +192,24 @@ export function deductWallet(
     lastTransaction: tx,
   };
 
+  if (typeof window !== 'undefined') {
+    try {
+      const authRaw = localStorage.getItem('cyber_auth_current_user');
+      if (authRaw) {
+        const authUser = JSON.parse(authRaw);
+        if (authUser) {
+          authUser.balance = newBalance;
+          localStorage.setItem('cyber_auth_current_user', JSON.stringify(authUser));
+          window.dispatchEvent(new CustomEvent('cyber_auth_updated', { detail: authUser }));
+        }
+      }
+    } catch {}
+  }
+
   broadcastWalletUpdate(updated);
   return { success: true, wallet: updated };
 }
 
-/**
- * Cập nhật máy ngồi và đơn giá giờ chơi khi đổi phòng máy
- */
 export function updateStationAndRate(
   pcName: string,
   zoneName: string,
@@ -227,9 +226,6 @@ export function updateStationAndRate(
   return updated;
 }
 
-/**
- * Trừ tiền giờ chơi máy theo giá tiền máy đã setup
- */
 export function deductPlayTimeFee(
   amount: number,
   pcName: string,
@@ -257,13 +253,24 @@ export function deductPlayTimeFee(
     lastTransaction: tx,
   };
 
+  if (typeof window !== 'undefined') {
+    try {
+      const authRaw = localStorage.getItem('cyber_auth_current_user');
+      if (authRaw) {
+        const authUser = JSON.parse(authRaw);
+        if (authUser) {
+          authUser.balance = newBalance;
+          localStorage.setItem('cyber_auth_current_user', JSON.stringify(authUser));
+          window.dispatchEvent(new CustomEvent('cyber_auth_updated', { detail: authUser }));
+        }
+      }
+    } catch {}
+  }
+
   broadcastWalletUpdate(updated);
   return { success: true, wallet: updated };
 }
 
-/**
- * Calculate total topup revenue from all transactions
- */
 export function calculateTotalTopupRevenue(): { totalTopup: number; recentTopups: WalletTransaction[] } {
   if (typeof window === 'undefined') return { totalTopup: 0, recentTopups: [] };
   const wallet = getStoredWallet();

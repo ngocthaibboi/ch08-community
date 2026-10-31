@@ -405,6 +405,8 @@ export default function ClientPcPage() {
     };
 
     loginUser(userObj);
+    setCurrentUser(userObj);
+    setWallet(getStoredWallet());
     updateStationAndRate(currentStation.id, currentStation.zone, customRate);
 
     const secs = Math.floor((balanceToUse / customRate) * 3600);
