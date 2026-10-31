@@ -20,7 +20,7 @@ const GAMES_LIST: GameItem[] = [
     platform: 'steam',
     platformLabel: 'STEAM',
     badge: 'HOT',
-    image: 'https://lh3.googleusercontent.com/aida-public/AB6AXuCzkSMq1TKCxW-P4Tyq_oGAJrujxwZLU2E8YGevaRG6L65heDlLNLQhFsRGB46uc2eMTrfrf9aV6XyDz6awgkG2-RE_YUhaX03Eq1sEZ7HJyUnPuaPT9aBvlIfTYxk36j8JYL0KkAY0JVgyMCBM-kT2uvIO2MMp71Di7eG_5KZC05SAOSeP_IlT9RAY8hH5IksZkfuT8x_3Q5b_D7ohykbZwQc9Wc41Osrb2eu37IS-6_8qY4wOmSZG',
+    image: 'https://images.unsplash.com/photo-1578632767115-351597cf2477?auto=format&fit=crop&w=700&q=80',
     categories: ['rpg', 'aaa'],
   },
   {
@@ -29,7 +29,7 @@ const GAMES_LIST: GameItem[] = [
     platform: 'riot',
     platformLabel: 'RIOT/VNG',
     badge: 'TOP 1',
-    image: 'https://lh3.googleusercontent.com/aida-public/AB6AXuBMh8ZjJKSY-hDfVBCfwABNCTxRgTZG10L5YMmrTns0xjctwrUXqWMRahhCjJ5e7zqzl8uF-jta_c1ynPWbgtcrsLPY999UdXGI7Nhajna98t3HfAHo0kXp1SWM-pET1QoNXV_l4OuSqnqTJ61Tkkb7xc8zbP-xMku78Oztk4eeNLi7TOT_qTQ9EcTraLUARcK0OCa_pvRZj6lCCXElLehCwZyr8K1-evJZH4pCwFRWy5vMAemuR4Ac',
+    image: 'https://images.unsplash.com/photo-1542751371-adc38448a05e?auto=format&fit=crop&w=700&q=80',
     categories: ['esports', 'moba'],
   },
   {
@@ -38,7 +38,7 @@ const GAMES_LIST: GameItem[] = [
     platform: 'riot',
     platformLabel: 'RIOT',
     badge: '540Hz',
-    image: 'https://lh3.googleusercontent.com/aida-public/AB6AXuD5hR9PLfWtbhbOi-WDhXt9yZWZUgsI1tj10eV37UDf80GIS0WFuOXQgwUSfxrYlZnb6oxltIK-EsK_8AzScl_uTqHADWa_wjeq-nOE2pai4bSM-_D6OLMgYjo7uB4t1YBC8k1f9UpBVf9qQUwIdxJ311Hl4HeVAylACgBUkxgEB-aV_ZFIIZvL2PvwpI6kzfx_sHafii_t_khjz8WsnoywBTNQz7Mf-lY7zjhv-NVPXSPJ6ffk35Ls',
+    image: 'https://images.unsplash.com/photo-1511512578047-dfb367046420?auto=format&fit=crop&w=700&q=80',
     categories: ['esports', 'fps'],
   },
   {
@@ -46,7 +46,7 @@ const GAMES_LIST: GameItem[] = [
     name: 'Counter-Strike 2',
     platform: 'steam',
     platformLabel: 'STEAM',
-    image: 'https://lh3.googleusercontent.com/aida-public/AB6AXuAEG5Z51qHJskujQD4bHi9dp-WjKam9MWRmxzTszoUYUGR-C2GN0JlhR2GV_UsKbGpbyN0Zs7yhxFKmRTzNaGk3uaIk8iOxz9kALQz1DGTV_zPq-8Zc9bDgQAqGF2XRo90Z5dybxwHjLjX1YAvHkjfV7MaNf8U-YK5DZQG-M8Pj0jowYpm2b3yrzK8ETDukPweNdt3WdRHy1Msevj6ab5dIbYX6L8SrtFvVCxFd09nDfSchC6t8--o9',
+    image: 'https://images.unsplash.com/photo-1579373903781-fd5c0c30c4cd?auto=format&fit=crop&w=700&q=80',
     categories: ['esports', 'fps'],
   },
   {
@@ -55,7 +55,7 @@ const GAMES_LIST: GameItem[] = [
     platform: 'garena',
     platformLabel: 'GARENA',
     badge: 'HOT',
-    image: 'https://lh3.googleusercontent.com/aida-public/AB6AXuB5ZHY-IIPQ4SbBXYve5568SYd1fw48fS_E6voSVRLLIWDiQv74i_y18NQjmCsqtD_4JsC5W-QOzkQurEuziC9UVEFGGvgf3BroT2xPJyiuxc70YLTu44ESZeIoVWnw7gPb5QhpEXFwVJtXHcaBjwtTWyk8sMqEfIbgH39h-6z7iQSm9Nw7uPwYe5Etl6JvXdLHTlud1Ihisk43YYG_qYj6OuT3vdHUbwBr7j-6S6Br-3ncNg2ctsx_',
+    image: 'https://images.unsplash.com/photo-1574629810360-7efbbe195018?auto=format&fit=crop&w=700&q=80',
     categories: ['esports'],
   },
   {
@@ -63,7 +63,7 @@ const GAMES_LIST: GameItem[] = [
     name: 'PUBG: BATTLEGROUNDS',
     platform: 'steam',
     platformLabel: 'STEAM',
-    image: 'https://lh3.googleusercontent.com/aida-public/AB6AXuAQ8dqRxHk7EuPZN8_1BGltr5OYnAkj4TbT8c5JO4v6630hccGgShpEEgwby2yF5nD_as-5GXPeX4_-t1xJO4JZlr1g1J1qYPmr92Ak3I0pe8FOeJbWeAsi_cpfAy22OFj0E1oKAzGug7WNjl3O0CvUvk3JcLRpRQ0FGFzYWQUExn3r7SUeiRg-6xOKroEan7SSr8kD6vfKkS-LMDlOPZkele24Rg1DNqia1s8WFaO1FgGex1UGJ9tL',
+    image: 'https://images.unsplash.com/photo-1563089145-599997674d42?auto=format&fit=crop&w=700&q=80',
     categories: ['esports', 'fps', 'battle-royale'],
   },
   {
@@ -72,7 +72,7 @@ const GAMES_LIST: GameItem[] = [
     platform: 'other',
     platformLabel: 'FIVEM',
     badge: 'ROLEPLAY',
-    image: 'https://lh3.googleusercontent.com/aida-public/AB6AXuCBN8DTkrrdURUkVDToP0InwI6CNn7FDbJkMQIgC8wdXU5io491vTOIc4w4MwAtVsLaGIvJ2sr-ioLpftmD6wN_Bq_1Wq4ETjKvoomXrX35FV24zVuO-gKg3ikVLBIYlmssvpKdW793vSmB3zO2n27AxMXhcmiWsksmuDIOsrjpPF0DoyjKjNZ4csQoa5bkE86Dy7pM7RfgjKRQpodYDTWvuNepA5Uytll4hqroNnT4eBMg80_kLDoF',
+    image: 'https://images.unsplash.com/photo-1518709268805-4e9042af9f23?auto=format&fit=crop&w=700&q=80',
     categories: ['rpg', 'roleplay'],
   },
   {
@@ -159,19 +159,17 @@ export default function GameMenuPreviewPage() {
   const [launchStatus, setLaunchStatus] = useState('ĐANG KẾT NỐI SERVER...');
   const [ramOptimized, setRamOptimized] = useState(false);
 
-  // Exact categories counts matching the 16 games
   const categoryCounts = useMemo(() => {
     return {
-      all: GAMES_LIST.length, // 16
-      esports: GAMES_LIST.filter((g) => g.categories.includes('esports')).length, // 6
-      fps: GAMES_LIST.filter((g) => g.categories.includes('fps')).length, // 5
-      moba: GAMES_LIST.filter((g) => g.categories.includes('moba')).length, // 3
-      'battle-royale': GAMES_LIST.filter((g) => g.categories.includes('battle-royale')).length, // 4
-      rpg: GAMES_LIST.filter((g) => g.categories.includes('rpg')).length, // 4
+      all: GAMES_LIST.length, 
+      esports: GAMES_LIST.filter((g) => g.categories.includes('esports')).length, 
+      fps: GAMES_LIST.filter((g) => g.categories.includes('fps')).length, 
+      moba: GAMES_LIST.filter((g) => g.categories.includes('moba')).length, 
+      'battle-royale': GAMES_LIST.filter((g) => g.categories.includes('battle-royale')).length, 
+      rpg: GAMES_LIST.filter((g) => g.categories.includes('rpg')).length, 
     };
   }, []);
 
-  // Filtered games
   const filteredGames = useMemo(() => {
     return GAMES_LIST.filter((game) => {
       const matchSearch =
@@ -213,7 +211,7 @@ export default function GameMenuPreviewPage() {
 
   return (
     <div className="min-h-screen bg-[#070e1d] text-slate-100 font-sans flex flex-col select-none">
-      {/* Notice Banner: This is a preview template */}
+      
       <div className="bg-amber-950/80 border-b border-amber-500/40 px-4 py-2 text-center text-xs font-mono text-amber-200 flex items-center justify-center gap-2">
         <span className="material-symbols-outlined text-[16px] text-amber-400">preview</span>
         <span>
@@ -221,7 +219,7 @@ export default function GameMenuPreviewPage() {
         </span>
       </div>
 
-      {/* Sub-header Telemetry Bar */}
+      
       <div className="bg-[#0c1322] border-b border-slate-800 px-4 py-2 flex flex-wrap items-center justify-between gap-3 text-xs font-mono">
         <div className="flex items-center gap-3">
           <div className="flex items-center gap-1.5 bg-slate-900 border border-cyan-500/40 px-3 py-1 rounded-lg">
@@ -249,7 +247,7 @@ export default function GameMenuPreviewPage() {
           </div>
         </div>
 
-        {/* Quick Tools */}
+        
         <div className="flex items-center gap-2">
           <div className="hidden lg:flex items-center gap-1 bg-slate-900 border border-slate-800 p-0.5 rounded-lg">
             <button className="px-2.5 py-1 rounded hover:bg-slate-800 text-slate-300 hover:text-white transition flex items-center gap-1 text-[11px] font-bold">
@@ -273,11 +271,11 @@ export default function GameMenuPreviewPage() {
         </div>
       </div>
 
-      {/* Search HUD & Platform Filter Bar */}
+      
       <div className="bg-slate-900/90 border-b border-slate-800 px-4 py-3">
         <div className="max-w-7xl mx-auto space-y-3">
           <div className="flex flex-col md:flex-row items-center justify-between gap-3">
-            {/* Search Input */}
+            
             <div className="relative w-full md:w-96">
               <span className="material-symbols-outlined absolute left-3 top-1/2 -translate-y-1/2 text-cyan-400 text-[18px]">
                 search
@@ -294,7 +292,7 @@ export default function GameMenuPreviewPage() {
               </kbd>
             </div>
 
-            {/* Platform Filter Chips */}
+            
             <div className="flex items-center gap-1.5 overflow-x-auto w-full md:w-auto scrollbar-none">
               {[
                 { id: 'all', label: 'Tất cả' },
@@ -318,7 +316,7 @@ export default function GameMenuPreviewPage() {
             </div>
           </div>
 
-          {/* Quick Categories with EXACT COUNTS (16 total) */}
+          
           <div className="flex items-center gap-2 overflow-x-auto scrollbar-none pt-2 border-t border-slate-800/80">
             {[
               { id: 'all', label: `TẤT CẢ (${categoryCounts.all})` },
@@ -344,7 +342,7 @@ export default function GameMenuPreviewPage() {
         </div>
       </div>
 
-      {/* Main Game Grid (16 Games) */}
+      
       <main className="flex-1 max-w-7xl w-full mx-auto p-4 lg:p-6">
         <div className="flex justify-between items-center mb-4">
           <div className="flex items-center gap-2">
@@ -410,7 +408,7 @@ export default function GameMenuPreviewPage() {
         )}
       </main>
 
-      {/* Interactive Game Launch Modal */}
+      
       {launchingGame && (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/80 backdrop-blur-md p-4 animate-fade-in">
           <div className="w-full max-w-md bg-slate-900 border border-cyan-500/40 p-6 rounded-2xl shadow-[0_0_50px_rgba(0,240,255,0.3)] flex flex-col items-center text-center gap-4 relative overflow-hidden">
@@ -424,7 +422,7 @@ export default function GameMenuPreviewPage() {
               <p className="text-xs text-slate-400 mt-1">Đang đồng bộ Cloud Save & tối ưu tần số quét 240Hz / 540Hz...</p>
             </div>
 
-            {/* Progress bar */}
+            
             <div className="w-full bg-slate-800 h-2 rounded-full overflow-hidden border border-slate-700">
               <div
                 className="h-full bg-gradient-to-r from-cyan-500 to-purple-600 rounded-full transition-all duration-300"

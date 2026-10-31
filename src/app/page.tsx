@@ -13,7 +13,6 @@ import {
 import { getLoggedInUser, loginUser, AUTH_EVENT_NAME, AuthUser } from '@/lib/authStore';
 import AuthModal from '@/components/auth/AuthModal';
 
-// Danh mục sản phẩm Gear & Dịch vụ Mod Phím chính hãng
 const GEAR_PRODUCTS = [
   {
     id: 'gear-1',
@@ -78,7 +77,6 @@ const GEAR_PRODUCTS = [
 ];
 
 
-// Cấu hình chuẩn xác 6 Phân Khu Đẳng Cấp Thượng Thừa trên Trang Chủ
 const SIX_ZONES_HOME = [
   {
     id: 'STANDARD' as const,
@@ -186,7 +184,7 @@ const SIX_ZONES_HOME = [
     activeRing: 'border-blue-400 ring-2 ring-blue-400/50 shadow-blue-500/20',
     tagClass: 'text-blue-400 border-blue-500/40',
     accentText: 'text-blue-400',
-    image: 'https://images.unsplash.com/photo-1606813907291-d86efa9b94db?auto=format&fit=crop&w=700&q=80',
+    image: '/images/billiards-lounge.jpg',
     desc: 'Phòng riêng hội bạn chiến FC25, Mortal Kombat, Mario Kart (CONSOLE-01..02) và Billiards Club 10 bàn Aileex King 9020 (BIDA-01..04). TV 75" 4K OLED 120Hz Dolby Vision, 4 tay cầm DualSense Edge.',
     cpu: 'PS5 Pro 2TB Ray-Tracing + Bàn Aileex King 9020',
     gpu: 'Custom RDNA 3 67WGP + Đá tự nhiên 3 tấm Bỉ',
@@ -210,14 +208,12 @@ function getZoneForSeat(seat: BaseSeat): 'STANDARD' | 'PRO' | 'VIP' | 'ARENA' | 
 export default function Home() {
   const [currentUser, setCurrentUser] = useState<AuthUser | null>(null);
 
-  // 6 Phân Khu State & Quản Lý Trạm Máy Thời Gian Thực
   const [selectedZone, setSelectedZone] = useState<'ALL' | 'STANDARD' | 'PRO' | 'VIP' | 'ARENA' | 'COUPLE_STREAM' | 'CONSOLE_BIDA'>('STANDARD');
   const [selectedModalSeat, setSelectedModalSeat] = useState<BaseSeat | null>(null);
   const [selectedSeatForBooking, setSelectedSeatForBooking] = useState<string | null>(null);
   const [storedBookings, setStoredBookings] = useState<SeatBooking[]>([]);
   const [customSeatRates, setCustomSeatRates] = useState<Record<string, number>>({});
 
-  // Form Booking State
   const [branch, setBranch] = useState('Zone 01: 182 Lê Duẩn, TP. Vinh (Flagship Complex)');
   const [zoneCategory, setZoneCategory] = useState('Standard Zone Tiêu Chuẩn (STD-01..10) - 12.000đ/h');
   const [quantity, setQuantity] = useState('1');
@@ -226,7 +222,6 @@ export default function Home() {
   const [customerName, setCustomerName] = useState('');
   const [phone, setPhone] = useState('');
 
-  // Modal Auth & Booking Success
   const [isAuthModalOpen, setIsAuthModalOpen] = useState(false);
   const [authModalMessage, setAuthModalMessage] = useState<string | undefined>(undefined);
   const [successBooking, setSuccessBooking] = useState<{
@@ -236,15 +231,12 @@ export default function Home() {
     zone: string;
   } | null>(null);
 
-  // State Gói Hội Viên
   const [membershipToast, setMembershipToast] = useState<string | null>(null);
 
-  // State Showroom Gear Modal
   const [isGearModalOpen, setIsGearModalOpen] = useState(false);
   const [selectedGearTab, setSelectedGearTab] = useState<'all' | 'mouse' | 'keyboard' | 'services'>('all');
   const [gearSuccessToast, setGearSuccessToast] = useState<string | null>(null);
 
-  // State Community Hub
   const [activeCommunityTab, setActiveCommunityTab] = useState<'tournaments' | 'lfg' | 'reviews'>('tournaments');
   const [tournamentSuccessToast, setTournamentSuccessToast] = useState<string | null>(null);
   const [lfgPosts, setLfgPosts] = useState([
@@ -299,7 +291,6 @@ export default function Home() {
   const [newLfgContent, setNewLfgContent] = useState('');
 
 
-  // Tính toán trạng thái thời gian thực của máy
   const getSeatLiveStatus = (seat: BaseSeat) => {
     const booking = storedBookings.find(
       (b) => b.seatId === seat.id && b.status === 'RESERVED'
@@ -336,7 +327,6 @@ export default function Home() {
     };
   };
 
-  // Đơn giá thực tế (lấy từ tùy chỉnh của server nếu có)
   const getSeatPrice = (seat: BaseSeat) => {
     if (customSeatRates[seat.id]) {
       return `${customSeatRates[seat.id].toLocaleString('vi-VN')}đ/h`;
@@ -344,7 +334,6 @@ export default function Home() {
     return seat.price;
   };
 
-  // Xử lý chọn máy nhanh để đặt chỗ
   const handleSelectSeatToBook = (seat: BaseSeat) => {
     if (!currentUser) {
       setAuthModalMessage(`Vui lòng đăng nhập tài khoản Cyber Zone để tiến hành đặt giữ chỗ cho máy ${seat.id} (${seat.zoneName})!`);
@@ -378,7 +367,6 @@ export default function Home() {
     }
   };
 
-  // Lắng nghe thay đổi đăng nhập
   useEffect(() => {
     const user = getLoggedInUser();
     setCurrentUser(user);
@@ -396,7 +384,6 @@ export default function Home() {
       }
     };
 
-    // Khởi tạo & đồng bộ danh sách đơn đặt máy
     setStoredBookings(getStoredBookings());
     try {
       const savedRates = localStorage.getItem('CYBER_CUSTOM_SEAT_RATES');
@@ -430,18 +417,15 @@ export default function Home() {
     };
   }, []);
 
-  // Xử lý khi nhấn nút Đặt chỗ bàn / máy
   const handleBookingSubmit = (e: React.FormEvent) => {
     e.preventDefault();
 
-    // KIỂM TRA ĐĂNG NHẬP: Bắt buộc phải đăng nhập thì mới cho đặt bàn
     if (!currentUser) {
       setAuthModalMessage('Bạn cần đăng nhập tài khoản Cyber Zone để xác thực và tiến hành đặt giữ chỗ máy / bàn!');
       setIsAuthModalOpen(true);
       return;
     }
 
-    // Tìm máy/bàn phù hợp (ưu tiên máy khách đã bấm chọn trực tiếp trên sơ đồ)
     let targetSeatId = selectedSeatForBooking || 'STD-01';
     if (!selectedSeatForBooking) {
       if (zoneCategory.includes('Standard')) targetSeatId = 'STD-01';
@@ -456,7 +440,6 @@ export default function Home() {
 
     const seat = ALL_SEATS_CONFIG.find((s) => s.id === targetSeatId) || ALL_SEATS_CONFIG[0];
 
-    // Lưu vào store và kích hoạt đồng bộ real-time sang Server và Sơ đồ máy
     const newBooking = saveBooking({
       seatId: seat.id,
       customerName: customerName.trim() || currentUser.fullName,
@@ -478,7 +461,6 @@ export default function Home() {
     });
   };
 
-  // Xử lý đăng ký gói hội viên
   const handleSubscribePlan = (planName: string, tierBadge: string) => {
     if (!currentUser) {
       setAuthModalMessage(`Vui lòng đăng nhập để đăng ký kích hoạt gói ${planName}!`);
@@ -495,7 +477,6 @@ export default function Home() {
     setTimeout(() => setMembershipToast(null), 6000);
   };
 
-  // Xử lý đăng bài tìm đồng đội (LFG)
   const handlePostLfg = (e: React.FormEvent) => {
     e.preventDefault();
     if (!newLfgContent.trim()) return;
@@ -516,7 +497,6 @@ export default function Home() {
     setNewLfgName('');
   };
 
-  // Xử lý đăng ký giải đấu
   const handleRegisterTournament = (tournamentName: string) => {
     if (!currentUser) {
       setAuthModalMessage(`Vui lòng đăng nhập để đăng ký tham gia giải đấu: ${tournamentName}!`);
@@ -527,7 +507,6 @@ export default function Home() {
     setTimeout(() => setTournamentSuccessToast(null), 6000);
   };
 
-  // Xử lý mượn/đặt test gear
   const handleRequestGear = (gearName: string) => {
     setGearSuccessToast(`🎉 Đã tiếp nhận yêu cầu trải nghiệm "${gearName}". Kỹ thuật viên sẽ mang gear tới máy của bạn ngay!`);
     setTimeout(() => setGearSuccessToast(null), 5000);
@@ -536,7 +515,7 @@ export default function Home() {
   return (
     <div className="w-full bg-[#030712] text-slate-200 font-sans selection:bg-emerald-400 selection:text-black">
       
-      {/* ══════════ 1. HERO SECTION: NEXT-GEN ESPORTS & ENTERTAINMENT COMPLEX (Ảnh 1) ══════════ */}
+      
       <div className="relative py-12 md:py-20 border-b border-white/10 overflow-hidden">
         <div className="max-w-6xl mx-auto px-4 text-center space-y-6">
           
@@ -573,7 +552,7 @@ export default function Home() {
             </a>
           </div>
 
-          {/* 5 THẺ THÔNG SỐ KỶ LỤC CỦA TỔ HỢP */}
+          
           <div className="grid grid-cols-2 md:grid-cols-5 gap-3 pt-10 font-mono text-center">
             <div className="p-4 rounded-2xl bg-slate-900/60 border border-white/10">
               <span className="text-[10px] text-slate-400 uppercase block">SỨC CHỨA CẤU HÌNH</span>
@@ -607,7 +586,7 @@ export default function Home() {
 
       <div className="max-w-7xl mx-auto px-4 space-y-28 py-16">
 
-        {/* ══════════ 2. KHÁI NIỆM GIẢI TRÍ MỚI: VƯƠNG QUỐC CYBERPUNK (Ảnh 2) ══════════ */}
+        
         <div id="khai-niem" className="grid grid-cols-1 lg:grid-cols-12 gap-10 items-center">
           <div className="lg:col-span-6 space-y-5">
             <span className="text-xs font-mono text-emerald-400 font-bold uppercase tracking-wider flex items-center gap-1.5">
@@ -633,7 +612,7 @@ export default function Home() {
             </div>
           </div>
 
-          {/* 2 Card ảnh không gian */}
+          
           <div className="lg:col-span-6 grid grid-cols-1 sm:grid-cols-2 gap-4">
             <div className="group rounded-2xl overflow-hidden border border-white/10 relative h-72">
               <img
@@ -671,7 +650,7 @@ export default function Home() {
           </div>
         </div>
 
-        {/* ══════════ 3. 6 PHÂN KHU ĐẲNG CẤP THƯỢNG THỪA ══════════ */}
+        
         <div id="phan-khu" className="space-y-8 scroll-mt-24">
           <div className="flex flex-col md:flex-row justify-between items-start md:items-end gap-4 border-b border-white/10 pb-6">
             <div>
@@ -688,7 +667,7 @@ export default function Home() {
             </p>
           </div>
 
-          {/* THANH SELECTOR NHANH 6 PHÂN KHU + TẤT CẢ */}
+          
           <div className="flex items-center gap-2 overflow-x-auto pb-2 scrollbar-none">
             <button
               type="button"
@@ -731,7 +710,7 @@ export default function Home() {
             })}
           </div>
 
-          {/* 6 CARDS SHOWCASE CỦA 6 PHÂN KHU (BẤM VÀO ĐỂ CHỌN XEM MÁY) */}
+          
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
             {SIX_ZONES_HOME.map((zone) => {
               const isActive = selectedZone === zone.id;
@@ -797,7 +776,7 @@ export default function Home() {
                       </div>
                     </div>
 
-                    {/* Nút gợi ý bấm vào xem máy */}
+                    
                     <div className={`mt-2 py-2 px-3 rounded-xl font-mono text-xs font-bold text-center border transition flex items-center justify-center gap-2 ${
                       isActive
                         ? 'bg-emerald-500/10 border-emerald-500/40 text-emerald-300'
@@ -818,10 +797,10 @@ export default function Home() {
             })}
           </div>
 
-          {/* ══════════ SƠ ĐỒ & DANH SÁCH PHÒNG MÁY CỦA PHÂN KHU ĐƯỢC CHỌN ══════════ */}
+          
           <div id="danh-sach-may-phan-khu" className="pt-4 space-y-6 scroll-mt-24">
             
-            {/* Header Phân Khu Hiện Tại */}
+            
             {(() => {
               const currentZoneConfig = SIX_ZONES_HOME.find((z) => z.id === selectedZone);
               const zoneTitle = currentZoneConfig ? currentZoneConfig.name : 'Tất Cả 6 Phân Khu Cyber Zone';
@@ -853,7 +832,7 @@ export default function Home() {
                       </p>
                     </div>
 
-                    {/* Thống kê trạng thái máy của khu */}
+                    
                     <div className="flex flex-wrap items-center gap-2 text-xs font-mono">
                       <div className="px-3 py-1.5 rounded-xl bg-emerald-500/15 border border-emerald-500/40 text-emerald-300 flex items-center gap-1.5">
                         <span className="w-2 h-2 rounded-full bg-emerald-400" />
@@ -870,7 +849,7 @@ export default function Home() {
                     </div>
                   </div>
 
-                  {/* Cấu hình tiêu chuẩn của phân khu (nếu đang chọn 1 phân khu cụ thể) */}
+                  
                   {currentZoneConfig && (
                     <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 font-mono text-xs">
                       <div className="p-3 rounded-xl bg-black/40 border border-white/5 space-y-1">
@@ -907,7 +886,7 @@ export default function Home() {
                     </div>
                   )}
 
-                  {/* LƯỚI PHÒNG MÁY / TRẠM MÁY THỜI GIAN THỰC */}
+                  
                   <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 xl:grid-cols-6 gap-3.5 pt-2">
                     {zoneSeats.map((seat) => {
                       const live = getSeatLiveStatus(seat);
@@ -928,7 +907,7 @@ export default function Home() {
                               : 'bg-[#18140d]/90 border-amber-500/30 hover:border-amber-500/60'
                           }`}
                         >
-                          {/* Mã máy + Badge */}
+                          
                           <div>
                             <div className="flex items-start justify-between gap-1 mb-1.5">
                               <span className="text-base sm:text-lg font-black text-white font-gaming tracking-wider">
@@ -940,21 +919,21 @@ export default function Home() {
                               </span>
                             </div>
 
-                            {/* Tag máy trải nghiệm */}
+                            
                             {isVipExperience && (
                               <div className="mb-2 px-1.5 py-0.5 rounded bg-purple-500/20 border border-purple-500/40 text-purple-300 font-mono text-[9px] font-bold text-center">
                                 ⭐ MÁY TRẢI NGHIỆM ĐỘC QUYỀN
                               </div>
                             )}
 
-                            {/* Thông tin khách nếu bận/đặt */}
+                            
                             {live.occupant && (
                               <div className="text-[10px] font-mono text-slate-300 truncate mb-1">
                                 👤 {live.occupant}
                               </div>
                             )}
 
-                            {/* Cấu hình rút gọn */}
+                            
                             <div className="font-mono text-[10px] text-slate-400 space-y-0.5">
                               <div className="truncate text-slate-300">{seat.cpu}</div>
                               <div className="truncate text-cyan-400">{seat.gpu}</div>
@@ -962,7 +941,7 @@ export default function Home() {
                             </div>
                           </div>
 
-                          {/* Giá tiền & Nút thao tác */}
+                          
                           <div className="pt-2 border-t border-white/10 space-y-2">
                             <div className="flex justify-between items-center text-xs font-mono">
                               <span className="text-slate-400 text-[10px]">Đơn giá:</span>
@@ -1005,7 +984,7 @@ export default function Home() {
           </div>
         </div>
 
-        {/* ══════════ 4. CÁC GÓI THẺ HỘI VIÊN & ĐẶC QUYỀN VIP (MEMBERSHIP PASS) ══════════ */}
+        
         <div id="bang-gia" className="space-y-8">
           <div className="text-center space-y-2 max-w-2xl mx-auto">
             <span className="text-xs font-mono text-emerald-400 font-bold uppercase tracking-wider">
@@ -1019,7 +998,7 @@ export default function Home() {
             </p>
           </div>
 
-          {/* Flash alert khi đăng ký gói thành công */}
+          
           {membershipToast && (
             <div className="p-4 rounded-2xl bg-emerald-500/20 border border-emerald-400 text-emerald-300 font-mono text-xs flex items-center justify-between shadow-2xl animate-bounce">
               <span className="flex items-center gap-2">
@@ -1031,7 +1010,7 @@ export default function Home() {
           )}
 
           <div className="grid grid-cols-1 md:grid-cols-3 gap-6 items-stretch">
-            {/* Gói 1: SILVER MEMBER */}
+            
             <div className="rounded-3xl bg-slate-900/60 border border-white/10 p-8 flex flex-col justify-between space-y-6 hover:border-slate-500/50 transition">
               <div>
                 <div className="flex justify-between items-center text-xs font-mono text-slate-400">
@@ -1074,7 +1053,7 @@ export default function Home() {
               </button>
             </div>
 
-            {/* Gói 2: GOLD GAMER PASS (HOT) */}
+            
             <div className="rounded-3xl bg-gradient-to-b from-[#091f1b] via-slate-900 to-slate-900 border-2 border-emerald-400 p-8 flex flex-col justify-between space-y-6 shadow-2xl relative">
               <span className="absolute -top-3.5 left-1/2 -translate-x-1/2 px-4 py-1 rounded-full bg-gradient-to-r from-emerald-400 to-cyan-400 text-black text-[10px] font-black font-mono uppercase tracking-wider shadow-lg">
                 LỰA CHỌN PHỔ BIẾN NHẤT ⭐
@@ -1124,7 +1103,7 @@ export default function Home() {
               </button>
             </div>
 
-            {/* Gói 3: DIAMOND ELITE VIP */}
+            
             <div className="rounded-3xl bg-slate-900/60 border border-purple-500/40 p-8 flex flex-col justify-between space-y-6 hover:border-purple-400 transition">
               <div>
                 <div className="flex justify-between items-center text-xs font-mono text-purple-400 font-bold">
@@ -1172,7 +1151,7 @@ export default function Home() {
             </div>
           </div>
 
-          {/* Banner Khuyến Mãi Nạp Giờ Vàng */}
+          
           <div className="p-4 md:p-6 rounded-2xl bg-gradient-to-r from-emerald-950/60 to-slate-900 border border-emerald-500/30 flex flex-col md:flex-row justify-between items-center gap-4">
             <div className="flex items-center gap-4">
               <div className="w-10 h-10 rounded-xl bg-emerald-500/20 text-emerald-400 flex items-center justify-center text-xl shrink-0">
@@ -1196,10 +1175,10 @@ export default function Home() {
           </div>
         </div>
 
-        {/* ══════════ 5. BIỂU MẪU GIỮ CHỖ TRỰC TUYẾN 24/7 (Ảnh 3 - Yêu Cầu Đăng Nhập Mới Đặt Được) ══════════ */}
+        
         <div id="dat-cho" className="grid grid-cols-1 lg:grid-cols-12 gap-10 items-center p-8 md:p-12 rounded-3xl bg-slate-900/60 border border-white/10">
           
-          {/* Cột Trái: Giới thiệu & Cam kết */}
+          
           <div className="lg:col-span-5 space-y-4">
             <span className="text-xs font-mono text-emerald-400 font-bold uppercase tracking-wider">
               GIỮ CHỖ TRỰC TUYẾN TỨC THÌ
@@ -1225,7 +1204,7 @@ export default function Home() {
               </div>
             </div>
 
-            {/* Trạng thái xác thực tài khoản & Máy đang chọn */}
+            
             <div className="p-3 rounded-xl bg-black/40 border border-white/10 mt-4 text-xs font-mono space-y-2">
               {selectedSeatForBooking && (
                 <div className="flex items-center justify-between p-2 rounded-lg bg-emerald-500/15 border border-emerald-500/40 text-emerald-300">
@@ -1256,13 +1235,13 @@ export default function Home() {
             </div>
           </div>
 
-          {/* Cột Phải: Biểu Mẫu Giữ Chỗ 24/7 (Ảnh 3) */}
+          
           <div className="lg:col-span-7 bg-[#070d18] border border-white/10 rounded-2xl p-6 md:p-8 space-y-4">
             <h3 className="text-lg font-bold text-white font-gaming border-b border-white/10 pb-3">
               Biểu Mẫu Giữ Chỗ 24/7
             </h3>
 
-            {/* Thông báo thành công nếu vừa đặt */}
+            
             {successBooking && (
               <div className="p-4 rounded-xl bg-emerald-500/20 border border-emerald-400 text-emerald-300 font-mono text-xs flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3 shadow-xl">
                 <div>
@@ -1398,7 +1377,7 @@ export default function Home() {
 
         </div>
 
-        {/* ══════════ 6. SHOWROOM GEAR & TRẠM MOD PHÍM, ĐỘ TẢN NHIỆT (Ảnh 4) ══════════ */}
+        
         <div id="showroom" className="p-8 md:p-12 rounded-3xl bg-gradient-to-br from-[#08151a] to-slate-900 border border-emerald-500/30">
           <div className="grid grid-cols-1 lg:grid-cols-12 gap-8 items-center">
             
@@ -1446,7 +1425,7 @@ export default function Home() {
               </div>
             </div>
 
-            {/* 3 Ảnh gear đúng chuẩn */}
+            
             <div className="lg:col-span-6 grid grid-cols-2 gap-4">
               <img
                 src="https://images.unsplash.com/photo-1618384887929-16ec33fab9ef?auto=format&fit=crop&w=500&q=80"
@@ -1468,7 +1447,7 @@ export default function Home() {
           </div>
         </div>
 
-        {/* ══════════ 7. CYBER ZONE COMMUNITY HUB & ĐÁNH GIÁ (COMMUNITY FEATURE) ══════════ */}
+        
         <div id="community" className="space-y-8 scroll-mt-24">
           <div id="khach-hang" className="text-center space-y-2">
             <span className="text-xs font-mono text-emerald-400 font-bold uppercase tracking-wider flex items-center justify-center gap-1.5">
@@ -1483,7 +1462,7 @@ export default function Home() {
             </p>
           </div>
 
-          {/* Toast thông báo giải đấu */}
+          
           {tournamentSuccessToast && (
             <div className="p-4 rounded-2xl bg-cyan-500/20 border border-cyan-400 text-cyan-300 font-mono text-xs flex items-center justify-between shadow-2xl animate-bounce">
               <span className="flex items-center gap-2">
@@ -1494,7 +1473,7 @@ export default function Home() {
             </div>
           )}
 
-          {/* TAB ĐIỀU KHIỂN COMMUNITY */}
+          
           <div className="flex justify-center">
             <div className="inline-flex p-1.5 rounded-2xl bg-slate-900 border border-white/10 gap-1 font-mono text-xs">
               <button
@@ -1539,12 +1518,12 @@ export default function Home() {
             </div>
           </div>
 
-          {/* TAB 1: GIẢI ĐẤU ESPORTS & BẢNG XẾP HẠNG CLAN */}
+          
           {activeCommunityTab === 'tournaments' && (
             <div className="space-y-6">
               <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
                 
-                {/* Giải 1: CS2 Major Cup */}
+                
                 <div className="p-6 rounded-3xl bg-slate-900/80 border border-amber-500/40 space-y-4 relative overflow-hidden flex flex-col justify-between">
                   <div className="space-y-3">
                     <div className="flex justify-between items-center font-mono text-xs">
@@ -1586,7 +1565,7 @@ export default function Home() {
                   </button>
                 </div>
 
-                {/* Giải 2: LMHT Đấu Trường Vinh Quang */}
+                
                 <div className="p-6 rounded-3xl bg-slate-900/80 border border-cyan-500/40 space-y-4 relative overflow-hidden flex flex-col justify-between">
                   <div className="space-y-3">
                     <div className="flex justify-between items-center font-mono text-xs">
@@ -1628,7 +1607,7 @@ export default function Home() {
                   </button>
                 </div>
 
-                {/* Giải 3: Billiards Pool 9-Ball Open */}
+                
                 <div className="p-6 rounded-3xl bg-slate-900/80 border border-emerald-500/40 space-y-4 relative overflow-hidden flex flex-col justify-between">
                   <div className="space-y-3">
                     <div className="flex justify-between items-center font-mono text-xs">
@@ -1672,7 +1651,7 @@ export default function Home() {
 
               </div>
 
-              {/* Bảng Xếp Hạng Top Clan Cyber Zone */}
+              
               <div className="p-6 rounded-3xl bg-black/40 border border-white/10 space-y-4">
                 <div className="flex justify-between items-center">
                   <div className="flex items-center gap-2">
@@ -1720,11 +1699,11 @@ export default function Home() {
             </div>
           )}
 
-          {/* TAB 2: GHÉP KÈO LEO RANK & TÌM ĐỒNG ĐỘI (LFG) */}
+          
           {activeCommunityTab === 'lfg' && (
             <div className="grid grid-cols-1 lg:grid-cols-12 gap-8 items-start">
               
-              {/* Form Đăng Bài Tìm Đồng Đội Mới */}
+              
               <div className="lg:col-span-5 bg-slate-900/90 border border-emerald-500/40 rounded-3xl p-6 space-y-4">
                 <div className="flex items-center gap-2 border-b border-white/10 pb-3">
                   <span className="material-symbols-outlined text-emerald-400 text-xl">person_add</span>
@@ -1798,7 +1777,7 @@ export default function Home() {
                 </form>
               </div>
 
-              {/* Feed Danh Sách Ghép Kèo Thực Tế */}
+              
               <div className="lg:col-span-7 space-y-3">
                 <div className="flex justify-between items-center text-xs font-mono text-slate-400 pb-1 border-b border-white/10">
                   <span>BẢNG TIN GHÉP KÈO TRỰC TIẾP ({lfgPosts.length} BÀI ĐĂNG)</span>
@@ -1857,13 +1836,13 @@ export default function Home() {
             </div>
           )}
 
-          {/* TAB 3: ĐÁNH GIÁ TUYỂN THỦ & CỘNG ĐỒNG HỘI VIÊN */}
+          
           {activeCommunityTab === 'reviews' && (
             <div className="space-y-6">
               
-              {/* 3 Đánh giá từ huyền thoại Faker, Độ Mixi, Elon Musk */}
+              
               <div className="grid grid-cols-1 md:grid-cols-3 gap-6 font-sans">
-                {/* 1. FAKER */}
+                
                 <div className="p-6 rounded-2xl bg-slate-900/60 border border-red-500/30 space-y-4 hover:border-red-500/60 transition flex flex-col justify-between">
                   <div className="text-amber-400 text-xs tracking-widest">★★★★★</div>
                   <p className="text-xs text-slate-300 italic leading-relaxed">
@@ -1885,7 +1864,7 @@ export default function Home() {
                   </div>
                 </div>
 
-                {/* 2. ĐỘ MIXI */}
+                
                 <div className="p-6 rounded-2xl bg-slate-900/60 border border-amber-500/30 space-y-4 hover:border-amber-500/60 transition flex flex-col justify-between">
                   <div className="text-amber-400 text-xs tracking-widest">★★★★★</div>
                   <p className="text-xs text-slate-300 italic leading-relaxed">
@@ -1907,7 +1886,7 @@ export default function Home() {
                   </div>
                 </div>
 
-                {/* 3. ELON MUSK */}
+                
                 <div className="p-6 rounded-2xl bg-slate-900/60 border border-cyan-500/30 space-y-4 hover:border-cyan-500/60 transition flex flex-col justify-between">
                   <div className="text-amber-400 text-xs tracking-widest">★★★★★</div>
                   <p className="text-xs text-slate-300 italic leading-relaxed">
@@ -1930,9 +1909,9 @@ export default function Home() {
                 </div>
               </div>
 
-              {/* 3 Đánh giá thực tế từ cộng đồng hội viên Cyber Zone */}
+              
               <div className="grid grid-cols-1 md:grid-cols-3 gap-6 font-sans">
-                {/* 4. Nguyễn Hoàng Long */}
+                
                 <div className="p-6 rounded-2xl bg-slate-900/40 border border-white/10 space-y-4 flex flex-col justify-between">
                   <div className="text-amber-400 text-xs tracking-widest">★★★★★</div>
                   <p className="text-xs text-slate-300 leading-relaxed italic">
@@ -1949,7 +1928,7 @@ export default function Home() {
                   </div>
                 </div>
 
-                {/* 5. Trần Linh Chi & Bạn Trai */}
+                
                 <div className="p-6 rounded-2xl bg-slate-900/40 border border-pink-500/20 space-y-4 flex flex-col justify-between">
                   <div className="text-amber-400 text-xs tracking-widest">★★★★★</div>
                   <p className="text-xs text-slate-300 leading-relaxed italic">
@@ -1966,7 +1945,7 @@ export default function Home() {
                   </div>
                 </div>
 
-                {/* 6. Lê Quốc Tuấn */}
+                
                 <div className="p-6 rounded-2xl bg-slate-900/40 border border-white/10 space-y-4 flex flex-col justify-between">
                   <div className="text-amber-400 text-xs tracking-widest">★★★★★</div>
                   <p className="text-xs text-slate-300 leading-relaxed italic">
@@ -1989,7 +1968,7 @@ export default function Home() {
 
         </div>
 
-        {/* ══════════ 8. CALL TO ACTION CUỐI CÙNG (Ảnh 5) ══════════ */}
+        
         <div className="p-10 md:p-14 rounded-3xl bg-gradient-to-r from-emerald-950/40 via-slate-900 to-cyan-950/40 border border-emerald-500/30 text-center space-y-6">
           <span className="text-xs font-mono text-emerald-400 font-bold uppercase tracking-wider">
             SẴN SÀNG CHO CUỘC ĐẤU TIẾP THEO?
@@ -2019,11 +1998,11 @@ export default function Home() {
 
       </div>
 
-      {/* ══════════ FOOTER ESPORTS ĐẲNG CẤP DOANH NGHIỆP (Ảnh 5) ══════════ */}
+      
       <footer className="border-t border-white/10 bg-black/60 pt-16 pb-8 px-4 text-xs text-slate-400 font-sans">
         <div className="max-w-7xl mx-auto grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-10 pb-12 border-b border-white/10">
           
-          {/* Cột 1: Thông tin thương hiệu */}
+          
           <div className="space-y-4">
             <div className="flex items-center gap-3">
               <div className="w-9 h-9 rounded-xl bg-gradient-to-br from-emerald-400 to-cyan-500 flex items-center justify-center text-black font-black text-lg">
@@ -2044,7 +2023,7 @@ export default function Home() {
             </div>
           </div>
 
-          {/* Cột 2: Phân khu & Dịch vụ */}
+          
           <div className="space-y-3 font-mono">
             <h4 className="font-bold text-white uppercase tracking-wider text-[11px] font-sans">
               PHÂN KHU TRẢI NGHIỆM
@@ -2058,7 +2037,7 @@ export default function Home() {
             </ul>
           </div>
 
-          {/* Cột 3: Hỗ trợ & Khách hàng */}
+          
           <div className="space-y-3 font-mono">
             <h4 className="font-bold text-white uppercase tracking-wider text-[11px] font-sans">
               HỖ TRỢ &amp; HỘI VIÊN
@@ -2072,7 +2051,7 @@ export default function Home() {
             </ul>
           </div>
 
-          {/* Cột 4: Hệ thống cơ sở */}
+          
           <div className="space-y-3">
             <h4 className="font-bold text-white uppercase tracking-wider text-[11px]">
               HỆ THỐNG CƠ SỞ
@@ -2091,7 +2070,7 @@ export default function Home() {
 
         </div>
 
-        {/* Copyright */}
+        
         <div className="max-w-7xl mx-auto pt-6 flex flex-col sm:flex-row justify-between items-center gap-3 text-[11px] text-slate-500 font-mono">
           <div>
             © 2026 <span className="text-white font-bold">CYBER ZONE COMPLEX</span>. All Rights Reserved.
@@ -2102,7 +2081,7 @@ export default function Home() {
         </div>
       </footer>
 
-      {/* MODAL SHOWROOM GAMING GEAR & TRẠM MOD PHÍM */}
+      
       {isGearModalOpen && (
         <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/85 backdrop-blur-md">
           <div className="w-full max-w-4xl bg-slate-900 border border-emerald-500/40 rounded-3xl p-6 sm:p-8 shadow-2xl space-y-6 max-h-[90vh] overflow-y-auto font-sans">
@@ -2127,7 +2106,7 @@ export default function Home() {
               </button>
             </div>
 
-            {/* Toast tiếp nhận yêu cầu */}
+            
             {gearSuccessToast && (
               <div className="p-3.5 rounded-xl bg-emerald-500/20 border border-emerald-400 text-emerald-300 font-mono text-xs flex items-center gap-2 animate-bounce">
                 <span className="material-symbols-outlined text-[18px]">check_circle</span>
@@ -2135,7 +2114,7 @@ export default function Home() {
               </div>
             )}
 
-            {/* Filter Tabs */}
+            
             <div className="flex flex-wrap gap-2 border-b border-white/10 pb-4 font-mono text-xs">
               {[
                 { id: 'all', label: 'TẤT CẢ SẢN PHẨM & DỊCH VỤ' },
@@ -2158,7 +2137,7 @@ export default function Home() {
               ))}
             </div>
 
-            {/* Grid Sản phẩm */}
+            
             <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
               {GEAR_PRODUCTS
                 .filter((p) => selectedGearTab === 'all' || p.category === selectedGearTab)
@@ -2220,12 +2199,12 @@ export default function Home() {
         </div>
       )}
 
-            {/* ══════════ MODAL CHI TIẾT CẤU HÌNH PHÒNG MÁY / TRẠM MÁY ══════════ */}
+            
       {selectedModalSeat && (
         <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/80 backdrop-blur-md animate-fadeIn">
           <div className="relative w-full max-w-2xl bg-gradient-to-br from-slate-900 via-[#0a1420] to-slate-950 border border-emerald-500/40 rounded-3xl p-6 md:p-8 shadow-2xl text-white space-y-6">
             
-            {/* Header Modal */}
+            
             <div className="flex items-start justify-between border-b border-white/10 pb-4">
               <div>
                 <div className="flex items-center gap-2 mb-1">
@@ -2255,7 +2234,7 @@ export default function Home() {
               </button>
             </div>
 
-            {/* Trạng thái & Đơn giá */}
+            
             <div className="flex flex-wrap items-center justify-between gap-3 p-3.5 rounded-2xl bg-black/40 border border-white/5 font-mono text-xs">
               <div className="flex items-center gap-2">
                 <span className="text-slate-400">Trạng thái:</span>
@@ -2279,7 +2258,7 @@ export default function Home() {
               </div>
             </div>
 
-            {/* Bảng cấu hình phần cứng chi tiết */}
+            
             <div className="space-y-3 font-mono text-xs">
               <div className="text-[11px] font-bold text-slate-400 uppercase tracking-wider flex items-center gap-1.5">
                 <span className="material-symbols-outlined text-[15px] text-emerald-400">tune</span>
@@ -2337,7 +2316,7 @@ export default function Home() {
               </div>
             </div>
 
-            {/* Nút hành động */}
+            
             <div className="flex flex-col sm:flex-row justify-end gap-3 pt-2 border-t border-white/10 font-mono text-xs">
               <button
                 type="button"
@@ -2360,7 +2339,7 @@ export default function Home() {
         </div>
       )}
 
-      {/* MODAL YÊU CẦU ĐĂNG NHẬP */}
+      
       <AuthModal
         isOpen={isAuthModalOpen}
         defaultTab="login"
