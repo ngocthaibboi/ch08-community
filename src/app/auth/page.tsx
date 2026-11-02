@@ -479,7 +479,7 @@ export default function AuthAndWallet() {
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
               {TIERS_ORDER.map((tierKey) => {
                 const tier = GAMER_PASS_TIERS[tierKey];
-                const isCurrent = currentTier.key === tier.key;
+                const isCurrent = currentTier.code === tier.code;
 
                 return (
                   <div
