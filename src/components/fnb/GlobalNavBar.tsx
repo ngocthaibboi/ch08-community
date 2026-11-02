@@ -56,7 +56,6 @@ export default function GlobalNavBar() {
       }
     };
     document.addEventListener('mousedown', handleClickOutside);
-
     return () => {
       window.removeEventListener(STORAGE_EVENT_NAME, updateAll);
       window.removeEventListener(WALLET_EVENT_NAME, updateAll);
@@ -78,125 +77,93 @@ export default function GlobalNavBar() {
     }
   };
 
-  return (
-    <header className="sticky top-0 z-50 flex flex-col shadow-2xl">
+
+      return (
+    <header className="sticky top-0 z-50 flex flex-col bg-[#070d1e] shadow-2xl">
       
-      
+      {/* ══════════ THANH 1: BỘ CHUYỂN ĐỔI 5 GIAO DIỆN HỆ THỐNG (LAYOUT NẰM PHÍA TRÊN THANH TRANG CHỦ) ══════════ */}
       <div
         onMouseEnter={() => setIsSystemDrawerOpen(true)}
         onMouseLeave={() => {
           if (!isPinned) setIsSystemDrawerOpen(false);
         }}
-        className="relative z-50 transition-all duration-300"
+        className={`bg-[#020617] border-b border-emerald-500/30 overflow-hidden transition-all duration-300 ease-in-out ${
+          isSystemDrawerOpen || isPinned
+            ? 'max-h-36 opacity-100 py-2.5 px-3 sm:px-4'
+            : 'max-h-0 opacity-0 py-0 px-3 sm:px-4 pointer-events-none border-b-0'
+        }`}
       >
-        
-        <div
-          className={`bg-[#020617]/98 backdrop-blur-xl border-b border-emerald-500/30 font-mono text-[10px] sm:text-[11px] overflow-hidden transition-all duration-300 ease-in-out shadow-2xl ${
-            isSystemDrawerOpen || isPinned
-              ? 'max-h-32 opacity-100 py-2 px-3 sm:px-4'
-              : 'max-h-0 opacity-0 py-0 px-3 sm:px-4 pointer-events-none'
-          }`}
-        >
-          <div className="max-w-7xl mx-auto flex flex-col lg:flex-row items-start lg:items-center justify-between gap-2">
-            <div className="flex items-center gap-2">
-              <span className="w-2 h-2 rounded-full bg-emerald-400 animate-ping"></span>
-              <span className="font-bold text-emerald-400 uppercase tracking-wider">
-                CHỌN GIAO DIỆN HỆ THỐNG:
-              </span>
-            </div>
-
-            <div className="flex flex-wrap items-center gap-1.5 sm:gap-2">
-              {ecosystemModes.map((mode) => {
-                const isActive = pathname === mode.href;
-                return (
-                  <Link
-                    key={mode.href}
-                    href={mode.href}
-                    className={`flex items-center gap-1.5 px-2.5 sm:px-3 py-1 rounded-lg font-bold transition-all ${
-                      isActive
-                        ? 'bg-gradient-to-r from-emerald-400 to-cyan-400 text-slate-950 font-black shadow-[0_0_12px_rgba(16,185,129,0.35)] scale-105'
-                        : 'bg-slate-900/90 text-slate-300 hover:text-white border border-white/10 hover:border-emerald-500/40'
-                    }`}
-                  >
-                    <span className="material-symbols-outlined text-[14px]">{mode.icon}</span>
-                    <span>{mode.label}</span>
-                    {mode.countBadge && pendingOrdersCount > 0 && (
-                      <span className="bg-amber-400 text-slate-950 text-[9px] font-black px-1.5 py-0.2 rounded-full font-mono animate-pulse">
-                        {pendingOrdersCount}
-                      </span>
-                    )}
-                    {mode.liveBadge && (
-                      <span className="w-1.5 h-1.5 rounded-full bg-emerald-400 animate-ping"></span>
-                    )}
-                  </Link>
-                );
-              })}
-
-              
-              <button
-                type="button"
-                onClick={() => setIsPinned(!isPinned)}
-                title={isPinned ? 'Bỏ ghim (tự động ẩn khi rời chuột)' : 'Ghim cố định thanh này'}
-                className={`px-2 py-1 rounded-lg text-[10px] font-mono font-bold flex items-center gap-1 transition cursor-pointer ${
-                  isPinned
-                    ? 'bg-emerald-400 text-black shadow-md'
-                    : 'bg-slate-800 text-slate-400 hover:text-white border border-white/10'
-                }`}
-              >
-                <span className="material-symbols-outlined text-[13px]">{isPinned ? 'push_pin' : 'keep'}</span>
-                <span>{isPinned ? 'Đã ghim' : 'Ghim'}</span>
-              </button>
-            </div>
+        <div className="max-w-7xl mx-auto flex flex-col lg:flex-row items-start lg:items-center justify-between gap-2 font-mono text-[10px] sm:text-[11px]">
+          <div className="flex items-center gap-2">
+            <span className="w-2 h-2 rounded-full bg-emerald-400 animate-ping"></span>
+            <span className="font-bold text-emerald-400 uppercase tracking-wider">
+              CHỌN GIAO DIỆN HỆ THỐNG:
+            </span>
+            <span className="hidden sm:inline text-slate-500">•</span>
+            <span className="hidden sm:inline text-slate-400">5 Phân hệ trải nghiệm</span>
           </div>
-        </div>
 
-        
-        {!isPinned && (
-          <div className="flex justify-center -mb-2 relative z-10 pointer-events-auto">
+          <div className="flex flex-wrap items-center gap-1.5 sm:gap-2">
+            {ecosystemModes.map((mode) => {
+              const isActive = pathname === mode.href;
+              return (
+                <Link
+                  key={mode.href}
+                  href={mode.href}
+                  className={`flex items-center gap-1.5 px-2.5 sm:px-3 py-1 rounded-lg font-bold font-mono text-[10px] sm:text-[11px] transition-all ${
+                    isActive
+                      ? 'bg-gradient-to-r from-emerald-400 to-cyan-400 text-slate-950 font-black shadow-[0_0_12px_rgba(16,185,129,0.35)] scale-105'
+                      : 'bg-slate-900/90 text-slate-300 hover:text-white border border-white/10 hover:border-emerald-500/40'
+                  }`}
+                >
+                  <span className="material-symbols-outlined text-[14px]">{mode.icon}</span>
+                  <span>{mode.label}</span>
+                  {mode.countBadge && pendingOrdersCount > 0 && (
+                    <span className="bg-amber-400 text-slate-950 text-[9px] font-black px-1.5 py-0.2 rounded-full font-mono animate-pulse">
+                      {pendingOrdersCount}
+                    </span>
+                  )}
+                  {mode.liveBadge && (
+                    <span className="w-1.5 h-1.5 rounded-full bg-emerald-400 animate-ping"></span>
+                  )}
+                </Link>
+              );
+            })}
+
             <button
               type="button"
-              onClick={() => setIsSystemDrawerOpen(!isSystemDrawerOpen)}
-              className="flex items-center gap-1.5 px-3 py-0.5 rounded-b-xl bg-[#020617]/95 border-x border-b border-emerald-500/40 text-[9px] sm:text-[10px] font-mono font-bold text-slate-400 hover:text-emerald-400 hover:border-emerald-400 shadow-[0_4px_12px_rgba(0,0,0,0.5)] transition group cursor-pointer"
+              onClick={() => setIsPinned(!isPinned)}
+              title={isPinned ? 'Bỏ ghim (tự động ẩn khi rời chuột)' : 'Ghim cố định thanh này'}
+              className={`px-2 py-1 rounded-lg text-[10px] font-mono font-bold flex items-center gap-1 transition cursor-pointer ${
+                isPinned
+                  ? 'bg-emerald-400 text-black shadow-md'
+                  : 'bg-slate-800 text-slate-400 hover:text-white border border-white/10'
+              }`}
             >
-              <span className="w-1.5 h-1.5 rounded-full bg-emerald-400 animate-pulse group-hover:scale-125 transition"></span>
-              <span className="tracking-wider">GIAO DIỆN HỆ THỐNG</span>
-              <span className="material-symbols-outlined text-[13px] group-hover:translate-y-0.5 transition duration-200">
-                {isSystemDrawerOpen ? 'keyboard_arrow_up' : 'keyboard_arrow_down'}
-              </span>
+              <span className="material-symbols-outlined text-[13px]">{isPinned ? 'push_pin' : 'keep'}</span>
+              <span>{isPinned ? 'Đã ghim' : 'Ghim'}</span>
             </button>
-          </div>
-        )}
-      </div>
 
-      
-      <div className="bg-black/90 border-b border-white/10 text-[11px] text-slate-400 py-1.5 px-4 font-mono">
-        <div className="max-w-7xl mx-auto flex flex-wrap justify-between items-center gap-2">
-          <div className="flex items-center gap-4">
-            <span className="inline-flex items-center gap-1.5 text-emerald-400 font-bold">
-              <span className="w-2 h-2 rounded-full bg-emerald-400 animate-pulse"></span>
-              ĐANG MỞ CỬA 24/7
-            </span>
-            <span className="hidden sm:inline text-slate-300">
-              📍 182 Lê Duẩn, TP. Vinh (Gần ĐH Vinh)
-            </span>
-          </div>
-
-          <div className="flex items-center gap-4">
-            <span className="hidden md:inline text-amber-300 font-semibold">
-              ⚡ Tặng 100% nạp lần đầu cho Tân thủ
-            </span>
-            <a href="tel:19008888" className="text-cyan-400 hover:text-white transition font-bold flex items-center gap-1">
-              📞 Hotline: 1900 8888
-            </a>
+            <button
+              type="button"
+              onClick={() => {
+                setIsPinned(false);
+                setIsSystemDrawerOpen(false);
+              }}
+              title="Thu gọn thanh hệ thống"
+              className="px-2 py-1 rounded-lg text-[10px] font-mono font-bold text-slate-400 hover:text-rose-400 border border-white/10 hover:border-rose-500/40 transition"
+            >
+              ✕
+            </button>
           </div>
         </div>
       </div>
 
-      
-      <nav className="border-b border-white/10 bg-[#070d1e]/95 backdrop-blur-md px-4 py-2.5">
+      {/* ══════════ THANH 2: NAVBAR CHÍNH (NẰM SÁT MÉP TRÊN TRANG WEB KHI CHƯA MỞ DRAWER) ══════════ */}
+      <nav className="border-b border-white/10 bg-[#070d1e] px-4 py-2.5 relative">
         <div className="max-w-7xl mx-auto flex items-center justify-between gap-4">
           
-          
+          {/* Logo Thương Hiệu */}
           <Link href="/" className="flex items-center gap-3 group flex-shrink-0">
             <div className="w-10 h-10 rounded-xl bg-gradient-to-br from-emerald-400 via-teal-400 to-cyan-500 flex items-center justify-center text-black font-black text-xl shadow-lg shadow-emerald-500/20 group-hover:scale-105 transition">
               CZ
@@ -211,8 +178,8 @@ export default function GlobalNavBar() {
             </div>
           </Link>
 
-          
-          <div className="hidden lg:flex items-center gap-5 text-xs font-mono font-bold uppercase tracking-wider text-slate-300">
+          {/* Menu Điều Hướng Trung Tâm: Trang chủ - Khu máy dịch vụ - ... */}
+          <div className="hidden lg:flex items-center gap-4 xl:gap-5 text-xs font-mono font-bold uppercase tracking-wider text-slate-300">
             <Link
               href="/"
               className={`transition hover:text-emerald-400 ${pathname === '/' ? 'text-emerald-400 font-black' : ''}`}
@@ -220,7 +187,7 @@ export default function GlobalNavBar() {
               TRANG CHỦ
             </Link>
 
-            
+            {/* Dropdown: Khu máy & Dịch vụ */}
             <div className="relative" ref={dropdownRef}>
               <button
                 type="button"
@@ -347,10 +314,43 @@ export default function GlobalNavBar() {
             >
               SHOWROOM
             </Link>
+
+            {/* Nút GIAO DIỆN HỆ THỐNG: Vẫn ở đây nhưng Layout mở ra nằm phía trên thanh Trang Chủ */}
+            <button
+              type="button"
+              onClick={() => setIsSystemDrawerOpen(!isSystemDrawerOpen)}
+              onMouseEnter={() => setIsSystemDrawerOpen(true)}
+              className={`flex items-center gap-1.5 px-3 py-1.5 rounded-xl font-mono text-[11px] font-bold tracking-wider transition-all border cursor-pointer ${
+                isSystemDrawerOpen || isPinned
+                  ? 'bg-emerald-400 text-black border-emerald-400 shadow-[0_0_15px_rgba(16,185,129,0.4)]'
+                  : 'bg-slate-900/90 text-slate-300 hover:text-emerald-400 border-emerald-500/40 hover:border-emerald-400 shadow-sm'
+              }`}
+              title="Mở thanh chuyển đổi 5 giao diện hệ thống (nằm phía trên thanh Trang Chủ)"
+            >
+              <span className="w-1.5 h-1.5 rounded-full bg-emerald-400 animate-pulse"></span>
+              <span>GIAO DIỆN HỆ THỐNG</span>
+              <span className="material-symbols-outlined text-[15px]">
+                {isSystemDrawerOpen ? 'keyboard_arrow_up' : 'keyboard_arrow_down'}
+              </span>
+            </button>
           </div>
 
-          
+          {/* Cụm Bên Phải: Nút Hệ thống (mobile), Hotline, Nút Đặt Máy Trước & ĐĂNG NHẬP / ĐĂNG KÝ */}
           <div className="flex items-center gap-2 sm:gap-3 flex-shrink-0">
+            {/* Nút Giao diện hệ thống trên mobile/tablet */}
+            <button
+              type="button"
+              onClick={() => setIsSystemDrawerOpen(!isSystemDrawerOpen)}
+              className="lg:hidden flex items-center gap-1 px-2.5 py-1.5 rounded-lg bg-slate-900 border border-emerald-500/40 text-emerald-400 font-mono text-[10px] font-bold cursor-pointer"
+              title="Giao diện hệ thống"
+            >
+              <span className="w-1.5 h-1.5 rounded-full bg-emerald-400 animate-pulse"></span>
+              <span>HỆ THỐNG</span>
+              <span className="material-symbols-outlined text-[14px]">
+                {isSystemDrawerOpen ? 'keyboard_arrow_up' : 'keyboard_arrow_down'}
+              </span>
+            </button>
+
             <a
               href="tel:19008888"
               className="hidden xl:flex items-center gap-1.5 text-xs font-mono font-bold text-slate-300 hover:text-white px-2 py-1.5 rounded-lg transition"
@@ -358,7 +358,7 @@ export default function GlobalNavBar() {
               <span className="text-emerald-400">📞</span> 1900 8888
             </a>
 
-            
+            {/* Nút Đặt Máy Trước */}
             <Link
               href="/#phan-khu"
               className="px-3.5 sm:px-4 py-2 bg-emerald-400 hover:bg-emerald-300 text-black font-extrabold text-xs rounded-xl shadow-lg shadow-emerald-500/25 transition uppercase font-sans flex items-center gap-1"
@@ -366,9 +366,8 @@ export default function GlobalNavBar() {
               <span>ĐẶT MÁY TRƯỚC</span>
             </Link>
 
-            
+            {/* CỤM ĐĂNG NHẬP / ĐĂNG KÝ HOẶC THÔNG TIN TÀI KHOẢN */}
             {currentUser ? (
-              
               <div className="flex items-center gap-2">
                 <Link
                   href="/auth"
@@ -387,48 +386,51 @@ export default function GlobalNavBar() {
                       {wallet.balance.toLocaleString('vi-VN')}đ
                     </span>
                   </div>
-                  <div className="w-8 h-8 rounded-lg bg-emerald-500/20 text-emerald-400 flex items-center justify-center font-bold text-sm border border-emerald-400">
-                    <span className="material-symbols-outlined text-[18px]">person</span>
+                  <div className="w-8 h-8 rounded-lg bg-emerald-500/20 text-emerald-400 flex items-center justify-center font-bold">
+                    <span className="material-symbols-outlined text-base">person</span>
                   </div>
                 </Link>
 
+                {/* Nút Đăng xuất */}
                 <button
                   type="button"
                   onClick={handleLogout}
-                  className="w-8 h-8 rounded-lg bg-rose-500/10 hover:bg-rose-500/20 border border-rose-500/30 text-rose-400 flex items-center justify-center text-xs transition"
                   title="Đăng xuất tài khoản"
+                  className="w-8 h-8 rounded-lg bg-rose-500/10 border border-rose-500/30 text-rose-400 hover:bg-rose-500/20 hover:border-rose-500 transition flex items-center justify-center cursor-pointer"
                 >
-                  <span className="material-symbols-outlined text-[16px]">power_settings_new</span>
+                  <span className="material-symbols-outlined text-base">power_settings_new</span>
                 </button>
               </div>
             ) : (
-              
+              /* CHƯA ĐĂNG NHẬP: HIỆN 2 NÚT ĐĂNG NHẬP & ĐĂNG KÝ */
               <div className="flex items-center gap-2">
                 <button
                   type="button"
-                  onClick={() => handleOpenAuth('login')}
-                  className="px-3.5 py-1.5 rounded-xl bg-white/5 hover:bg-white/10 border border-white/10 text-slate-300 hover:text-white font-semibold text-xs transition flex items-center gap-1.5 cursor-pointer"
+                  onClick={() => {
+                    setAuthModalTab('login');
+                    setIsAuthModalOpen(true);
+                  }}
+                  className="px-3 sm:px-3.5 py-2 rounded-xl bg-slate-800 hover:bg-slate-700 text-white font-mono text-xs font-bold transition border border-white/10"
                 >
-                  <span className="material-symbols-outlined text-cyan-400 text-[16px]">login</span>
-                  <span>Đăng nhập</span>
+                  ĐĂNG NHẬP
                 </button>
-
                 <button
                   type="button"
-                  onClick={() => handleOpenAuth('register')}
-                  className="hidden sm:inline-flex px-3.5 py-1.5 rounded-xl bg-emerald-500/20 hover:bg-emerald-500/30 border border-emerald-500/40 text-emerald-300 font-bold text-xs transition cursor-pointer"
+                  onClick={() => {
+                    setAuthModalTab('register');
+                    setIsAuthModalOpen(true);
+                  }}
+                  className="px-3 sm:px-3.5 py-2 rounded-xl bg-cyan-500 hover:bg-cyan-400 text-slate-950 font-mono text-xs font-black shadow-lg shadow-cyan-500/20 transition"
                 >
-                  Đăng ký
+                  ĐĂNG KÝ
                 </button>
               </div>
             )}
-
           </div>
-
         </div>
       </nav>
 
-      
+      {/* MODAL AUTH DÙNG CHUNG TOÀN HỆ THỐNG */}
       <AuthModal
         isOpen={isAuthModalOpen}
         defaultTab={authModalTab}
