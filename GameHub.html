@@ -1,0 +1,655 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>GameHub — Cộng đồng & Cẩm nang Game thủ</title>
+  <!-- Google Fonts & FontAwesome -->
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&family=Rajdhani:wght@600;700&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+  
+  <style>
+    :root {
+      --bg-dark: #0b0f19;
+      --card-bg: #141c2e;
+      --card-border: #23304a;
+      --text-main: #f1f5f9;
+      --text-muted: #94a3b8;
+      --accent-purple: #8b5cf6;
+      --accent-blue: #38bdf8;
+      --accent-green: #10b981;
+      --gradient-primary: linear-gradient(135deg, #6366f1 0%, #a855f7 100%);
+      --gradient-glow: 0 0 20px rgba(139, 92, 246, 0.35);
+    }
+
+    * {
+      box-sizing: border-box;
+      margin: 0;
+      padding: 0;
+    }
+
+    body {
+      background-color: var(--bg-dark);
+      color: var(--text-main);
+      font-family: 'Plus Jakarta Sans', -apple-system, BlinkMacSystemFont, sans-serif;
+      min-height: 100vh;
+      display: flex;
+      flex-direction: column;
+    }
+
+    h1, h2, h3, h4, .navbar-brand {
+      font-family: 'Rajdhani', sans-serif;
+      font-weight: 700;
+      letter-spacing: 0.5px;
+    }
+
+    a {
+      color: var(--accent-blue);
+      text-decoration: none;
+      transition: all 0.2s;
+    }
+    a:hover {
+      color: #7dd3fc;
+    }
+
+    /* Container */
+    .container {
+      width: 100%;
+      max-width: 1200px;
+      margin: 0 auto;
+      padding: 0 20px;
+    }
+
+    /* Navbar */
+    .navbar {
+      background: rgba(15, 23, 42, 0.95);
+      backdrop-filter: blur(12px);
+      border-bottom: 1px solid var(--card-border);
+      position: sticky;
+      top: 0;
+      z-index: 100;
+      padding: 14px 0;
+    }
+    .navbar-inner {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+    }
+    .navbar-brand {
+      color: #fff;
+      font-size: 26px;
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      text-shadow: 0 0 12px rgba(99, 102, 241, 0.6);
+    }
+    .nav-links {
+      display: flex;
+      gap: 16px;
+      align-items: center;
+      list-style: none;
+    }
+    .nav-links a {
+      color: #cbd5e1;
+      font-weight: 600;
+      font-size: 14px;
+      padding: 8px 14px;
+      border-radius: 8px;
+    }
+    .nav-links a:hover, .nav-links a.active {
+      color: #fff;
+      background: rgba(99, 102, 241, 0.18);
+    }
+
+    /* User switcher badge */
+    .user-pill {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      background: #1e293b;
+      padding: 6px 14px;
+      border-radius: 30px;
+      border: 1px solid var(--card-border);
+    }
+    .user-pill img {
+      width: 28px;
+      height: 28px;
+      border-radius: 50%;
+      border: 2px solid var(--accent-purple);
+    }
+
+    /* Hero Banner */
+    .hero-banner {
+      background: linear-gradient(135deg, rgba(30, 41, 59, 0.88) 0%, rgba(15, 23, 42, 0.96) 100%), url('https://images.unsplash.com/photo-1542751371-adc38448a05e?q=80&w=1600') center/cover;
+      border: 1px solid var(--card-border);
+      border-radius: 18px;
+      padding: 45px 35px;
+      margin: 30px 0;
+      box-shadow: 0 12px 30px rgba(0, 0, 0, 0.5);
+    }
+    .hero-banner h1 {
+      font-size: 38px;
+      margin-bottom: 12px;
+      background: linear-gradient(90deg, #fff, #c084fc);
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+    }
+    .hero-banner p {
+      color: var(--text-muted);
+      font-size: 16px;
+      max-width: 650px;
+      line-height: 1.6;
+    }
+
+    /* Buttons */
+    .btn {
+      display: inline-flex;
+      align-items: center;
+      gap: 8px;
+      padding: 10px 20px;
+      border-radius: 10px;
+      font-weight: 600;
+      font-size: 14px;
+      cursor: pointer;
+      border: none;
+      transition: all 0.25s ease;
+    }
+    .btn-gaming {
+      background: var(--gradient-primary);
+      color: #fff !important;
+      box-shadow: 0 4px 15px rgba(99, 102, 241, 0.4);
+    }
+    .btn-gaming:hover {
+      box-shadow: 0 6px 20px rgba(168, 85, 247, 0.6);
+      transform: translateY(-2px);
+    }
+    .btn-outline {
+      background: rgba(30, 41, 59, 0.6);
+      border: 1px solid var(--card-border);
+      color: #e2e8f0;
+    }
+    .btn-outline:hover {
+      background: #1e293b;
+      border-color: var(--accent-purple);
+      color: #fff;
+    }
+    .btn-sm {
+      padding: 6px 14px;
+      font-size: 13px;
+    }
+
+    /* Layout Grid */
+    .main-grid {
+      display: grid;
+      grid-template-columns: 2fr 1fr;
+      gap: 25px;
+      margin-bottom: 50px;
+    }
+    @media (max-width: 860px) {
+      .main-grid {
+        grid-template-columns: 1fr;
+      }
+    }
+
+    /* Card Panels */
+    .panel {
+      background: var(--card-bg);
+      border: 1px solid var(--card-border);
+      border-radius: 14px;
+      padding: 22px;
+      margin-bottom: 20px;
+      box-shadow: 0 8px 24px rgba(0, 0, 0, 0.35);
+      transition: all 0.25s ease;
+    }
+    .panel:hover {
+      border-color: rgba(139, 92, 246, 0.4);
+      transform: translateY(-3px);
+      box-shadow: var(--gradient-glow);
+    }
+
+    .badge-tag {
+      background: rgba(99, 102, 241, 0.2);
+      color: #818cf8;
+      border: 1px solid rgba(99, 102, 241, 0.4);
+      padding: 4px 10px;
+      border-radius: 6px;
+      font-size: 12px;
+      font-weight: 700;
+    }
+
+    /* Filter Bar */
+    .filter-bar {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-bottom: 20px;
+    }
+    .tab-group {
+      display: flex;
+      background: #1e293b;
+      padding: 4px;
+      border-radius: 30px;
+      border: 1px solid var(--card-border);
+    }
+    .tab-btn {
+      padding: 6px 16px;
+      border-radius: 20px;
+      border: none;
+      background: transparent;
+      color: var(--text-muted);
+      cursor: pointer;
+      font-size: 13px;
+      font-weight: 600;
+      transition: all 0.2s;
+    }
+    .tab-btn.active {
+      background: var(--accent-purple);
+      color: #fff;
+    }
+
+    /* Comments Section */
+    .comment-item {
+      background: #0f172a;
+      padding: 12px 16px;
+      border-radius: 10px;
+      border-left: 3px solid var(--accent-purple);
+      margin-top: 10px;
+      font-size: 14px;
+    }
+
+    /* Modal Form */
+    .modal-overlay {
+      display: none;
+      position: fixed;
+      inset: 0;
+      background: rgba(0, 0, 0, 0.75);
+      backdrop-filter: blur(5px);
+      z-index: 1000;
+      align-items: center;
+      justify-content: center;
+    }
+    .modal-box {
+      background: var(--card-bg);
+      border: 1px solid var(--card-border);
+      border-radius: 16px;
+      width: 90%;
+      max-width: 550px;
+      padding: 30px;
+      box-shadow: 0 20px 40px rgba(0,0,0,0.8);
+    }
+    .modal-box input, .modal-box textarea, .modal-box select {
+      width: 100%;
+      background: #0f172a;
+      border: 1px solid var(--card-border);
+      color: #fff;
+      padding: 12px;
+      border-radius: 8px;
+      margin-top: 6px;
+      margin-bottom: 16px;
+      font-family: inherit;
+    }
+    .modal-box input:focus, .modal-box textarea:focus {
+      outline: none;
+      border-color: var(--accent-purple);
+    }
+
+    footer {
+      margin-top: auto;
+      border-top: 1px solid var(--card-border);
+      padding: 24px 0;
+      text-align: center;
+      color: var(--text-muted);
+      font-size: 13px;
+      background: #080c14;
+    }
+  </style>
+</head>
+<body>
+
+  <!-- Top Navigation -->
+  <nav class="navbar">
+    <div class="container navbar-inner">
+      <div class="navbar-brand">
+        <i class="fa-solid fa-gamepad" style="color:#a855f7;"></i> GAMEHUB
+      </div>
+      <ul class="nav-links">
+        <li><a href="#" class="active"><i class="fa-solid fa-house"></i> Trang chủ</a></li>
+        <li><a href="#games-sec"><i class="fa-solid fa-fire"></i> Tựa game hot</a></li>
+        <li><a href="#gamers-sec"><i class="fa-solid fa-users"></i> Game thủ</a></li>
+      </ul>
+      <div class="user-pill">
+        <img src="https://api.dicebear.com/7.x/bottts/svg?seed=faker_god" alt="avatar">
+        <span style="font-size:13px; font-weight:700; color:#f8fafc;">faker_god</span>
+        <span style="background:#4f46e5; font-size:10px; padding:2px 8px; border-radius:12px;">Admin</span>
+      </div>
+    </div>
+  </nav>
+
+  <div class="container">
+    <!-- Hero Banner -->
+    <div class="hero-banner">
+      <h1><i class="fa-solid fa-fire" style="color:#c084fc;"></i> CHÀO MỪNG ĐẾN GAMEHUB</h1>
+      <p>Cộng đồng chia sẻ cẩm nang vượt ải, phân tích chiến thuật và đánh giá những tựa game đỉnh cao dành cho game thủ Việt Nam.</p>
+      <div style="margin-top: 24px; display:flex; gap:12px; flex-wrap:wrap;">
+        <button class="btn btn-gaming" onclick="openModal()">
+          <i class="fa-solid fa-feather-pointed"></i> Đăng cẩm nang mới
+        </button>
+        <a href="#games-sec" class="btn btn-outline">
+          <i class="fa-solid fa-compass"></i> Khám phá danh sách game
+        </a>
+      </div>
+    </div>
+
+    <!-- Main Content Layout -->
+    <div class="main-grid">
+      <!-- Left Column: Posts Feed -->
+      <div>
+        <div class="filter-bar">
+          <h3><i class="fa-solid fa-stream" style="color:#38bdf8;"></i> Bảng tin cẩm nang</h3>
+          <div class="tab-group">
+            <button class="tab-btn active" id="tabAll" onclick="filterGuides('all')">
+              <i class="fa-solid fa-globe"></i> Tất cả bài viết
+            </button>
+            <button class="tab-btn" id="tabFollowed" onclick="filterGuides('followed')">
+              <i class="fa-solid fa-user-check"></i> Đang theo dõi
+            </button>
+          </div>
+        </div>
+
+        <div id="guidesList">
+          <!-- Guide 1 -->
+          <div class="panel" data-author="wukong_fan">
+            <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:12px;">
+              <span class="badge-tag"><i class="fa-solid fa-tag"></i> Black Myth: Wukong</span>
+              <small style="color:var(--text-muted);"><i class="fa-regular fa-clock"></i> 26/10/2026 11:32</small>
+            </div>
+            <h3 style="margin-bottom:10px; font-size:20px;">
+              <a href="javascript:void(0)" style="color:#fff;">Hướng dẫn đánh bại Hắc Phong Đại Vương tại Hắc Phong Sơn</a>
+            </h3>
+            <p style="color:var(--text-muted); line-height:1.6; font-size:14px;">
+              Đây là một trong những đại boss khó nhằn ở Hắc Phong Sơn. Mẹo: Sử dụng Định Thân Thuật ngay khi boss chuẩn bị phóng hỏa kiếm, trang bị bảo pháp Tị Hỏa Tráo để miễn nhiễm toàn bộ sát thương lửa!
+            </p>
+            <div style="display:flex; justify-content:space-between; align-items:center; margin-top:16px; border-top:1px solid var(--card-border); padding-top:14px;">
+              <div style="display:flex; align-items:center; gap:10px;">
+                <img src="https://api.dicebear.com/7.x/bottts/svg?seed=wukong_fan" width="28" height="28" style="border-radius:50%;">
+                <span style="font-weight:600; font-size:14px;">wukong_fan</span>
+                <span style="background:#334155; font-size:10px; padding:2px 6px; border-radius:4px;">Reviewer</span>
+              </div>
+              <button class="btn btn-outline btn-sm" onclick="toggleComments('comment-box-1')">
+                <i class="fa-solid fa-comment-dots" style="color:#a855f7;"></i> <span id="count-1">2</span> Bình luận
+              </button>
+            </div>
+            <!-- Comments Box -->
+            <div id="comment-box-1" style="display:none; margin-top:16px; border-top:1px dashed var(--card-border); padding-top:12px;">
+              <div id="comments-1">
+                <div class="comment-item">
+                  <b>faker_god:</b> Hướng dẫn rất chi tiết, dùng Tị Hỏa Tráo qua ải dễ hơn hẳn!
+                </div>
+                <div class="comment-item">
+                  <b>pro_gamer:</b> Boss này né lốc xoay nhịp 2 là dễ đánh nhất.
+                </div>
+              </div>
+              <div style="display:flex; gap:8px; margin-top:12px;">
+                <input type="text" id="input-1" placeholder="Nhập bình luận của bạn..." style="flex:1; background:#0f172a; border:1px solid var(--card-border); padding:8px 12px; border-radius:6px; color:#fff;">
+                <button class="btn btn-gaming btn-sm" onclick="addComment(1)"><i class="fa-solid fa-paper-plane"></i> Gửi</button>
+              </div>
+            </div>
+          </div>
+
+          <!-- Guide 2 -->
+          <div class="panel" data-author="faker_god">
+            <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:12px;">
+              <span class="badge-tag"><i class="fa-solid fa-tag"></i> Elden Ring</span>
+              <small style="color:var(--text-muted);"><i class="fa-regular fa-clock"></i> 25/10/2026 18:20</small>
+            </div>
+            <h3 style="margin-bottom:10px; font-size:20px;">
+              <a href="javascript:void(0)" style="color:#fff;">Top 3 cách Build Kiếm Sĩ Xuất Huyết (Bleed Dex) tối ưu nhất</a>
+            </h3>
+            <p style="color:var(--text-muted); line-height:1.6; font-size:14px;">
+              Xuất huyết luôn là cơ chế sát thương bá đạo nhất trong Vùng Đất Bóng Tối. Kết hợp thanh song kiếm Uchigatana cùng kỹ năng Seppuku và Mặt nạ Trắng để gia tăng 20% sát thương tức thì.
+            </p>
+            <div style="display:flex; justify-content:space-between; align-items:center; margin-top:16px; border-top:1px solid var(--card-border); padding-top:14px;">
+              <div style="display:flex; align-items:center; gap:10px;">
+                <img src="https://api.dicebear.com/7.x/bottts/svg?seed=faker_god" width="28" height="28" style="border-radius:50%;">
+                <span style="font-weight:600; font-size:14px;">faker_god</span>
+                <span style="background:#4f46e5; font-size:10px; padding:2px 6px; border-radius:4px;">Admin</span>
+              </div>
+              <button class="btn btn-outline btn-sm" onclick="toggleComments('comment-box-2')">
+                <i class="fa-solid fa-comment-dots" style="color:#a855f7;"></i> <span id="count-2">1</span> Bình luận
+              </button>
+            </div>
+            <!-- Comments Box -->
+            <div id="comment-box-2" style="display:none; margin-top:16px; border-top:1px dashed var(--card-border); padding-top:12px;">
+              <div id="comments-2">
+                <div class="comment-item">
+                  <b>wukong_fan:</b> Build này đi boss Malenia đánh cực kỳ sướng tay!
+                </div>
+              </div>
+              <div style="display:flex; gap:8px; margin-top:12px;">
+                <input type="text" id="input-2" placeholder="Nhập bình luận của bạn..." style="flex:1; background:#0f172a; border:1px solid var(--card-border); padding:8px 12px; border-radius:6px; color:#fff;">
+                <button class="btn btn-gaming btn-sm" onclick="addComment(2)"><i class="fa-solid fa-paper-plane"></i> Gửi</button>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Right Column: Sidebar -->
+      <div>
+        <!-- Games Section -->
+        <div class="panel" id="games-sec">
+          <h4 style="margin-bottom:16px; font-size:18px;"><i class="fa-solid fa-fire text-danger" style="color:#ef4444;"></i> Tựa Game Nổi Bật</h4>
+          <div style="display:flex; flex-direction:column; gap:14px;">
+            <div style="display:flex; justify-content:space-between; align-items:center; border-bottom:1px solid var(--card-border); padding-bottom:10px;">
+              <div>
+                <b style="color:#f8fafc;">Black Myth: Wukong</b><br>
+                <small style="color:var(--text-muted);">Action RPG • PC / PS5</small>
+              </div>
+              <span class="badge-tag">Hot</span>
+            </div>
+            <div style="display:flex; justify-content:space-between; align-items:center; border-bottom:1px solid var(--card-border); padding-bottom:10px;">
+              <div>
+                <b style="color:#f8fafc;">Elden Ring</b><br>
+                <small style="color:var(--text-muted);">Souls-like • Multi-platform</small>
+              </div>
+              <span class="badge-tag">Goty</span>
+            </div>
+            <div style="display:flex; justify-content:space-between; align-items:center;">
+              <div>
+                <b style="color:#f8fafc;">Valorant</b><br>
+                <small style="color:var(--text-muted);">Tactical FPS • PC</small>
+              </div>
+              <span class="badge-tag">Esports</span>
+            </div>
+          </div>
+        </div>
+
+        <!-- Featured Gamers -->
+        <div class="panel" id="gamers-sec">
+          <h4 style="margin-bottom:16px; font-size:18px;"><i class="fa-solid fa-trophy" style="color:#f59e0b;"></i> Game thủ tiêu biểu</h4>
+          <div style="display:flex; flex-direction:column; gap:12px;">
+            <div style="display:flex; justify-content:space-between; align-items:center;">
+              <div style="display:flex; align-items:center; gap:10px;">
+                <img src="https://api.dicebear.com/7.x/bottts/svg?seed=wukong_fan" width="32" height="32" style="border-radius:50%;">
+                <div>
+                  <b style="font-size:14px;">wukong_fan</b><br>
+                  <small style="color:var(--text-muted);">15 cẩm nang</small>
+                </div>
+              </div>
+              <button class="btn btn-outline btn-sm" id="btn-follow-1" onclick="toggleFollow('btn-follow-1')">
+                <i class="fa-solid fa-check"></i> Đã theo dõi
+              </button>
+            </div>
+
+            <div style="display:flex; justify-content:space-between; align-items:center;">
+              <div style="display:flex; align-items:center; gap:10px;">
+                <img src="https://api.dicebear.com/7.x/bottts/svg?seed=pro_gamer" width="32" height="32" style="border-radius:50%;">
+                <div>
+                  <b style="font-size:14px;">pro_gamer</b><br>
+                  <small style="color:var(--text-muted);">8 cẩm nang</small>
+                </div>
+              </div>
+              <button class="btn btn-gaming btn-sm" id="btn-follow-2" onclick="toggleFollow('btn-follow-2')">
+                <i class="fa-solid fa-user-plus"></i> Theo dõi
+              </button>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Modal Đăng Cẩm Nang Mới -->
+  <div class="modal-overlay" id="guideModal">
+    <div class="modal-box">
+      <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:18px;">
+        <h3 style="margin:0; font-size:22px;"><i class="fa-solid fa-pen-nib" style="color:var(--accent-purple);"></i> Đăng Cẩm Nang Mới</h3>
+        <button onclick="closeModal()" style="background:none; border:none; color:var(--text-muted); font-size:20px; cursor:pointer;">&times;</button>
+      </div>
+      <div>
+        <label style="font-size:13px; font-weight:600;">Tiêu đề cẩm nang</label>
+        <input type="text" id="newTitle" placeholder="Ví dụ: Cách khắc chế tướng địch...">
+
+        <label style="font-size:13px; font-weight:600;">Tựa game</label>
+        <select id="newGameTag">
+          <option value="Black Myth: Wukong">Black Myth: Wukong</option>
+          <option value="Elden Ring">Elden Ring</option>
+          <option value="Valorant">Valorant</option>
+          <option value="Khác">Khác</option>
+        </select>
+
+        <label style="font-size:13px; font-weight:600;">Nội dung chi tiết</label>
+        <textarea id="newContent" rows="4" placeholder="Chia sẻ mẹo, chiến thuật của bạn..."></textarea>
+
+        <div style="display:flex; justify-content:flex-end; gap:10px;">
+          <button class="btn btn-outline" onclick="closeModal()">Hủy</button>
+          <button class="btn btn-gaming" onclick="publishGuide()"><i class="fa-solid fa-paper-plane"></i> Đăng bài</button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <footer>
+    <div class="container">
+      GameHub — Dự án Bài tập Lớn Thiết Kế Web & Hệ Thống Cộng Đồng Game Thủ © 2026
+    </div>
+  </footer>
+
+  <script>
+    // Toggle Comment box
+    function toggleComments(id) {
+      const el = document.getElementById(id);
+      el.style.display = (el.style.display === 'none' || el.style.display === '') ? 'block' : 'none';
+    }
+
+    // Add comment live
+    function addComment(guideId) {
+      const input = document.getElementById('input-' + guideId);
+      const text = input.value.trim();
+      if (!text) return;
+
+      const container = document.getElementById('comments-' + guideId);
+      const newComment = document.createElement('div');
+      newComment.className = 'comment-item';
+      newComment.innerHTML = '<b>faker_god:</b> ' + escapeHtml(text);
+      container.appendChild(newComment);
+
+      const countEl = document.getElementById('count-' + guideId);
+      countEl.innerText = parseInt(countEl.innerText) + 1;
+      input.value = '';
+    }
+
+    // Filter guides
+    function filterGuides(type) {
+      const tabAll = document.getElementById('tabAll');
+      const tabFollowed = document.getElementById('tabFollowed');
+      const panels = document.querySelectorAll('#guidesList .panel');
+
+      if (type === 'all') {
+        tabAll.classList.add('active');
+        tabFollowed.classList.remove('active');
+        panels.forEach(p => p.style.display = 'block');
+      } else {
+        tabFollowed.classList.add('active');
+        tabAll.classList.remove('active');
+        panels.forEach(p => {
+          // faker_god chỉ follow wukong_fan
+          if (p.getAttribute('data-author') === 'wukong_fan') {
+            p.style.display = 'block';
+          } else {
+            p.style.display = 'none';
+          }
+        });
+      }
+    }
+
+    // Modal open/close
+    function openModal() {
+      document.getElementById('guideModal').style.display = 'flex';
+    }
+    function closeModal() {
+      document.getElementById('guideModal').style.display = 'none';
+    }
+
+    // Publish new guide
+    function publishGuide() {
+      const title = document.getElementById('newTitle').value.trim();
+      const tag = document.getElementById('newGameTag').value;
+      const content = document.getElementById('newContent').value.trim();
+
+      if (!title || !content) {
+        alert('Vui lòng nhập đầy đủ tiêu đề và nội dung!');
+        return;
+      }
+
+      const list = document.getElementById('guidesList');
+      const newPanel = document.createElement('div');
+      newPanel.className = 'panel';
+      newPanel.setAttribute('data-author', 'faker_god');
+      newPanel.innerHTML = `
+        <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:12px;">
+          <span class="badge-tag"><i class="fa-solid fa-tag"></i> ${tag}</span>
+          <small style="color:var(--text-muted);"><i class="fa-regular fa-clock"></i> Vừa xong</small>
+        </div>
+        <h3 style="margin-bottom:10px; font-size:20px;">
+          <a href="javascript:void(0)" style="color:#fff;">${escapeHtml(title)}</a>
+        </h3>
+        <p style="color:var(--text-muted); line-height:1.6; font-size:14px;">
+          ${escapeHtml(content)}
+        </p>
+        <div style="display:flex; justify-content:space-between; align-items:center; margin-top:16px; border-top:1px solid var(--card-border); padding-top:14px;">
+          <div style="display:flex; align-items:center; gap:10px;">
+            <img src="https://api.dicebear.com/7.x/bottts/svg?seed=faker_god" width="28" height="28" style="border-radius:50%;">
+            <span style="font-weight:600; font-size:14px;">faker_god</span>
+            <span style="background:#4f46e5; font-size:10px; padding:2px 6px; border-radius:4px;">Admin</span>
+          </div>
+          <span style="color:var(--text-muted); font-size:13px;"><i class="fa-solid fa-check text-success"></i> Đã xuất bản</span>
+        </div>
+      `;
+
+      list.prepend(newPanel);
+      closeModal();
+      document.getElementById('newTitle').value = '';
+      document.getElementById('newContent').value = '';
+    }
+
+    // Toggle Follow Button
+    function toggleFollow(btnId) {
+      const btn = document.getElementById(btnId);
+      if (btn.classList.contains('btn-gaming')) {
+        btn.className = 'btn btn-outline btn-sm';
+        btn.innerHTML = '<i class="fa-solid fa-check"></i> Đã theo dõi';
+      } else {
+        btn.className = 'btn btn-gaming btn-sm';
+        btn.innerHTML = '<i class="fa-solid fa-user-plus"></i> Theo dõi';
+      }
+    }
+
+    function escapeHtml(text) {
+      return text.replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;");
+    }
+  </script>
+</body>
+</html>
