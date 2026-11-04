@@ -215,7 +215,7 @@ export default function AuthModal({
 
             <div className="pt-2 border-t border-slate-800 space-y-1.5">
               <span className="text-[10px] text-slate-500 block mb-1 text-center uppercase tracking-wider">
-                CHỌN TÀI KHOẢN DIỄN TẬP THỬ NGHIỆM HẠNG
+                HOẶC ĐĂNG NHẬP NHANH VỚI TÀI KHOẢN MẪU
               </span>
               <div className="grid grid-cols-2 gap-2">
                 <button
