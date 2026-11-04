@@ -81,7 +81,7 @@ export default function GlobalNavBar() {
       return (
     <header className="sticky top-0 z-50 flex flex-col bg-[#070d1e] shadow-2xl">
       
-      {/* ══════════ THANH 1: BỘ CHUYỂN ĐỔI 5 GIAO DIỆN HỆ THỐNG (LAYOUT NẰM PHÍA TRÊN THANH TRANG CHỦ) ══════════ */}
+      
       <div
         onMouseEnter={() => setIsSystemDrawerOpen(true)}
         onMouseLeave={() => {
@@ -159,11 +159,11 @@ export default function GlobalNavBar() {
         </div>
       </div>
 
-      {/* ══════════ THANH 2: NAVBAR CHÍNH (NẰM SÁT MÉP TRÊN TRANG WEB KHI CHƯA MỞ DRAWER) ══════════ */}
+      
       <nav className="border-b border-white/10 bg-[#070d1e] px-4 py-2.5 relative">
         <div className="max-w-7xl mx-auto flex items-center justify-between gap-4">
           
-          {/* Logo Thương Hiệu */}
+          
           <Link href="/" className="flex items-center gap-3 group flex-shrink-0">
             <div className="w-10 h-10 rounded-xl bg-gradient-to-br from-emerald-400 via-teal-400 to-cyan-500 flex items-center justify-center text-black font-black text-xl shadow-lg shadow-emerald-500/20 group-hover:scale-105 transition">
               CZ
@@ -178,7 +178,7 @@ export default function GlobalNavBar() {
             </div>
           </Link>
 
-          {/* Menu Điều Hướng Trung Tâm: Trang chủ - Khu máy dịch vụ - ... */}
+          
           <div className="hidden lg:flex items-center gap-4 xl:gap-5 text-xs font-mono font-bold uppercase tracking-wider text-slate-300">
             <Link
               href="/"
@@ -187,7 +187,7 @@ export default function GlobalNavBar() {
               TRANG CHỦ
             </Link>
 
-            {/* Dropdown: Khu máy & Dịch vụ */}
+            
             <div className="relative" ref={dropdownRef}>
               <button
                 type="button"
@@ -315,7 +315,7 @@ export default function GlobalNavBar() {
               SHOWROOM
             </Link>
 
-            {/* Nút GIAO DIỆN HỆ THỐNG: Vẫn ở đây nhưng Layout mở ra nằm phía trên thanh Trang Chủ */}
+            
             <button
               type="button"
               onClick={() => setIsSystemDrawerOpen(!isSystemDrawerOpen)}
@@ -335,9 +335,9 @@ export default function GlobalNavBar() {
             </button>
           </div>
 
-          {/* Cụm Bên Phải: Nút Hệ thống (mobile), Hotline, Nút Đặt Máy Trước & ĐĂNG NHẬP / ĐĂNG KÝ */}
+          
           <div className="flex items-center gap-2 sm:gap-3 flex-shrink-0">
-            {/* Nút Giao diện hệ thống trên mobile/tablet */}
+            
             <button
               type="button"
               onClick={() => setIsSystemDrawerOpen(!isSystemDrawerOpen)}
@@ -358,7 +358,7 @@ export default function GlobalNavBar() {
               <span className="text-emerald-400">📞</span> 1900 8888
             </a>
 
-            {/* Nút Đặt Máy Trước */}
+            
             <Link
               href="/#phan-khu"
               className="px-3.5 sm:px-4 py-2 bg-emerald-400 hover:bg-emerald-300 text-black font-extrabold text-xs rounded-xl shadow-lg shadow-emerald-500/25 transition uppercase font-sans flex items-center gap-1"
@@ -366,7 +366,7 @@ export default function GlobalNavBar() {
               <span>ĐẶT MÁY TRƯỚC</span>
             </Link>
 
-            {/* CỤM ĐĂNG NHẬP / ĐĂNG KÝ HOẶC THÔNG TIN TÀI KHOẢN */}
+            
             {currentUser ? (
               <div className="flex items-center gap-2">
                 <Link
@@ -391,7 +391,7 @@ export default function GlobalNavBar() {
                   </div>
                 </Link>
 
-                {/* Nút Đăng xuất */}
+                
                 <button
                   type="button"
                   onClick={handleLogout}
@@ -402,7 +402,7 @@ export default function GlobalNavBar() {
                 </button>
               </div>
             ) : (
-              /* CHƯA ĐĂNG NHẬP: HIỆN 2 NÚT ĐĂNG NHẬP & ĐĂNG KÝ */
+              
               <div className="flex items-center gap-2">
                 <button
                   type="button"
@@ -430,7 +430,7 @@ export default function GlobalNavBar() {
         </div>
       </nav>
 
-      {/* MODAL AUTH DÙNG CHUNG TOÀN HỆ THỐNG */}
+      
       <AuthModal
         isOpen={isAuthModalOpen}
         defaultTab={authModalTab}
