@@ -216,7 +216,7 @@ export default function Home() {
   const [branch, setBranch] = useState('Zone 01: 182 Lê Duẩn, TP. Vinh (Flagship Complex)');
   const [zoneCategory, setZoneCategory] = useState('Standard Zone Tiêu Chuẩn (STD-01..10) - 12.000đ/h');
   const [quantity, setQuantity] = useState('1');
-  const [bookingDate, setBookingDate] = useState('2026-10-28');
+  const [bookingDate, setBookingDate] = useState(() => new Date().toISOString().split('T')[0]);
   const [timeSlot, setTimeSlot] = useState('Ngay bây giờ (Tức thì)');
   const [customerName, setCustomerName] = useState('');
   const [phone, setPhone] = useState('');

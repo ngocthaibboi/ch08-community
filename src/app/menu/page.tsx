@@ -663,7 +663,7 @@ function CyberMenuClientContent() {
                 <img
                   className="w-full h-full object-cover"
                   alt="Combo bữa ăn đêm game thủ"
-                  src="https:lh3.googleusercontent.com/aida-public/AB6AXuBymHLb3l1JmWlngJPpyVNfJn_0RCAbnaJG2NAs6alMIt8W-U6SFskoTKEjkvd0Kt7vvjBCCvoWMq-9GbL09b6AtcIxPDPxwB7KFmS-8eNKEzsGrF2k2wBnSiH6P_TwccorCzRjVwDrD24mrKtmtIwLqea1VJLEjpo4i_G2Xh5Wp3aisud9TovqNKYIws2Eae0UKcMazvvkyEXFpBb49Ifw47OL3AkVvC8BrmHmkz9pNJMX_WznqEn6"
+                  src="https://images.unsplash.com/photo-1555939594-58d7cb561ad1?auto=format&fit=crop&w=600&q=80"
                 />
                 <span className="absolute top-0 left-0 bg-rose-600 text-white text-[10px] font-black px-1.5 py-0.2 uppercase tracking-wider font-mono">
                   -20%
