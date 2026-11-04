@@ -1,0 +1,23 @@
+{% extends "base.html" %}
+{% block page_title %}Blog BookNest{% endblock %}
+{% block page_content %}
+  <h1>Blog BookNest</h1>
+  {% for post in posts.items %}
+    <div class="panel panel-default">
+      <div class="panel-body">
+        <h3><a href="{{ url_for('blog_detail', post_id=post.id) }}">{{ post.title }}</a></h3>
+        <p class="text-muted">{{ post.author.username }} · {{ post.created_at.strftime('%d/%m/%Y') }}</p>
+      </div>
+    </div>
+  {% else %}
+    <p>Chưa có bài viết nào.</p>
+  {% endfor %}
+
+  <nav>
+    <ul class="pager">
+      {% if posts.has_prev %}<li class="previous"><a href="{{ url_for('blog_list', page=posts.prev_num) }}">&larr; Trước</a></li>{% endif %}
+      <li><span>Trang {{ posts.page }} / {{ posts.pages }}</span></li>
+      {% if posts.has_next %}<li class="next"><a href="{{ url_for('blog_list', page=posts.next_num) }}">Sau &rarr;</a></li>{% endif %}
+    </ul>
+  </nav>
+{% endblock %}
