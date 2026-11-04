@@ -1,0 +1,58 @@
+{% extends "base.html" %}
+{% block page_title %}Đăng Ký Tài Khoản — GameHub Community{% endblock %}
+
+{% block page_content %}
+<div class="row" style="margin-top: 30px; margin-bottom: 60px;">
+  <div class="col-md-6 col-md-offset-3 col-sm-8 col-sm-offset-2">
+    <div class="panel panel-default" style="box-shadow: 0 15px 35px rgba(0,0,0,0.6); border-radius: 16px;">
+      <div class="panel-heading text-center" style="padding: 24px;">
+        <h2 style="margin: 0; font-size: 28px; color: #fff;">
+          <i class="fa-solid fa-user-plus" style="color: #ec4899;"></i> TẠO TÀI KHOẢN MỚI
+        </h2>
+        <p style="margin: 8px 0 0 0; color: var(--text-muted); font-size: 14px;">
+          Gia nhập GameHub để đăng tải cẩm nang và theo dõi cao thủ
+        </p>
+      </div>
+
+      <div class="panel-body" style="padding: 30px;">
+        <form method="POST" action="{{ url_for('register') }}">
+          <div class="form-group" style="margin-bottom: 18px;">
+            <label style="color: #e2e8f0; font-size: 14px;"><i class="fa-solid fa-gamepad"></i> Tên người dùng (Gamer Tag)</label>
+            <input type="text" name="username" class="form-control" placeholder="Ví dụ: rookie_gamer hoặc co_giao" required autofocus>
+          </div>
+
+          <div class="form-group" style="margin-bottom: 18px;">
+            <label style="color: #e2e8f0; font-size: 14px;"><i class="fa-solid fa-envelope"></i> Địa chỉ Email</label>
+            <input type="email" name="email" class="form-control" placeholder="name@example.com" required>
+          </div>
+
+          <div class="form-group" style="margin-bottom: 18px;">
+            <label style="color: #e2e8f0; font-size: 14px;"><i class="fa-solid fa-lock"></i> Mật khẩu bảo mật</label>
+            <input type="password" name="password" class="form-control" placeholder="Tối thiểu 6 ký tự" required>
+          </div>
+
+          <div class="form-group" style="margin-bottom: 24px;">
+            <label style="color: #e2e8f0; font-size: 14px;"><i class="fa-solid fa-shield-halved"></i> Vai trò tài khoản</label>
+            <select name="role" class="form-control" style="background:#0f172a; color:#fff;">
+              <option value="Gamer">Gamer (Đọc cẩm nang & bình luận)</option>
+              <option value="Reviewer">Reviewer (Đăng bài cẩm nang & review game)</option>
+              <option value="Admin">Giảng viên / Admin quản trị</option>
+            </select>
+          </div>
+
+          <button type="submit" class="btn btn-gaming btn-block" style="padding: 12px; font-size: 15px; border-radius: 10px; background: linear-gradient(135deg, #a855f7 0%, #ec4899 100%);">
+            <i class="fa-solid fa-user-plus"></i> Hoàn Tất Đăng Ký
+          </button>
+        </form>
+
+        <div style="margin-top: 25px; padding-top: 20px; border-top: 1px dashed var(--card-border); text-align: center;">
+          <p style="color: var(--text-muted); font-size: 14px; margin: 0;">
+            Đã có tài khoản rồi? 
+            <a href="{{ url_for('login') }}" style="color: #38bdf8; font-weight: 700;">Đăng nhập ngay &rarr;</a>
+          </p>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+{% endblock %}
