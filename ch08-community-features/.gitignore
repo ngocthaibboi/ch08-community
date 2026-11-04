@@ -13,9 +13,9 @@ env.bak/
 venv.bak/
 
 # SQLite / Database
-instance/*.db
-*.sqlite3
-*.db
+#instance/*.db
+#*.sqlite3
+#*.db
 
 # Environment variables
 .env
