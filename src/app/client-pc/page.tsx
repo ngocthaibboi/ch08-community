@@ -276,7 +276,7 @@ function formatSecondsToHMS(totalSecs: number): string {
 export default function ClientPcPage() {
   const [currentUser, setCurrentUser] = useState<AuthUser | null>(null);
   const [wallet, setWallet] = useState<UserWallet>(INITIAL_WALLET);
-  
+
   const [isLocked, setIsLocked] = useState(true);
 
   const [currentStation, setCurrentStation] = useState<StationPreset>(STATION_PRESETS[0]);
@@ -573,11 +573,10 @@ export default function ClientPcPage() {
   if (isLocked) {
     return (
       <div className="min-h-screen bg-[#020617] text-slate-100 flex flex-col justify-between p-4 sm:p-8 relative overflow-hidden font-sans select-none">
-        
+
         <div className="absolute inset-0 bg-[radial-gradient(ellipse_at_top,_var(--tw-gradient-stops))] from-cyan-950/40 via-slate-950 to-black pointer-events-none"></div>
         <div className="absolute top-1/4 left-1/2 -translate-x-1/2 w-96 h-96 bg-emerald-500/10 rounded-full blur-3xl pointer-events-none"></div>
 
-        
         <div className="relative z-10 max-w-6xl mx-auto w-full flex justify-between items-center pb-4 border-b border-white/10">
           <div className="flex items-center gap-3">
             <div className="w-10 h-10 rounded-xl bg-gradient-to-br from-emerald-400 to-cyan-500 flex items-center justify-center text-black font-black text-xl shadow-lg shadow-emerald-500/20">
@@ -607,10 +606,9 @@ export default function ClientPcPage() {
           </div>
         </div>
 
-        
         <div className="relative z-10 max-w-md w-full mx-auto my-auto py-8">
           <div className="bg-[#070e22]/95 border-2 border-emerald-500/50 rounded-3xl p-6 sm:p-8 shadow-[0_0_40px_rgba(16,185,129,0.2)] backdrop-blur-xl space-y-5">
-            
+
             <div className="text-center space-y-1">
               <div className="w-14 h-14 rounded-2xl bg-gradient-to-br from-emerald-400 to-cyan-500 flex items-center justify-center text-slate-950 mx-auto shadow-lg shadow-emerald-500/30">
                 <span className="material-symbols-outlined text-3xl font-black">lock_open</span>
@@ -662,7 +660,6 @@ export default function ClientPcPage() {
               </button>
             </form>
 
-            
             <div className="pt-3 border-t border-white/10 space-y-2">
               <span className="text-[10px] text-slate-400 block text-center uppercase tracking-wider font-mono">
                 DÀNH CHO BẠN THÁI DIỄN TẬP / DEMO THẦY CÔ
@@ -677,7 +674,6 @@ export default function ClientPcPage() {
               </button>
             </div>
 
-            
             <div className="p-3 rounded-2xl bg-black/40 border border-white/5 text-[11px] font-mono text-slate-400 space-y-1">
               <div className="flex justify-between">
                 <span>Cấu hình:</span>
@@ -696,13 +692,11 @@ export default function ClientPcPage() {
           </div>
         </div>
 
-        
         <div className="relative z-10 max-w-6xl mx-auto w-full flex flex-col sm:flex-row justify-between items-center gap-2 text-xs text-slate-500 font-mono pt-4 border-t border-white/10">
           <span>Trạm máy: <strong className="text-slate-300">{currentStation.name}</strong> • IP: 192.168.1.{currentStation.id.replace(/\D/g, '') || '8'}</span>
           <span>Hotline hỗ trợ nạp thẻ tại quầy: <strong className="text-emerald-400">1900 8888</strong></span>
         </div>
 
-        
         {showStationModal && (
           <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/85 backdrop-blur-md">
             <div className="w-full max-w-2xl bg-slate-900 border border-cyan-500/50 rounded-3xl p-6 shadow-2xl space-y-4 font-sans">
@@ -749,11 +743,9 @@ export default function ClientPcPage() {
 
   return (
     <div className={`min-h-screen ${currentStation.theme.bgGradient} text-slate-100 font-sans selection:bg-emerald-400 selection:text-black pb-16 transition-colors duration-700 relative`}>
-      
-      
+
       <div className={`absolute top-0 left-1/2 -translate-x-1/2 w-full max-w-5xl h-80 ${currentStation.theme.glowAura} rounded-full blur-3xl pointer-events-none opacity-30 transition-all duration-700`}></div>
 
-      
       {activeBroadcast && (
         <div className="bg-gradient-to-r from-purple-600 via-pink-600 to-cyan-500 text-white py-2 px-4 shadow-xl flex items-center justify-between animate-fadeIn z-50">
           <div className="max-w-7xl mx-auto w-full flex items-center justify-between gap-3 text-xs font-mono font-bold">
@@ -771,7 +763,6 @@ export default function ClientPcPage() {
         </div>
       )}
 
-      
       {directAdminMessage && (
         <div className="bg-amber-400 text-slate-950 py-2.5 px-4 shadow-2xl flex items-center justify-between font-mono text-xs font-bold z-50 animate-bounce">
           <div className="max-w-7xl mx-auto w-full flex items-center justify-between gap-3">
@@ -789,11 +780,9 @@ export default function ClientPcPage() {
         </div>
       )}
 
-      
       <div className={`bg-slate-950/80 backdrop-blur-md ${currentStation.theme.hudGlow} py-3 px-4 sticky top-0 z-40 transition-all duration-500`}>
         <div className="max-w-7xl mx-auto flex flex-wrap items-center justify-between gap-4">
-          
-          
+
           <div className="flex items-center gap-3">
             <div className={`w-10 h-10 rounded-xl ${currentStation.theme.stationTagBg} flex items-center justify-center font-black font-gaming text-lg shadow-lg`}>
               {currentStation.id.slice(-2)}
@@ -806,8 +795,7 @@ export default function ClientPcPage() {
                 <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full bg-emerald-500/20 text-emerald-400 border border-emerald-500/40 text-[9px] font-mono font-bold">
                   <span className="w-1.5 h-1.5 rounded-full bg-emerald-400 animate-ping"></span> ONLINE
                 </span>
-                
-                
+
                 <button
                   onClick={() => setShowStationModal(true)}
                   className="px-2 py-0.5 rounded-lg bg-cyan-500/20 hover:bg-cyan-500/30 text-cyan-300 border border-cyan-500/40 text-[10px] font-mono font-bold transition flex items-center gap-1 cursor-pointer"
@@ -832,7 +820,6 @@ export default function ClientPcPage() {
             </div>
           </div>
 
-          
           <div className="flex items-center gap-3 bg-black/60 border border-white/10 px-4 py-2 rounded-2xl shadow-inner font-mono">
             <span className="material-symbols-outlined text-amber-400 text-[20px] animate-pulse">timer</span>
             <div className="text-center">
@@ -852,7 +839,6 @@ export default function ClientPcPage() {
             </button>
           </div>
 
-          
           <div className="flex items-center gap-2">
             <Link
               href={`/menu?seat=${currentStation.id}`}
@@ -901,7 +887,6 @@ export default function ClientPcPage() {
               <span className="hidden md:inline">GỌI NHÂN VIÊN</span>
             </button>
 
-            
             <button
               onClick={handleLockClient}
               className="px-2.5 py-2 rounded-xl bg-slate-800 hover:bg-slate-700 text-slate-300 hover:text-white border border-white/10 text-xs font-mono font-bold transition flex items-center gap-1 cursor-pointer"
@@ -915,7 +900,6 @@ export default function ClientPcPage() {
         </div>
       </div>
 
-      
       {alertSuccess && (
         <div className="max-w-7xl mx-auto px-4 mt-4">
           <div className="p-3.5 rounded-2xl bg-emerald-500/20 border border-emerald-400 text-emerald-300 font-mono text-xs flex items-center justify-between shadow-xl animate-bounce">
@@ -928,13 +912,11 @@ export default function ClientPcPage() {
         </div>
       )}
 
-      
       <div className="max-w-7xl mx-auto px-4 pt-8 space-y-8">
-        
-        
+
         <div className="relative rounded-3xl overflow-hidden p-6 sm:p-10 bg-gradient-to-r from-[#0c1833] via-[#081224] to-[#040812] border border-white/10 shadow-2xl">
           <div className="absolute right-0 top-0 bottom-0 w-1/2 opacity-20 pointer-events-none bg-[radial-gradient(circle_at_center,_var(--tw-gradient-stops))] from-cyan-400 via-transparent to-transparent"></div>
-          
+
           <div className="relative z-10 max-w-3xl space-y-4">
             <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-cyan-500/10 border border-cyan-500/30 text-cyan-400 text-xs font-mono font-bold">
               <span className="material-symbols-outlined text-[16px]">verified</span>
@@ -971,7 +953,6 @@ export default function ClientPcPage() {
           </div>
         </div>
 
-        
         <div className="p-6 rounded-3xl bg-gradient-to-r from-[#07132a] via-[#091834] to-[#07132a] border border-cyan-400/50 shadow-2xl relative overflow-hidden">
           <div className="flex flex-col lg:flex-row justify-between items-start lg:items-center gap-4 pb-4 border-b border-white/10">
             <div>
@@ -1051,10 +1032,8 @@ export default function ClientPcPage() {
           </div>
         </div>
 
-        
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
-          
-          
+
           <Link
             href="/menu"
             className="group p-5 rounded-2xl bg-[#070d1e]/90 border border-white/10 hover:border-emerald-500/60 transition-all shadow-xl hover:-translate-y-1 flex flex-col justify-between"
@@ -1081,7 +1060,6 @@ export default function ClientPcPage() {
             </div>
           </Link>
 
-          
           <Link
             href="/games"
             className="group p-5 rounded-2xl bg-[#070d1e]/90 border border-white/10 hover:border-cyan-500/60 transition-all shadow-xl hover:-translate-y-1 flex flex-col justify-between"
@@ -1121,7 +1099,6 @@ export default function ClientPcPage() {
             </div>
           </Link>
 
-          
           <Link
             href="/auth"
             className="group p-5 rounded-2xl bg-[#070d1e]/90 border border-white/10 hover:border-amber-500/60 transition-all shadow-xl hover:-translate-y-1 flex flex-col justify-between"
@@ -1148,7 +1125,6 @@ export default function ClientPcPage() {
             </div>
           </Link>
 
-          
           <div
             onClick={() => setShowCallModal(true)}
             className="group p-5 rounded-2xl bg-[#070d1e]/90 border border-white/10 hover:border-rose-500/60 transition-all shadow-xl hover:-translate-y-1 flex flex-col justify-between cursor-pointer"
@@ -1177,10 +1153,8 @@ export default function ClientPcPage() {
 
         </div>
 
-        
         <div className="grid grid-cols-1 lg:grid-cols-12 gap-6">
-          
-          
+
           <div className="lg:col-span-7 bg-[#070d1e]/80 border border-white/10 rounded-3xl p-6 space-y-4">
             <div className="flex justify-between items-center border-b border-white/10 pb-4">
               <div>
@@ -1224,7 +1198,6 @@ export default function ClientPcPage() {
             </div>
           </div>
 
-          
           {(() => {
             const currentTier = getTierByName(currentUser?.userTier || wallet.userTier);
             const cumulative = getCumulativeTopupAmount(wallet);
@@ -1265,7 +1238,6 @@ export default function ClientPcPage() {
                     </span>
                   </div>
 
-                  
                   <div className="p-3 rounded-xl bg-black/50 border border-white/10 space-y-2">
                     <div className="flex justify-between text-[11px]">
                       <span className="text-slate-400">
@@ -1321,7 +1293,6 @@ export default function ClientPcPage() {
 
       </div>
 
-      
       {showStationModal && (
         <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/85 backdrop-blur-md">
           <div className="w-full max-w-2xl bg-slate-900 border border-cyan-500/50 rounded-3xl p-6 shadow-2xl space-y-4 font-sans">
@@ -1355,7 +1326,7 @@ export default function ClientPcPage() {
                   </div>
                   <div className="text-slate-200 font-bold">{p.name}</div>
                   <div className="text-[11px] text-slate-400 mt-0.5">{p.zone}</div>
-                  
+
                   <div className="mt-3 pt-2 border-t border-white/10 flex justify-between items-center">
                     <span className="text-emerald-400 font-black text-sm">{p.hourlyRate.toLocaleString('vi-VN')}đ/h</span>
                     <span className="text-[10px] text-cyan-300 font-bold">
@@ -1369,7 +1340,6 @@ export default function ClientPcPage() {
         </div>
       )}
 
-      
       {showRateModal && (
         <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/85 backdrop-blur-md">
           <div className="w-full max-w-md bg-slate-900 border border-amber-500/50 rounded-3xl p-6 shadow-2xl space-y-4 font-sans">
@@ -1439,7 +1409,6 @@ export default function ClientPcPage() {
         </div>
       )}
 
-      
       {showCallModal && (
         <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/80 backdrop-blur-sm animate-fadeIn">
           <div className="w-full max-w-md bg-slate-900 border border-rose-500/40 rounded-3xl p-6 shadow-2xl space-y-5">
@@ -1481,7 +1450,6 @@ export default function ClientPcPage() {
               ))}
             </div>
 
-            
             <div className="pt-3 border-t border-white/10 space-y-2">
               <label className="text-[11px] text-slate-300 font-mono font-bold flex items-center gap-1.5">
                 <span className="material-symbols-outlined text-[15px] text-rose-400">edit_note</span>
@@ -1524,11 +1492,10 @@ export default function ClientPcPage() {
         </div>
       )}
 
-      
       {showGamerPassModal && (
         <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/85 backdrop-blur-md">
           <div className="w-full max-w-4xl bg-[#090f20] border border-cyan-500/50 rounded-3xl p-6 sm:p-8 shadow-2xl space-y-6 font-sans text-slate-100 max-h-[92vh] overflow-y-auto">
-            
+
             <div className="flex justify-between items-center border-b border-white/10 pb-4">
               <div className="flex items-center gap-3">
                 <div className="w-12 h-12 rounded-2xl bg-gradient-to-tr from-cyan-400 to-amber-400 text-black flex items-center justify-center font-black text-xl shadow-lg">
@@ -1551,7 +1518,6 @@ export default function ClientPcPage() {
               </button>
             </div>
 
-            
             {(() => {
               const currentTier = getTierByName(currentUser?.userTier || wallet.userTier);
               const cumulative = getCumulativeTopupAmount(wallet);
@@ -1601,7 +1567,6 @@ export default function ClientPcPage() {
               );
             })()}
 
-            
             <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
               {TIERS_ORDER.map((tierKey) => {
                 const tier = GAMER_PASS_TIERS[tierKey];
@@ -1679,7 +1644,6 @@ export default function ClientPcPage() {
               })}
             </div>
 
-            
             <div className="p-4 rounded-2xl bg-slate-800/80 border border-amber-500/30 space-y-3 font-mono">
               <div className="flex items-center justify-between">
                 <div className="flex items-center gap-2">
@@ -1716,7 +1680,6 @@ export default function ClientPcPage() {
         </div>
       )}
 
-      
       {showUpgradeSuccessModal && (
         <div className="fixed inset-0 z-[60] flex items-center justify-center p-4 bg-black/90 backdrop-blur-md animate-fadeIn">
           <div className="w-full max-w-md bg-gradient-to-b from-[#132347] to-[#070d1e] border-2 border-amber-400 rounded-3xl p-6 sm:p-8 text-center space-y-4 shadow-2xl relative">
@@ -1756,7 +1719,6 @@ export default function ClientPcPage() {
         </div>
       )}
 
-      
       <div className="fixed bottom-4 left-1/2 -translate-x-1/2 z-40 bg-[#080d19]/95 backdrop-blur-md border border-white/15 px-4 py-2 rounded-2xl shadow-[0_10px_40px_rgba(0,0,0,0.8)] flex items-center gap-3">
         <div className="flex items-center gap-2 pr-3 border-r border-white/10 font-mono text-xs">
           <span className="w-2 h-2 rounded-full bg-emerald-400 animate-pulse"></span>

@@ -11,7 +11,6 @@ export interface StaffRequest {
 export const STAFF_REQUEST_STORAGE_KEY = 'CYBER_STAFF_REQUESTS';
 export const STAFF_REQUEST_EVENT = 'cyber_staff_request_sync';
 
-// KHỞI TẠO BAN ĐẦU: TRỐNG (Khi khách tại máy bấm gọi thì mới xuất hiện)
 export const INITIAL_STAFF_REQUESTS: StaffRequest[] = [];
 
 export function getStoredStaffRequests(): StaffRequest[] {

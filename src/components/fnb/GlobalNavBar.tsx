@@ -77,11 +77,9 @@ export default function GlobalNavBar() {
     }
   };
 
-
       return (
     <header className="sticky top-0 z-50 flex flex-col bg-[#070d1e] shadow-2xl">
-      
-      
+
       <div
         onMouseEnter={() => setIsSystemDrawerOpen(true)}
         onMouseLeave={() => {
@@ -159,11 +157,9 @@ export default function GlobalNavBar() {
         </div>
       </div>
 
-      
       <nav className="border-b border-white/10 bg-[#070d1e] px-4 py-2.5 relative">
         <div className="max-w-7xl mx-auto flex items-center justify-between gap-4">
-          
-          
+
           <Link href="/" className="flex items-center gap-3 group flex-shrink-0">
             <div className="w-10 h-10 rounded-xl bg-gradient-to-br from-emerald-400 via-teal-400 to-cyan-500 flex items-center justify-center text-black font-black text-xl shadow-lg shadow-emerald-500/20 group-hover:scale-105 transition">
               CZ
@@ -178,7 +174,6 @@ export default function GlobalNavBar() {
             </div>
           </Link>
 
-          
           <div className="hidden lg:flex items-center gap-4 xl:gap-5 text-xs font-mono font-bold uppercase tracking-wider text-slate-300">
             <Link
               href="/"
@@ -187,7 +182,6 @@ export default function GlobalNavBar() {
               TRANG CHỦ
             </Link>
 
-            
             <div className="relative" ref={dropdownRef}>
               <button
                 type="button"
@@ -315,7 +309,6 @@ export default function GlobalNavBar() {
               SHOWROOM
             </Link>
 
-            
             <button
               type="button"
               onClick={() => setIsSystemDrawerOpen(!isSystemDrawerOpen)}
@@ -335,9 +328,8 @@ export default function GlobalNavBar() {
             </button>
           </div>
 
-          
           <div className="flex items-center gap-2 sm:gap-3 flex-shrink-0">
-            
+
             <button
               type="button"
               onClick={() => setIsSystemDrawerOpen(!isSystemDrawerOpen)}
@@ -358,7 +350,6 @@ export default function GlobalNavBar() {
               <span className="text-emerald-400">📞</span> 1900 8888
             </a>
 
-            
             <Link
               href="/#phan-khu"
               className="px-3.5 sm:px-4 py-2 bg-emerald-400 hover:bg-emerald-300 text-black font-extrabold text-xs rounded-xl shadow-lg shadow-emerald-500/25 transition uppercase font-sans flex items-center gap-1"
@@ -366,7 +357,6 @@ export default function GlobalNavBar() {
               <span>ĐẶT MÁY TRƯỚC</span>
             </Link>
 
-            
             {currentUser ? (
               <div className="flex items-center gap-2">
                 <Link
@@ -391,7 +381,6 @@ export default function GlobalNavBar() {
                   </div>
                 </Link>
 
-                
                 <button
                   type="button"
                   onClick={handleLogout}
@@ -402,7 +391,7 @@ export default function GlobalNavBar() {
                 </button>
               </div>
             ) : (
-              
+
               <div className="flex items-center gap-2">
                 <button
                   type="button"
@@ -430,7 +419,6 @@ export default function GlobalNavBar() {
         </div>
       </nav>
 
-      
       <AuthModal
         isOpen={isAuthModalOpen}
         defaultTab={authModalTab}

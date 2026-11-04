@@ -30,12 +30,10 @@ export interface BaseSeat {
 export const BOOKING_STORAGE_KEY = 'CYBER_ZONE_BOOKINGS';
 export const BOOKING_STORAGE_EVENT = 'cyber_booking_sync';
 
-// KHỞI TẠO BAN ĐẦU: TRỐNG HOÀN TOÀN (Không có đơn đặt ảo nào)
 export const INITIAL_BOOKINGS: SeatBooking[] = [];
 
-// DANH SÁCH TẤT CẢ PHÂN KHU ĐẦY ĐỦ CỦA CYBER ZONE
 export const ALL_SEATS_CONFIG: BaseSeat[] = [
-  // ═══════════════ TẦNG 1: ĐẤU TRƯỜNG ARENA (10 MÁY THI ĐẤU 5VS5) ═══════════════
+
   {
     id: 'ARENA-A1',
     type: 'ARENA',
@@ -167,7 +165,6 @@ export const ALL_SEATS_CONFIG: BaseSeat[] = [
     zoneName: 'Đấu Trường Arena (Đội Đỏ)',
   },
 
-  // ═══════════════ TẦNG 1: BILLIARDS LOUNGE 10 BÀN AILEEX & MIN ═══════════════
   {
     id: 'BIDA-01',
     type: 'BIDA',
@@ -299,7 +296,6 @@ export const ALL_SEATS_CONFIG: BaseSeat[] = [
     zoneName: 'Billiards VIP Suite',
   },
 
-  // ═══════════════ TẦNG 1: STANDARD ZONE TIÊU CHUẨN (10 MÁY: STD-01..10) ═══════════════
   {
     id: 'STD-01',
     type: 'STD',
@@ -431,7 +427,6 @@ export const ALL_SEATS_CONFIG: BaseSeat[] = [
     zoneName: 'Standard Zone Tiêu Chuẩn (Tầng 1)',
   },
 
-  // ═══════════════ TẦNG 2: CYBER PRO 540HZ (6 MÁY MỚI BỔ SUNG) ═══════════════
   {
     id: 'PRO-01',
     type: 'PRO',
@@ -485,7 +480,6 @@ export const ALL_SEATS_CONFIG: BaseSeat[] = [
     zoneName: 'Khu Máy Cyber Pro 540Hz',
   },
 
-  // ═══════════════ TẦNG 2: PHÒNG VIP SUITE (10 MÁY) ═══════════════
   {
     id: 'VIP-01',
     type: 'VIP',
@@ -581,7 +575,7 @@ export const ALL_SEATS_CONFIG: BaseSeat[] = [
     id: 'VIP-08',
     type: 'VIP',
     floor: 2,
-    defaultStatus: 'CURRENT', // Máy bạn đang ngồi trải nghiệm
+    defaultStatus: 'CURRENT',
     price: '22.000đ/h',
     cpu: 'Intel Core i7 14700K',
     gpu: 'RTX 4070 Ti Super 16GB',
@@ -591,7 +585,6 @@ export const ALL_SEATS_CONFIG: BaseSeat[] = [
     zoneName: 'Khu Thi Đấu VIP (Máy của bạn)',
   },
 
-  // ═══════════════ TẦNG 2: STREAMER STUDIO & COUPLE & CONSOLE ═══════════════
   {
     id: 'STREAM-01',
     type: 'STREAM',
@@ -692,7 +685,6 @@ export function saveBooking(
   const current = getStoredBookings();
   const code = bookingData.bookingCode || `CZ-2026-X${Math.floor(100 + Math.random() * 900)}`;
 
-  // Lọc bỏ đặt chỗ cũ của máy này nếu có
   const filtered = current.filter((b) => b.seatId !== bookingData.seatId);
 
   const newBooking: SeatBooking = {

@@ -50,7 +50,7 @@ export default function CartSidebar({
 
   return (
     <div className="bg-slate-900 border border-slate-800 rounded-xl p-5 flex flex-col gap-4 shadow-2xl sticky top-20">
-      {/* Cart Header */}
+
       <div className="flex items-center justify-between pb-3 border-b border-slate-800">
         <div className="flex items-center gap-2.5">
           <div className="w-9 h-9 rounded-lg bg-cyan-500/10 border border-cyan-400/40 flex items-center justify-center text-cyan-400 shadow-[0_0_10px_rgba(0,240,255,0.2)]">
@@ -83,7 +83,6 @@ export default function CartSidebar({
         )}
       </div>
 
-      {/* Cart Items List */}
       {cart.length === 0 ? (
         <div className="py-8 px-4 flex flex-col items-center justify-center text-center text-slate-500 bg-slate-950/60 rounded-lg border border-slate-800/80">
           <span className="material-symbols-outlined text-4xl text-slate-600 mb-2">fastfood</span>
@@ -140,7 +139,6 @@ export default function CartSidebar({
         </div>
       )}
 
-      {/* Note to Staff / Kitchen */}
       <div>
         <label className="text-slate-400 text-xs block mb-1 font-semibold">Lời nhắn bếp / nhân viên:</label>
         <input
@@ -152,7 +150,6 @@ export default function CartSidebar({
         />
       </div>
 
-      {/* Payment Method Selector */}
       <div className="space-y-1.5">
         <span className="text-slate-400 text-xs font-bold block uppercase tracking-wider">Hình thức thanh toán:</span>
         <label
@@ -206,7 +203,6 @@ export default function CartSidebar({
         </label>
       </div>
 
-      {/* Price Breakdown */}
       <div className="bg-slate-950/90 border border-slate-800 p-3 rounded-lg flex flex-col gap-1.5 text-xs">
         <div className="flex items-center justify-between text-slate-400">
           <span>Tiền món ({totalItemsCount} món):</span>
@@ -228,7 +224,6 @@ export default function CartSidebar({
         </div>
       </div>
 
-      {/* Big CTA Button */}
       <button
         onClick={handleOrderSubmit}
         disabled={cart.length === 0 || isSubmitting}

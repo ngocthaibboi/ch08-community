@@ -116,8 +116,7 @@ export default function AuthModal({
   return (
     <div className="fixed inset-0 z-[100] bg-black/85 backdrop-blur-md flex items-center justify-center p-4">
       <div className="bg-[#0b1329] border border-emerald-500/50 rounded-3xl p-6 sm:p-8 max-w-md w-full shadow-2xl relative font-sans text-slate-100">
-        
-        {/* Nút đóng */}
+
         <button
           onClick={onClose}
           className="absolute top-4 right-4 text-slate-400 hover:text-white text-lg w-8 h-8 rounded-full bg-slate-800 flex items-center justify-center transition"
@@ -125,7 +124,6 @@ export default function AuthModal({
           ✕
         </button>
 
-        {/* Header Modal */}
         <div className="text-center mb-6">
           <div className="w-12 h-12 rounded-2xl bg-gradient-to-br from-emerald-400 via-teal-400 to-cyan-500 flex items-center justify-center text-black font-black text-2xl mx-auto shadow-lg shadow-emerald-500/25">
             CZ
@@ -138,7 +136,6 @@ export default function AuthModal({
           </p>
         </div>
 
-        {/* Thông báo cảnh báo yêu cầu đăng nhập nếu có */}
         {message && (
           <div className="mb-4 p-3 rounded-xl bg-amber-500/15 border border-amber-500/40 text-amber-300 text-xs font-mono flex items-center gap-2">
             <span className="material-symbols-outlined text-amber-400 text-sm">lock</span>
@@ -146,7 +143,6 @@ export default function AuthModal({
           </div>
         )}
 
-        {/* Tabs switcher */}
         <div className="flex gap-2 p-1 bg-slate-900 rounded-xl mb-5 font-mono text-xs">
           <button
             type="button"
@@ -184,7 +180,6 @@ export default function AuthModal({
           </div>
         )}
 
-        {/* Form Đăng Nhập */}
         {tab === 'login' ? (
           <form onSubmit={handleLoginSubmit} className="space-y-4 font-mono text-xs">
             <div>
@@ -218,7 +213,6 @@ export default function AuthModal({
               ĐĂNG NHẬP VÀO HỆ THỐNG
             </button>
 
-            {/* Đăng nhập nhanh cho demo */}
             <div className="pt-2 border-t border-slate-800 space-y-1.5">
               <span className="text-[10px] text-slate-500 block mb-1 text-center uppercase tracking-wider">
                 CHỌN TÀI KHOẢN DIỄN TẬP THỬ NGHIỆM HẠNG
@@ -249,7 +243,7 @@ export default function AuthModal({
             </div>
           </form>
         ) : (
-          /* Form Đăng Ký */
+
           <form onSubmit={handleRegisterSubmit} className="space-y-3 font-mono text-xs">
             <div>
               <label className="text-slate-400 block mb-1">TÊN ĐĂNG NHẬP TÀI KHOẢN (*)</label>

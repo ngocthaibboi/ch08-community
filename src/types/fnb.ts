@@ -18,7 +18,7 @@ export interface MenuItem {
   price: number;
   originalPrice?: number;
   image: string;
-  prepTime: number; // minutes
+  prepTime: number;
   isAvailable: boolean;
   isHot: boolean;
   isBestSeller: boolean;

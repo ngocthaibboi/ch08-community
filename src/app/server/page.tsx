@@ -32,7 +32,6 @@ import {
   WALLET_EVENT_NAME,
 } from '@/lib/walletStore';
 
-// Cấu hình 6 phân khu chuẩn xác theo trang chủ
 interface ZoneCategory {
   id: 'ALL' | 'STANDARD' | 'PRO' | 'VIP' | 'ARENA' | 'COUPLE_STREAM' | 'CONSOLE_BIDA';
   name: string;
@@ -181,37 +180,29 @@ export default function MainServerPage() {
   const [topupRev, setTopupRev] = useState(0);
   const [fnbRev, setFnbRev] = useState(0);
 
-  // Bộ lọc theo 6 Phân Khu
   const [selectedZone, setSelectedZone] = useState<ZoneCategory['id']>('ALL');
-  // Bộ lọc trạng thái máy
+
   const [statusFilter, setStatusFilter] = useState<'ALL' | 'AVAILABLE' | 'ONLINE' | 'BOOKED' | 'BIDA'>('ALL');
 
-  // Máy trạm đang được chọn để quản trị & xem chi tiết
   const [selectedSeat, setSelectedSeat] = useState<BaseSeat | null>(null);
   const [notificationMsg, setNotificationMsg] = useState<string | null>(null);
 
-  // Đơn giá tùy chỉnh cho từng máy (lưu localStorage)
   const [customSeatRates, setCustomSeatRates] = useState<Record<string, number>>({});
   const [customRateInput, setCustomRateInput] = useState('');
 
-  // Nạp tiền tùy chỉnh cho máy được chọn
   const [customTopupInput, setCustomTopupInput] = useState('');
 
-  // Âm thanh chuông cảnh báo quầy lễ tân
   const [soundEnabled, setSoundEnabled] = useState(true);
   const prevReqCountRef = useRef(0);
   const prevBookingCountRef = useRef(0);
 
-  // Hệ thống phát loa toàn quán (PA Broadcast)
   const [showBroadcastModal, setShowBroadcastModal] = useState(false);
   const [broadcastText, setBroadcastText] = useState('');
   const [activeBroadcast, setActiveBroadcast] = useState<string | null>(null);
 
-  // Tin nhắn riêng gửi trực tiếp xuống màn hình máy
   const [directMessageText, setDirectMessageText] = useState('');
   const [sentMessageToast, setSentMessageToast] = useState<string | null>(null);
 
-  // Hàm phát chuông đôi Ding-Dong bằng Web Audio API thuần
   const playServerChime = () => {
     if (!soundEnabled || typeof window === 'undefined') return;
     try {
@@ -224,7 +215,6 @@ export default function MainServerPage() {
       osc.connect(gain);
       gain.connect(ctx.destination);
 
-      // Chime note 1: E5 (659Hz) -> Chime note 2: A5 (880Hz)
       osc.frequency.setValueAtTime(659.25, ctx.currentTime);
       osc.frequency.setValueAtTime(880, ctx.currentTime + 0.16);
 
@@ -234,11 +224,10 @@ export default function MainServerPage() {
       osc.start();
       osc.stop(ctx.currentTime + 0.6);
     } catch {
-      // Audio autoplay check
+
     }
   };
 
-  // Đồng bộ tất cả dữ liệu hệ thống thời gian thực
   const syncAllData = () => {
     const currentBookings = getStoredBookings();
     const currentStaffRequests = getStoredStaffRequests();
@@ -246,7 +235,6 @@ export default function MainServerPage() {
     const topups = calculateTotalTopupRevenue().totalTopup;
     const fnbTotal = orders.reduce((sum, o) => sum + (o.totalAmount || 0), 0);
 
-    // Kích hoạt chuông nếu có yêu cầu gọi nhân viên hoặc đặt máy mới
     if (
       currentStaffRequests.length > prevReqCountRef.current ||
       currentBookings.length > prevBookingCountRef.current
@@ -263,13 +251,12 @@ export default function MainServerPage() {
     setFnbRev(fnbTotal);
     setRevenue(topups + fnbTotal);
 
-    // Lấy bảng giá tùy chỉnh từ localStorage
     if (typeof window !== 'undefined') {
       try {
         const rawRates = localStorage.getItem('CYBER_CUSTOM_SEAT_RATES');
         if (rawRates) setCustomSeatRates(JSON.parse(rawRates));
       } catch {
-        // ignore
+
       }
 
       const bCast = localStorage.getItem('CYBER_ACTIVE_BROADCAST');
@@ -294,7 +281,6 @@ export default function MainServerPage() {
     };
   }, [soundEnabled]);
 
-  // Cập nhật giá nhập vào khi chọn máy khác
   useEffect(() => {
     if (selectedSeat) {
       const currentRate = customSeatRates[selectedSeat.id] || parseDefaultRate(selectedSeat.price);
@@ -304,21 +290,18 @@ export default function MainServerPage() {
     }
   }, [selectedSeat, customSeatRates]);
 
-  // Xử lý hủy đặt chỗ từ quầy máy chủ
   const handleCancelBooking = (seatId: string) => {
     cancelBooking(seatId);
     setNotificationMsg(`Đã hủy đặt trước cho máy/bàn ${seatId}!`);
     setTimeout(() => setNotificationMsg(null), 4000);
   };
 
-  // Xử lý duyệt yêu cầu hỗ trợ của nhân viên
   const handleResolveStaffRequest = (id: string) => {
     resolveStaffRequest(id);
     setNotificationMsg('✅ Đã hoàn thành hỗ trợ khách hàng!');
     setTimeout(() => setNotificationMsg(null), 3000);
   };
 
-  // NÚT RESET TOÀN BỘ VỀ 0
   const handleResetAllToZero = () => {
     if (
       confirm(
@@ -344,7 +327,6 @@ export default function MainServerPage() {
     }
   };
 
-  // Xử lý cập nhật giá giờ cho máy (mốc sẵn hoặc tự gõ)
   const handleUpdateSeatRate = (seatId: string, newRate: number) => {
     if (isNaN(newRate) || newRate <= 0) {
       alert('Vui lòng chọn hoặc nhập đơn giá giờ hợp lệ!');
@@ -358,7 +340,6 @@ export default function MainServerPage() {
       localStorage.setItem('CYBER_CUSTOM_SEAT_RATES', JSON.stringify(updatedRates));
     }
 
-    // Nếu đây là máy mà khách đang ngồi (VIP-08), cập nhật walletStore và phát event
     const currentW = getStoredWallet();
     if (currentW.pcName === seatId) {
       updateStationAndRate(seatId, selectedSeat?.zoneName || currentW.zoneName, newRate);
@@ -368,7 +349,6 @@ export default function MainServerPage() {
     setTimeout(() => setNotificationMsg(null), 4000);
   };
 
-  // Xử lý nạp tiền cho khách tại máy (mốc sẵn hoặc tự gõ)
   const handleTopupForSeat = (seatId: string, amount: number) => {
     if (isNaN(amount) || amount <= 0) {
       alert('Vui lòng chọn hoặc nhập số tiền nạp hợp lệ!');
@@ -384,7 +364,6 @@ export default function MainServerPage() {
     setTimeout(() => setNotificationMsg(null), 5000);
   };
 
-  // Xử lý phát loa toàn quán (PA Broadcast)
   const handleDispatchBroadcast = (msg: string) => {
     if (!msg.trim()) return;
     playServerChime();
@@ -399,7 +378,6 @@ export default function MainServerPage() {
     setTimeout(() => setNotificationMsg(null), 6000);
   };
 
-  // Xử lý gửi tin nhắn cảnh báo riêng xuống 1 máy trạm
   const handleSendDirectMessage = (seatId: string) => {
     if (!directMessageText.trim()) return;
     const msg = directMessageText.trim();
@@ -416,7 +394,6 @@ export default function MainServerPage() {
     setTimeout(() => setSentMessageToast(null), 4000);
   };
 
-  // Xử lý khóa máy từ xa
   const handleRemoteLockSeat = (seatId: string) => {
     if (confirm(`Bạn có chắc muốn KHÓA MÀN HÌNH từ xa máy ${seatId}?`)) {
       if (typeof window !== 'undefined') {
@@ -427,7 +404,6 @@ export default function MainServerPage() {
     }
   };
 
-  // Xử lý khởi động lại máy từ xa
   const handleRemoteRebootSeat = (seatId: string) => {
     if (confirm(`Gửi lệnh KHỞI ĐỘNG LẠI (Reboot) máy ${seatId}?`)) {
       setNotificationMsg(`🔄 Đang phát lệnh khởi động lại máy ${seatId} qua BootROM LAN...`);
@@ -438,9 +414,8 @@ export default function MainServerPage() {
     }
   };
 
-  // Lọc danh sách máy theo 6 Phân Khu & Trạng Thái
   const filteredSeats = ALL_SEATS_CONFIG.filter((seat) => {
-    // 1. Lọc theo Phân Khu
+
     if (selectedZone !== 'ALL') {
       const seatZone = getZoneIdForSeat(seat);
       if (seatZone !== selectedZone) return false;
@@ -451,7 +426,6 @@ export default function MainServerPage() {
     const isCurrent = seat.id === 'VIP-08';
     const isBida = seat.id.startsWith('BIDA');
 
-    // 2. Lọc theo Trạng Thái
     if (statusFilter === 'AVAILABLE') return !isBooked && !isCurrent;
     if (statusFilter === 'ONLINE') return isCurrent;
     if (statusFilter === 'BOOKED') return isBooked;
@@ -460,18 +434,17 @@ export default function MainServerPage() {
     return true;
   });
 
-  const activeSeatsCount = bookings.length + 1; // 1 máy VIP-08 đang online
+  const activeSeatsCount = bookings.length + 1;
   const occupancyPercent = Math.min(100, Math.round((activeSeatsCount / ALL_SEATS_CONFIG.length) * 100));
   const pendingStaffCount = staffRequests.filter((r) => r.status === 'PENDING').length;
   const currentSelectedZoneInfo = SIX_ZONES_CONFIG.find((z) => z.id === selectedZone);
 
   return (
     <div className="min-h-screen bg-[#020617] text-slate-100 font-sans selection:bg-emerald-400 selection:text-black pb-20">
-      
-      {/* ══════════ 1. HEADER HUD MÁY CHỦ QUẢN LÝ TRUNG TÂM ══════════ */}
+
       <div className="bg-gradient-to-r from-slate-950 via-[#07132a] to-slate-950 border-b border-cyan-500/30 p-4 shadow-2xl backdrop-blur-md sticky top-0 z-30">
         <div className="max-w-7xl mx-auto flex flex-col md:flex-row items-start md:items-center justify-between gap-4">
-          
+
           <div className="flex items-center gap-3.5">
             <div className="w-12 h-12 rounded-2xl bg-gradient-to-br from-cyan-400 via-teal-400 to-emerald-400 flex items-center justify-center text-slate-950 font-black text-2xl shadow-lg shadow-cyan-500/30">
               <span className="material-symbols-outlined text-[28px]">dns</span>
@@ -492,9 +465,8 @@ export default function MainServerPage() {
             </div>
           </div>
 
-          {/* Cụm nút Reset, Chuông âm thanh và Thống kê */}
           <div className="flex flex-wrap items-center gap-2.5">
-            {/* Nút bật/tắt chuông */}
+
             <button
               onClick={() => {
                 const next = !soundEnabled;
@@ -522,7 +494,7 @@ export default function MainServerPage() {
               <span className="material-symbols-outlined text-[16px]">restart_alt</span>
               <span>RESET HỆ THỐNG VỀ 0</span>
             </button>
-            
+
             <Link
               href="/dashboard"
               className="px-3.5 py-2 rounded-xl bg-slate-900 border border-white/10 hover:border-cyan-400 text-white font-mono text-xs font-bold transition flex items-center gap-1.5"
@@ -535,7 +507,6 @@ export default function MainServerPage() {
         </div>
       </div>
 
-      {/* THÔNG BÁO NOTIFICATION TOÀN HỆ THỐNG */}
       {notificationMsg && (
         <div className="max-w-7xl mx-auto px-4 mt-4">
           <div className="p-3.5 rounded-2xl bg-cyan-500/20 border border-cyan-400 text-cyan-300 font-mono text-xs flex items-center justify-between shadow-xl animate-pulse">
@@ -548,7 +519,6 @@ export default function MainServerPage() {
         </div>
       )}
 
-      {/* ══════════ 2. THANH PHÁT LOA TOÀN QUÁN (PA BROADCAST SYSTEM) ══════════ */}
       <div className="max-w-7xl mx-auto px-4 mt-5">
         <div className="p-4 rounded-3xl bg-gradient-to-r from-[#170a2c] via-[#091534] to-[#061e24] border border-cyan-500/40 shadow-2xl flex flex-col md:flex-row items-start md:items-center justify-between gap-4">
           <div className="flex items-center gap-3">
@@ -602,9 +572,8 @@ export default function MainServerPage() {
         </div>
       </div>
 
-      {/* ══════════ 3. 4 THẺ THỐNG KÊ TELEMETRY & CÔNG SUẤT REALTIME ══════════ */}
       <div className="max-w-7xl mx-auto px-4 mt-5 grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 font-mono">
-        {/* Card 1: Công suất phòng máy */}
+
         <div className="p-4 rounded-2xl bg-[#070e22]/90 border border-emerald-500/30 shadow-xl space-y-2">
           <div className="flex justify-between items-center text-slate-400 text-xs">
             <span>CÔNG SUẤT PHÒNG MÁY</span>
@@ -626,7 +595,6 @@ export default function MainServerPage() {
           </div>
         </div>
 
-        {/* Card 2: Doanh thu ca trực */}
         <div className="p-4 rounded-2xl bg-[#070e22]/90 border border-cyan-500/30 shadow-xl space-y-2">
           <div className="flex justify-between items-center text-slate-400 text-xs">
             <span>DOANH THU CA TRỰC</span>
@@ -641,7 +609,6 @@ export default function MainServerPage() {
           </div>
         </div>
 
-        {/* Card 3: Yêu cầu & Điều phối */}
         <div className="p-4 rounded-2xl bg-[#070e22]/90 border border-rose-500/30 shadow-xl space-y-2">
           <div className="flex justify-between items-center text-slate-400 text-xs">
             <span>YÊU CẦU &amp; PHỤC VỤ</span>
@@ -661,7 +628,6 @@ export default function MainServerPage() {
           </div>
         </div>
 
-        {/* Card 4: Hạ tầng mạng & BootROM */}
         <div className="p-4 rounded-2xl bg-[#070e22]/90 border border-purple-500/30 shadow-xl space-y-2">
           <div className="flex justify-between items-center text-slate-400 text-xs">
             <span>MẠNG BOOTROM LAN</span>
@@ -678,15 +644,12 @@ export default function MainServerPage() {
         </div>
       </div>
 
-      {/* ══════════ 4. BỐ CỤC 2 CỘT: 6 PHÂN KHU & SƠ ĐỒ MÁY (TRÁI) & TIN NHẮN (PHẢI) ══════════ */}
       <div className="max-w-7xl mx-auto px-4 pt-6 grid grid-cols-1 lg:grid-cols-12 gap-8">
-        
-        {/* CỘT TRÁI (8 CỘT): TÍCH HỢP 6 PHÂN KHU VÀ SƠ ĐỒ MÁY CHI TIẾT */}
+
         <div className="lg:col-span-8 space-y-6">
-          
+
           <div className="bg-[#070e22]/90 border border-white/10 rounded-3xl p-6 space-y-6 shadow-2xl">
-            
-            {/* Header: Tích hợp 6 Phân Khu Trực Quan */}
+
             <div className="border-b border-white/10 pb-4 space-y-3">
               <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-2">
                 <div>
@@ -703,9 +666,8 @@ export default function MainServerPage() {
                 </span>
               </div>
 
-              {/* LƯỚI 6 PHÂN KHU CHỌN NHANH */}
               <div className="grid grid-cols-2 sm:grid-cols-3 gap-2.5 pt-1 font-mono text-xs">
-                {/* Nút Xem Tất Cả */}
+
                 <button
                   type="button"
                   onClick={() => setSelectedZone('ALL')}
@@ -763,7 +725,6 @@ export default function MainServerPage() {
                 })}
               </div>
 
-              {/* Banner thông tin chi tiết của phân khu đang chọn */}
               {currentSelectedZoneInfo && (
                 <div className={`p-4 rounded-2xl ${currentSelectedZoneInfo.accentBg} border ${currentSelectedZoneInfo.accentBorder} flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3 text-xs font-mono animate-fadeIn`}>
                   <div className="space-y-1">
@@ -795,7 +756,6 @@ export default function MainServerPage() {
               )}
             </div>
 
-            {/* Bộ lọc trạng thái máy nhanh (Status Filter Pills) */}
             <div className="flex flex-wrap items-center gap-2 font-mono text-xs">
               <span className="text-slate-500 text-[11px]">Trạng thái máy:</span>
               {[
@@ -819,7 +779,6 @@ export default function MainServerPage() {
               ))}
             </div>
 
-            {/* LƯỚI DANH SÁCH MÁY CỦA PHÂN KHU ĐƯỢC CHỌN */}
             <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-3">
               {filteredSeats.map((seat) => {
                 const booking = bookings.find((b) => b.seatId === seat.id);
@@ -875,7 +834,6 @@ export default function MainServerPage() {
                       </div>
                     </div>
 
-                    {/* Nếu đã được đặt trước thì hiện tên khách */}
                     {isBooked ? (
                       <div className="pt-2 border-t border-amber-500/30 text-[10px] font-mono text-amber-300">
                         <div className="font-bold truncate">👤 {booking.customerName}</div>
@@ -899,11 +857,9 @@ export default function MainServerPage() {
 
           </div>
 
-          {/* ══════════ 5. CHI TIẾT MÁY & BẢNG ĐIỀU KHIỂN / CHỈNH GIÁ / NẠP TIỀN ══════════ */}
           {selectedSeat && (
             <div className="bg-[#070e22] border-2 border-cyan-400/50 rounded-3xl p-6 shadow-2xl font-mono text-xs space-y-5 animate-fadeIn">
-              
-              {/* Header chi tiết máy */}
+
               <div className="flex justify-between items-center border-b border-white/10 pb-3">
                 <div className="flex items-center gap-2.5">
                   <span className="material-symbols-outlined text-cyan-400 text-2xl">settings_remote</span>
@@ -924,7 +880,6 @@ export default function MainServerPage() {
                 </button>
               </div>
 
-              {/* Thông tin phần cứng chi tiết của máy */}
               <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-4 gap-3">
                 <div className="p-3 rounded-xl bg-black/40 border border-white/5">
                   <span className="text-[10px] text-slate-400 block uppercase">VI XỬ LÝ (CPU)</span>
@@ -946,7 +901,6 @@ export default function MainServerPage() {
                 </div>
               </div>
 
-              {/* MỤC 1: TỰ CHỈNH GIÁ TIỀN GIỜ CHƠI (THEO MỐC VÀ TỰ NHẬP) */}
               <div className="p-4 rounded-2xl bg-slate-900/90 border border-amber-500/30 space-y-3">
                 <div className="flex justify-between items-center">
                   <div className="flex items-center gap-1.5">
@@ -960,7 +914,6 @@ export default function MainServerPage() {
                   </span>
                 </div>
 
-                {/* Các mốc giá gợi ý nhanh */}
                 <div className="space-y-1.5">
                   <span className="text-[10px] text-slate-400 block">Chọn nhanh mốc giá có sẵn:</span>
                   <div className="grid grid-cols-4 sm:grid-cols-8 gap-1.5">
@@ -981,7 +934,6 @@ export default function MainServerPage() {
                   </div>
                 </div>
 
-                {/* Ô tự gõ giá tiền tùy ý */}
                 <div className="pt-2 border-t border-white/10 flex flex-col sm:flex-row gap-2 items-center">
                   <div className="relative flex-1 w-full">
                     <input
@@ -1005,7 +957,6 @@ export default function MainServerPage() {
                 </div>
               </div>
 
-              {/* MỤC 2: NẠP TIỀN VÍ CHO KHÁCH (THEO MỐC VÀ TỰ NHẬP SỐ TIỀN) */}
               <div className="p-4 rounded-2xl bg-slate-900/90 border border-emerald-500/30 space-y-3">
                 <div className="flex justify-between items-center">
                   <div className="flex items-center gap-1.5">
@@ -1019,7 +970,6 @@ export default function MainServerPage() {
                   </span>
                 </div>
 
-                {/* Các mốc nạp nhanh */}
                 <div className="space-y-1.5">
                   <span className="text-[10px] text-slate-400 block">Chọn nhanh mốc tiền nạp:</span>
                   <div className="grid grid-cols-3 sm:grid-cols-5 gap-2">
@@ -1036,7 +986,6 @@ export default function MainServerPage() {
                   </div>
                 </div>
 
-                {/* Ô tự nhập số tiền nạp tùy ý */}
                 <div className="pt-2 border-t border-white/10 flex flex-col sm:flex-row gap-2 items-center">
                   <div className="relative flex-1 w-full">
                     <input
@@ -1065,7 +1014,6 @@ export default function MainServerPage() {
                 </div>
               </div>
 
-              {/* MỤC 3: CÁC TÁC VỤ ĐIỀU KHIỂN TỪ XA KHÁC (KHÓA, REBOOT, NHẮN RIÊNG) */}
               <div className="p-4 rounded-2xl bg-slate-900 border border-cyan-500/30 space-y-3">
                 <span className="text-xs font-bold text-cyan-300 uppercase tracking-wider block">
                   ⚡ TÁC VỤ ĐIỀU KHIỂN TỪ XA KHÁC:
@@ -1089,7 +1037,6 @@ export default function MainServerPage() {
                   </button>
                 </div>
 
-                {/* Gửi tin nhắn riêng xuống màn hình máy */}
                 <div className="pt-2 border-t border-white/10 space-y-2">
                   <div className="flex gap-2">
                     <input
@@ -1121,7 +1068,6 @@ export default function MainServerPage() {
                 </div>
               </div>
 
-              {/* Nếu máy này đang có đơn đặt trước */}
               {(() => {
                 const booking = bookings.find((b) => b.seatId === selectedSeat.id);
                 if (booking) {
@@ -1148,10 +1094,8 @@ export default function MainServerPage() {
 
         </div>
 
-        {/* CỘT PHẢI (4 CỘT): TRUNG TÂM TIN NHẮN & YÊU CẦU REALTIME */}
         <div className="lg:col-span-4 space-y-6">
-          
-          {/* KHỐI 1: DANH SÁCH TIN NHẮN ĐẶT MÁY ONLINE TỪ KHÁCH HÀNG */}
+
           <div className="bg-[#070e22]/90 border border-white/10 rounded-3xl p-6 shadow-2xl space-y-4">
             <div className="flex justify-between items-center border-b border-white/10 pb-3">
               <div className="flex items-center gap-2">
@@ -1208,7 +1152,6 @@ export default function MainServerPage() {
             )}
           </div>
 
-          {/* KHỐI 2: DANH SÁCH YÊU CẦU GỌI NHÂN VIÊN TẬN MÁY */}
           <div className="bg-[#070e22]/90 border border-white/10 rounded-3xl p-6 shadow-2xl space-y-4">
             <div className="flex justify-between items-center border-b border-white/10 pb-3">
               <div className="flex items-center gap-2">
@@ -1259,7 +1202,6 @@ export default function MainServerPage() {
 
       </div>
 
-      {/* ══════════ MODAL PHÁT LOA TỰ NHẬP NỘI DUNG ══════════ */}
       {showBroadcastModal && (
         <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/85 backdrop-blur-md">
           <div className="w-full max-w-lg bg-[#081024] border border-cyan-400/50 rounded-3xl p-6 shadow-2xl space-y-4 font-sans text-slate-100">

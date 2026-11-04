@@ -30,7 +30,7 @@ export default function FoodCard({ item, onAddToCart }: FoodCardProps) {
   return (
     <div className="bg-slate-900 border border-slate-800 hover:border-cyan-400 rounded-xl p-3 flex flex-col justify-between group transition-all duration-200 hover:shadow-[0_4px_20px_rgba(0,240,255,0.2)]">
       <div>
-        {/* Item Image with Badges */}
+
         <div className="relative h-36 w-full rounded-lg overflow-hidden bg-black mb-2.5">
           <img
             src={item.image}
@@ -58,7 +58,6 @@ export default function FoodCard({ item, onAddToCart }: FoodCardProps) {
           </span>
         </div>
 
-        {/* Title & Price Bar */}
         <div className="flex items-start justify-between gap-1 mb-1">
           <h4 className="text-white font-black text-sm group-hover:text-cyan-400 transition-colors leading-tight">
             {item.name}
@@ -68,7 +67,6 @@ export default function FoodCard({ item, onAddToCart }: FoodCardProps) {
           </span>
         </div>
 
-        {/* Spicy Option Chips */}
         {item.spicyLevels && item.spicyLevels.length > 0 && (
           <div className="flex items-center gap-1.5 mt-2 text-[11px]">
             <span className="text-slate-400 font-semibold">Cấp cay:</span>
@@ -94,7 +92,6 @@ export default function FoodCard({ item, onAddToCart }: FoodCardProps) {
           </div>
         )}
 
-        {/* Options / Addon chips */}
         {item.options && item.options.length > 0 && (
           <div className="flex flex-wrap items-center gap-1 mt-2 text-[11px] text-slate-400">
             {item.options.map((opt, i) => (
@@ -108,7 +105,6 @@ export default function FoodCard({ item, onAddToCart }: FoodCardProps) {
           </div>
         )}
 
-        {/* Note detail */}
         {item.noteDetail && (!item.options || item.options.length === 0) && (!item.spicyLevels || item.spicyLevels.length === 0) && (
           <div className="flex items-center gap-1 mt-2 text-[11px] text-slate-400">
             <span className="bg-slate-800 border border-slate-700 px-1.5 py-0.5 rounded text-slate-300">
@@ -118,7 +114,6 @@ export default function FoodCard({ item, onAddToCart }: FoodCardProps) {
         )}
       </div>
 
-      {/* Quick Add Button */}
       <div className="mt-3 pt-2.5 border-t border-slate-800 flex items-center gap-1.5">
         <button
           onClick={handleQuickAdd}

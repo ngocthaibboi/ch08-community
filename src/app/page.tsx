@@ -76,7 +76,6 @@ const GEAR_PRODUCTS = [
   },
 ];
 
-
 const SIX_ZONES_HOME = [
   {
     id: 'STANDARD' as const,
@@ -289,7 +288,6 @@ export default function Home() {
   const [newLfgGame, setNewLfgGame] = useState('CS2');
   const [newLfgStation, setNewLfgStation] = useState('Khu Standard');
   const [newLfgContent, setNewLfgContent] = useState('');
-
 
   const getSeatLiveStatus = (seat: BaseSeat) => {
     const booking = storedBookings.find(
@@ -514,11 +512,10 @@ export default function Home() {
 
   return (
     <div className="w-full bg-[#030712] text-slate-200 font-sans selection:bg-emerald-400 selection:text-black">
-      
-      
+
       <div className="relative py-12 md:py-20 border-b border-white/10 overflow-hidden">
         <div className="max-w-6xl mx-auto px-4 text-center space-y-6">
-          
+
           <div className="inline-flex items-center gap-2 px-4 py-1.5 rounded-full bg-emerald-500/10 border border-emerald-500/30 text-emerald-400 text-xs font-mono font-bold">
             <span className="w-2 h-2 rounded-full bg-emerald-400 animate-ping"></span>
             TIÊU CHUẨN THI ĐẤU QUỐC TẾ IESF • HẠ TẦNG RTX ULTRA
@@ -552,7 +549,6 @@ export default function Home() {
             </a>
           </div>
 
-          
           <div className="grid grid-cols-2 md:grid-cols-5 gap-3 pt-10 font-mono text-center">
             <div className="p-4 rounded-2xl bg-slate-900/60 border border-white/10">
               <span className="text-[10px] text-slate-400 uppercase block">SỨC CHỨA CẤU HÌNH</span>
@@ -586,7 +582,6 @@ export default function Home() {
 
       <div className="max-w-7xl mx-auto px-4 space-y-28 py-16">
 
-        
         <div id="khai-niem" className="grid grid-cols-1 lg:grid-cols-12 gap-10 items-center">
           <div className="lg:col-span-6 space-y-5">
             <span className="text-xs font-mono text-emerald-400 font-bold uppercase tracking-wider flex items-center gap-1.5">
@@ -612,7 +607,6 @@ export default function Home() {
             </div>
           </div>
 
-          
           <div className="lg:col-span-6 grid grid-cols-1 sm:grid-cols-2 gap-4">
             <div className="group rounded-2xl overflow-hidden border border-white/10 relative h-72">
               <img
@@ -650,7 +644,6 @@ export default function Home() {
           </div>
         </div>
 
-        
         <div id="phan-khu" className="space-y-8 scroll-mt-24">
           <div className="flex flex-col md:flex-row justify-between items-start md:items-end gap-4 border-b border-white/10 pb-6">
             <div>
@@ -667,7 +660,6 @@ export default function Home() {
             </p>
           </div>
 
-          
           <div className="flex items-center gap-2 overflow-x-auto pb-2 scrollbar-none">
             <button
               type="button"
@@ -710,7 +702,6 @@ export default function Home() {
             })}
           </div>
 
-          
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
             {SIX_ZONES_HOME.map((zone) => {
               const isActive = selectedZone === zone.id;
@@ -736,7 +727,7 @@ export default function Home() {
                       className="w-full h-full object-cover group-hover:scale-105 transition duration-500"
                     />
                     <div className="absolute inset-0 bg-gradient-to-t from-slate-950 via-transparent to-transparent opacity-80" />
-                    
+
                     <span className={`absolute top-3 left-3 px-2.5 py-1 rounded bg-black/80 backdrop-blur-md font-mono text-[10px] font-bold border ${zone.tagClass}`}>
                       {zone.num} • {zone.name.toUpperCase()} ({zone.rate})
                     </span>
@@ -776,7 +767,6 @@ export default function Home() {
                       </div>
                     </div>
 
-                    
                     <div className={`mt-2 py-2 px-3 rounded-xl font-mono text-xs font-bold text-center border transition flex items-center justify-center gap-2 ${
                       isActive
                         ? 'bg-emerald-500/10 border-emerald-500/40 text-emerald-300'
@@ -797,17 +787,15 @@ export default function Home() {
             })}
           </div>
 
-          
           <div id="danh-sach-may-phan-khu" className="pt-4 space-y-6 scroll-mt-24">
-            
-            
+
             {(() => {
               const currentZoneConfig = SIX_ZONES_HOME.find((z) => z.id === selectedZone);
               const zoneTitle = currentZoneConfig ? currentZoneConfig.name : 'Tất Cả 6 Phân Khu Cyber Zone';
               const zoneBadge = currentZoneConfig ? currentZoneConfig.badge : 'TOÀN BỘ 42 MÁY/BÀN';
               const zoneRate = currentZoneConfig ? currentZoneConfig.rate : '12.000đ - 79.000đ/h';
               const zoneSeats = ALL_SEATS_CONFIG.filter((s) => selectedZone === 'ALL' || getZoneForSeat(s) === selectedZone);
-              
+
               const availableCount = zoneSeats.filter((s) => getSeatLiveStatus(s).status === 'AVAILABLE').length;
               const occupiedCount = zoneSeats.filter((s) => getSeatLiveStatus(s).status === 'OCCUPIED').length;
               const reservedCount = zoneSeats.filter((s) => getSeatLiveStatus(s).status === 'RESERVED').length;
@@ -832,7 +820,6 @@ export default function Home() {
                       </p>
                     </div>
 
-                    
                     <div className="flex flex-wrap items-center gap-2 text-xs font-mono">
                       <div className="px-3 py-1.5 rounded-xl bg-emerald-500/15 border border-emerald-500/40 text-emerald-300 flex items-center gap-1.5">
                         <span className="w-2 h-2 rounded-full bg-emerald-400" />
@@ -849,7 +836,6 @@ export default function Home() {
                     </div>
                   </div>
 
-                  
                   {currentZoneConfig && (
                     <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 font-mono text-xs">
                       <div className="p-3 rounded-xl bg-black/40 border border-white/5 space-y-1">
@@ -886,7 +872,6 @@ export default function Home() {
                     </div>
                   )}
 
-                  
                   <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 xl:grid-cols-6 gap-3.5 pt-2">
                     {zoneSeats.map((seat) => {
                       const live = getSeatLiveStatus(seat);
@@ -907,7 +892,7 @@ export default function Home() {
                               : 'bg-[#18140d]/90 border-amber-500/30 hover:border-amber-500/60'
                           }`}
                         >
-                          
+
                           <div>
                             <div className="flex items-start justify-between gap-1 mb-1.5">
                               <span className="text-base sm:text-lg font-black text-white font-gaming tracking-wider">
@@ -919,21 +904,18 @@ export default function Home() {
                               </span>
                             </div>
 
-                            
                             {isVipExperience && (
                               <div className="mb-2 px-1.5 py-0.5 rounded bg-purple-500/20 border border-purple-500/40 text-purple-300 font-mono text-[9px] font-bold text-center">
                                 ⭐ MÁY TRẢI NGHIỆM ĐỘC QUYỀN
                               </div>
                             )}
 
-                            
                             {live.occupant && (
                               <div className="text-[10px] font-mono text-slate-300 truncate mb-1">
                                 👤 {live.occupant}
                               </div>
                             )}
 
-                            
                             <div className="font-mono text-[10px] text-slate-400 space-y-0.5">
                               <div className="truncate text-slate-300">{seat.cpu}</div>
                               <div className="truncate text-cyan-400">{seat.gpu}</div>
@@ -941,7 +923,6 @@ export default function Home() {
                             </div>
                           </div>
 
-                          
                           <div className="pt-2 border-t border-white/10 space-y-2">
                             <div className="flex justify-between items-center text-xs font-mono">
                               <span className="text-slate-400 text-[10px]">Đơn giá:</span>
@@ -984,7 +965,6 @@ export default function Home() {
           </div>
         </div>
 
-        
         <div id="bang-gia" className="space-y-8">
           <div className="text-center space-y-2 max-w-2xl mx-auto">
             <span className="text-xs font-mono text-emerald-400 font-bold uppercase tracking-wider">
@@ -998,7 +978,6 @@ export default function Home() {
             </p>
           </div>
 
-          
           {membershipToast && (
             <div className="p-4 rounded-2xl bg-emerald-500/20 border border-emerald-400 text-emerald-300 font-mono text-xs flex items-center justify-between shadow-2xl animate-bounce">
               <span className="flex items-center gap-2">
@@ -1010,7 +989,7 @@ export default function Home() {
           )}
 
           <div className="grid grid-cols-1 md:grid-cols-3 gap-6 items-stretch">
-            
+
             <div className="rounded-3xl bg-slate-900/60 border border-white/10 p-8 flex flex-col justify-between space-y-6 hover:border-slate-500/50 transition">
               <div>
                 <div className="flex justify-between items-center text-xs font-mono text-slate-400">
@@ -1053,7 +1032,6 @@ export default function Home() {
               </button>
             </div>
 
-            
             <div className="rounded-3xl bg-gradient-to-b from-[#091f1b] via-slate-900 to-slate-900 border-2 border-emerald-400 p-8 flex flex-col justify-between space-y-6 shadow-2xl relative">
               <span className="absolute -top-3.5 left-1/2 -translate-x-1/2 px-4 py-1 rounded-full bg-gradient-to-r from-emerald-400 to-cyan-400 text-black text-[10px] font-black font-mono uppercase tracking-wider shadow-lg">
                 LỰA CHỌN PHỔ BIẾN NHẤT ⭐
@@ -1103,7 +1081,6 @@ export default function Home() {
               </button>
             </div>
 
-            
             <div className="rounded-3xl bg-slate-900/60 border border-purple-500/40 p-8 flex flex-col justify-between space-y-6 hover:border-purple-400 transition">
               <div>
                 <div className="flex justify-between items-center text-xs font-mono text-purple-400 font-bold">
@@ -1151,7 +1128,6 @@ export default function Home() {
             </div>
           </div>
 
-          
           <div className="p-4 md:p-6 rounded-2xl bg-gradient-to-r from-emerald-950/60 to-slate-900 border border-emerald-500/30 flex flex-col md:flex-row justify-between items-center gap-4">
             <div className="flex items-center gap-4">
               <div className="w-10 h-10 rounded-xl bg-emerald-500/20 text-emerald-400 flex items-center justify-center text-xl shrink-0">
@@ -1175,10 +1151,8 @@ export default function Home() {
           </div>
         </div>
 
-        
         <div id="dat-cho" className="grid grid-cols-1 lg:grid-cols-12 gap-10 items-center p-8 md:p-12 rounded-3xl bg-slate-900/60 border border-white/10">
-          
-          
+
           <div className="lg:col-span-5 space-y-4">
             <span className="text-xs font-mono text-emerald-400 font-bold uppercase tracking-wider">
               GIỮ CHỖ TRỰC TUYẾN TỨC THÌ
@@ -1204,7 +1178,6 @@ export default function Home() {
               </div>
             </div>
 
-            
             <div className="p-3 rounded-xl bg-black/40 border border-white/10 mt-4 text-xs font-mono space-y-2">
               {selectedSeatForBooking && (
                 <div className="flex items-center justify-between p-2 rounded-lg bg-emerald-500/15 border border-emerald-500/40 text-emerald-300">
@@ -1235,13 +1208,11 @@ export default function Home() {
             </div>
           </div>
 
-          
           <div className="lg:col-span-7 bg-[#070d18] border border-white/10 rounded-2xl p-6 md:p-8 space-y-4">
             <h3 className="text-lg font-bold text-white font-gaming border-b border-white/10 pb-3">
               Biểu Mẫu Giữ Chỗ 24/7
             </h3>
 
-            
             {successBooking && (
               <div className="p-4 rounded-xl bg-emerald-500/20 border border-emerald-400 text-emerald-300 font-mono text-xs flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3 shadow-xl">
                 <div>
@@ -1262,7 +1233,7 @@ export default function Home() {
             )}
 
             <form onSubmit={handleBookingSubmit} className="space-y-4 font-mono text-xs">
-              
+
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                 <div>
                   <label className="text-slate-400 block mb-1.5">CHỌN CHI NHÁNH</label>
@@ -1377,10 +1348,9 @@ export default function Home() {
 
         </div>
 
-        
         <div id="showroom" className="p-8 md:p-12 rounded-3xl bg-gradient-to-br from-[#08151a] to-slate-900 border border-emerald-500/30">
           <div className="grid grid-cols-1 lg:grid-cols-12 gap-8 items-center">
-            
+
             <div className="lg:col-span-6 space-y-4">
               <span className="px-2.5 py-1 rounded bg-emerald-500/20 text-emerald-400 font-mono text-[10px] font-bold">
                 CYBER ZONE TECH HUB
@@ -1391,7 +1361,7 @@ export default function Home() {
               <p className="text-xs text-slate-300 leading-relaxed">
                 Trải nghiệm thực tế trước khi sở hữu. Chúng tôi phân phối ủy quyền chính hãng chuột không dây 8000Hz, lót chuột Artisan Nhật Bản, phím cơ HE Hall Effect Rapid Trigger và dịch vụ vệ sinh tra keo tản nhiệt PTM7950 trực tiếp tại sảnh.
               </p>
-              
+
               <div className="grid grid-cols-2 gap-4 font-mono text-xs pt-2">
                 <div className="p-3 rounded-xl bg-black/40 border border-white/10">
                   <span className="text-emerald-400 font-bold flex items-center gap-1.5">
@@ -1425,7 +1395,6 @@ export default function Home() {
               </div>
             </div>
 
-            
             <div className="lg:col-span-6 grid grid-cols-2 gap-4">
               <img
                 src="https://images.unsplash.com/photo-1618384887929-16ec33fab9ef?auto=format&fit=crop&w=500&q=80"
@@ -1447,7 +1416,6 @@ export default function Home() {
           </div>
         </div>
 
-        
         <div id="community" className="space-y-8 scroll-mt-24">
           <div id="khach-hang" className="text-center space-y-2">
             <span className="text-xs font-mono text-emerald-400 font-bold uppercase tracking-wider flex items-center justify-center gap-1.5">
@@ -1462,7 +1430,6 @@ export default function Home() {
             </p>
           </div>
 
-          
           {tournamentSuccessToast && (
             <div className="p-4 rounded-2xl bg-cyan-500/20 border border-cyan-400 text-cyan-300 font-mono text-xs flex items-center justify-between shadow-2xl animate-bounce">
               <span className="flex items-center gap-2">
@@ -1473,7 +1440,6 @@ export default function Home() {
             </div>
           )}
 
-          
           <div className="flex justify-center">
             <div className="inline-flex p-1.5 rounded-2xl bg-slate-900 border border-white/10 gap-1 font-mono text-xs">
               <button
@@ -1518,12 +1484,10 @@ export default function Home() {
             </div>
           </div>
 
-          
           {activeCommunityTab === 'tournaments' && (
             <div className="space-y-6">
               <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-                
-                
+
                 <div className="p-6 rounded-3xl bg-slate-900/80 border border-amber-500/40 space-y-4 relative overflow-hidden flex flex-col justify-between">
                   <div className="space-y-3">
                     <div className="flex justify-between items-center font-mono text-xs">
@@ -1565,7 +1529,6 @@ export default function Home() {
                   </button>
                 </div>
 
-                
                 <div className="p-6 rounded-3xl bg-slate-900/80 border border-cyan-500/40 space-y-4 relative overflow-hidden flex flex-col justify-between">
                   <div className="space-y-3">
                     <div className="flex justify-between items-center font-mono text-xs">
@@ -1607,7 +1570,6 @@ export default function Home() {
                   </button>
                 </div>
 
-                
                 <div className="p-6 rounded-3xl bg-slate-900/80 border border-emerald-500/40 space-y-4 relative overflow-hidden flex flex-col justify-between">
                   <div className="space-y-3">
                     <div className="flex justify-between items-center font-mono text-xs">
@@ -1651,7 +1613,6 @@ export default function Home() {
 
               </div>
 
-              
               <div className="p-6 rounded-3xl bg-black/40 border border-white/10 space-y-4">
                 <div className="flex justify-between items-center">
                   <div className="flex items-center gap-2">
@@ -1699,11 +1660,9 @@ export default function Home() {
             </div>
           )}
 
-          
           {activeCommunityTab === 'lfg' && (
             <div className="grid grid-cols-1 lg:grid-cols-12 gap-8 items-start">
-              
-              
+
               <div className="lg:col-span-5 bg-slate-900/90 border border-emerald-500/40 rounded-3xl p-6 space-y-4">
                 <div className="flex items-center gap-2 border-b border-white/10 pb-3">
                   <span className="material-symbols-outlined text-emerald-400 text-xl">person_add</span>
@@ -1777,7 +1736,6 @@ export default function Home() {
                 </form>
               </div>
 
-              
               <div className="lg:col-span-7 space-y-3">
                 <div className="flex justify-between items-center text-xs font-mono text-slate-400 pb-1 border-b border-white/10">
                   <span>BẢNG TIN GHÉP KÈO TRỰC TIẾP ({lfgPosts.length} BÀI ĐĂNG)</span>
@@ -1836,13 +1794,11 @@ export default function Home() {
             </div>
           )}
 
-          
           {activeCommunityTab === 'reviews' && (
             <div className="space-y-6">
-              
-              
+
               <div className="grid grid-cols-1 md:grid-cols-3 gap-6 font-sans">
-                
+
                 <div className="p-6 rounded-2xl bg-slate-900/60 border border-red-500/30 space-y-4 hover:border-red-500/60 transition flex flex-col justify-between">
                   <div className="text-amber-400 text-xs tracking-widest">★★★★★</div>
                   <p className="text-xs text-slate-300 italic leading-relaxed">
@@ -1864,7 +1820,6 @@ export default function Home() {
                   </div>
                 </div>
 
-                
                 <div className="p-6 rounded-2xl bg-slate-900/60 border border-amber-500/30 space-y-4 hover:border-amber-500/60 transition flex flex-col justify-between">
                   <div className="text-amber-400 text-xs tracking-widest">★★★★★</div>
                   <p className="text-xs text-slate-300 italic leading-relaxed">
@@ -1886,7 +1841,6 @@ export default function Home() {
                   </div>
                 </div>
 
-                
                 <div className="p-6 rounded-2xl bg-slate-900/60 border border-cyan-500/30 space-y-4 hover:border-cyan-500/60 transition flex flex-col justify-between">
                   <div className="text-amber-400 text-xs tracking-widest">★★★★★</div>
                   <p className="text-xs text-slate-300 italic leading-relaxed">
@@ -1909,9 +1863,8 @@ export default function Home() {
                 </div>
               </div>
 
-              
               <div className="grid grid-cols-1 md:grid-cols-3 gap-6 font-sans">
-                
+
                 <div className="p-6 rounded-2xl bg-slate-900/40 border border-white/10 space-y-4 flex flex-col justify-between">
                   <div className="text-amber-400 text-xs tracking-widest">★★★★★</div>
                   <p className="text-xs text-slate-300 leading-relaxed italic">
@@ -1928,7 +1881,6 @@ export default function Home() {
                   </div>
                 </div>
 
-                
                 <div className="p-6 rounded-2xl bg-slate-900/40 border border-pink-500/20 space-y-4 flex flex-col justify-between">
                   <div className="text-amber-400 text-xs tracking-widest">★★★★★</div>
                   <p className="text-xs text-slate-300 leading-relaxed italic">
@@ -1945,7 +1897,6 @@ export default function Home() {
                   </div>
                 </div>
 
-                
                 <div className="p-6 rounded-2xl bg-slate-900/40 border border-white/10 space-y-4 flex flex-col justify-between">
                   <div className="text-amber-400 text-xs tracking-widest">★★★★★</div>
                   <p className="text-xs text-slate-300 leading-relaxed italic">
@@ -1968,7 +1919,6 @@ export default function Home() {
 
         </div>
 
-        
         <div className="p-10 md:p-14 rounded-3xl bg-gradient-to-r from-emerald-950/40 via-slate-900 to-cyan-950/40 border border-emerald-500/30 text-center space-y-6">
           <span className="text-xs font-mono text-emerald-400 font-bold uppercase tracking-wider">
             SẴN SÀNG CHO CUỘC ĐẤU TIẾP THEO?
@@ -1998,11 +1948,9 @@ export default function Home() {
 
       </div>
 
-      
       <footer className="border-t border-white/10 bg-black/60 pt-16 pb-8 px-4 text-xs text-slate-400 font-sans">
         <div className="max-w-7xl mx-auto grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-10 pb-12 border-b border-white/10">
-          
-          
+
           <div className="space-y-4">
             <div className="flex items-center gap-3">
               <div className="w-9 h-9 rounded-xl bg-gradient-to-br from-emerald-400 to-cyan-500 flex items-center justify-center text-black font-black text-lg">
@@ -2023,7 +1971,6 @@ export default function Home() {
             </div>
           </div>
 
-          
           <div className="space-y-3 font-mono">
             <h4 className="font-bold text-white uppercase tracking-wider text-[11px] font-sans">
               PHÂN KHU TRẢI NGHIỆM
@@ -2037,7 +1984,6 @@ export default function Home() {
             </ul>
           </div>
 
-          
           <div className="space-y-3 font-mono">
             <h4 className="font-bold text-white uppercase tracking-wider text-[11px] font-sans">
               HỖ TRỢ &amp; HỘI VIÊN
@@ -2051,7 +1997,6 @@ export default function Home() {
             </ul>
           </div>
 
-          
           <div className="space-y-3">
             <h4 className="font-bold text-white uppercase tracking-wider text-[11px]">
               HỆ THỐNG CƠ SỞ
@@ -2070,7 +2015,6 @@ export default function Home() {
 
         </div>
 
-        
         <div className="max-w-7xl mx-auto pt-6 flex flex-col sm:flex-row justify-between items-center gap-3 text-[11px] text-slate-500 font-mono">
           <div>
             © 2026 <span className="text-white font-bold">CYBER ZONE COMPLEX</span>. All Rights Reserved.
@@ -2081,7 +2025,6 @@ export default function Home() {
         </div>
       </footer>
 
-      
       {isGearModalOpen && (
         <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/85 backdrop-blur-md">
           <div className="w-full max-w-4xl bg-slate-900 border border-emerald-500/40 rounded-3xl p-6 sm:p-8 shadow-2xl space-y-6 max-h-[90vh] overflow-y-auto font-sans">
@@ -2106,7 +2049,6 @@ export default function Home() {
               </button>
             </div>
 
-            
             {gearSuccessToast && (
               <div className="p-3.5 rounded-xl bg-emerald-500/20 border border-emerald-400 text-emerald-300 font-mono text-xs flex items-center gap-2 animate-bounce">
                 <span className="material-symbols-outlined text-[18px]">check_circle</span>
@@ -2114,7 +2056,6 @@ export default function Home() {
               </div>
             )}
 
-            
             <div className="flex flex-wrap gap-2 border-b border-white/10 pb-4 font-mono text-xs">
               {[
                 { id: 'all', label: 'TẤT CẢ SẢN PHẨM & DỊCH VỤ' },
@@ -2137,7 +2078,6 @@ export default function Home() {
               ))}
             </div>
 
-            
             <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
               {GEAR_PRODUCTS
                 .filter((p) => selectedGearTab === 'all' || p.category === selectedGearTab)
@@ -2199,12 +2139,10 @@ export default function Home() {
         </div>
       )}
 
-            
       {selectedModalSeat && (
         <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/80 backdrop-blur-md animate-fadeIn">
           <div className="relative w-full max-w-2xl bg-gradient-to-br from-slate-900 via-[#0a1420] to-slate-950 border border-emerald-500/40 rounded-3xl p-6 md:p-8 shadow-2xl text-white space-y-6">
-            
-            
+
             <div className="flex items-start justify-between border-b border-white/10 pb-4">
               <div>
                 <div className="flex items-center gap-2 mb-1">
@@ -2234,7 +2172,6 @@ export default function Home() {
               </button>
             </div>
 
-            
             <div className="flex flex-wrap items-center justify-between gap-3 p-3.5 rounded-2xl bg-black/40 border border-white/5 font-mono text-xs">
               <div className="flex items-center gap-2">
                 <span className="text-slate-400">Trạng thái:</span>
@@ -2258,7 +2195,6 @@ export default function Home() {
               </div>
             </div>
 
-            
             <div className="space-y-3 font-mono text-xs">
               <div className="text-[11px] font-bold text-slate-400 uppercase tracking-wider flex items-center gap-1.5">
                 <span className="material-symbols-outlined text-[15px] text-emerald-400">tune</span>
@@ -2316,7 +2252,6 @@ export default function Home() {
               </div>
             </div>
 
-            
             <div className="flex flex-col sm:flex-row justify-end gap-3 pt-2 border-t border-white/10 font-mono text-xs">
               <button
                 type="button"
@@ -2339,7 +2274,6 @@ export default function Home() {
         </div>
       )}
 
-      
       <AuthModal
         isOpen={isAuthModalOpen}
         defaultTab="login"

@@ -288,8 +288,7 @@ export default function GameMenuPage() {
 
   return (
     <div className="min-h-screen bg-[#070a12] text-slate-100 font-sans flex flex-col select-none">
-      
-      
+
       <div className="bg-[#0b101d] border-b border-white/10 px-4 py-2.5 flex flex-wrap items-center justify-between gap-3 text-xs font-mono">
         <div className="flex items-center gap-3">
           <Link
@@ -345,7 +344,6 @@ export default function GameMenuPage() {
         </div>
       )}
 
-      
       {activePlayingGame && (
         <div className="bg-gradient-to-r from-[#17080f] via-[#210c17] to-[#120712] border-b-2 border-rose-500 px-4 py-2.5 shadow-[0_4px_25px_rgba(244,63,94,0.35)] flex flex-wrap items-center justify-between gap-3 z-30">
           <div className="flex items-center gap-3">
@@ -385,7 +383,6 @@ export default function GameMenuPage() {
         </div>
       )}
 
-      
       <div className="bg-[#0b101d]/90 border-b border-white/10 px-4 py-3">
         <div className="max-w-7xl mx-auto space-y-3">
           <div className="flex flex-col md:flex-row items-center justify-between gap-3">
@@ -454,7 +451,6 @@ export default function GameMenuPage() {
         </div>
       </div>
 
-      
       <main className="flex-1 max-w-7xl w-full mx-auto p-4 lg:p-6 pb-24">
         <div className="flex justify-between items-center mb-4">
           <div className="flex items-center gap-2">
@@ -516,7 +512,6 @@ export default function GameMenuPage() {
         )}
       </main>
 
-      
       <Link
         href={`/menu?seat=${wallet.pcName || 'VIP-08'}`}
         className="fixed bottom-6 right-6 z-40 bg-gradient-to-r from-amber-500 via-orange-500 to-amber-500 text-slate-950 font-black px-4 py-3 rounded-2xl shadow-[0_0_25px_rgba(245,158,11,0.6)] flex items-center gap-3 hover:scale-105 transition-transform border border-amber-300 cursor-pointer"
@@ -530,14 +525,13 @@ export default function GameMenuPage() {
         </div>
       </Link>
 
-      
       {launchingGame && (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/80 backdrop-blur-md p-4 animate-fade-in">
           <div className="w-full max-w-md bg-[#0c1220] border-2 border-amber-400/60 p-6 rounded-2xl shadow-[0_0_50px_rgba(245,158,11,0.3)] flex flex-col items-center text-center gap-4 relative overflow-hidden">
             <div className="w-16 h-16 rounded-full bg-amber-500/20 border-2 border-amber-400 flex items-center justify-center shadow-[0_0_20px_rgba(245,158,11,0.4)] animate-pulse text-amber-400">
               <span className="material-symbols-outlined text-3xl">sports_esports</span>
             </div>
-            
+
             <div>
               <h3 className="text-lg font-black text-white font-gaming uppercase tracking-wide">
                 {launchingGame.toUpperCase()}

@@ -21,19 +21,16 @@ export default function BookingSeatMap() {
   const [activeFloor, setActiveFloor] = useState<'floor1' | 'floor2'>('floor2');
   const [bookings, setBookings] = useState<SeatBooking[]>([]);
 
-  // Auth state
   const [currentUser, setCurrentUser] = useState<AuthUser | null>(null);
   const [showAuthModal, setShowAuthModal] = useState(false);
   const [authModalMessage, setAuthModalMessage] = useState<string | undefined>(undefined);
 
-  // State modal đặt máy tại chỗ
   const [showBookingModal, setShowBookingModal] = useState(false);
   const [formName, setFormName] = useState('');
   const [formPhone, setFormPhone] = useState('');
   const [formTime, setFormTime] = useState('18:00 - 22:00 (Giờ cao điểm)');
   const [successToast, setSuccessToast] = useState<string | null>(null);
 
-  // Sync bookings from bookingStore and handle cross-tab/storage changes
   useEffect(() => {
     const update = () => {
       setBookings(getStoredBookings());
@@ -69,7 +66,6 @@ export default function BookingSeatMap() {
 
   const baseSeats = activeFloor === 'floor2' ? FLOOR2_SEATS_CONFIG : FLOOR1_SEATS_CONFIG;
 
-  // Merge base seat config with live bookings
   const computedSeats = baseSeats.map((seat) => {
     const booking = bookings.find((b) => b.seatId === seat.id && b.status === 'RESERVED');
     if (booking) {
@@ -143,7 +139,7 @@ export default function BookingSeatMap() {
 
   return (
     <div className="min-h-screen bg-[#030712] text-slate-100 p-4 lg:p-6 font-sans">
-      {/* Thông báo Realtime Sync Banner */}
+
       {successToast && (
         <div className="mb-4 p-4 rounded-xl bg-gradient-to-r from-emerald-950 to-slate-900 border border-emerald-400 text-emerald-300 font-bold text-xs flex items-center justify-between shadow-2xl animate-bounce">
           <div className="flex items-center gap-2">
@@ -154,7 +150,6 @@ export default function BookingSeatMap() {
         </div>
       )}
 
-      {/* Top Header đồng bộ với nhận diện CZ của bạn Thái */}
       <div className="flex flex-col lg:flex-row justify-between items-start lg:items-center bg-[#070d1e]/90 border border-white/10 backdrop-blur-md p-4 sm:p-5 rounded-2xl mb-6 shadow-2xl gap-4">
         <div>
           <div className="flex flex-wrap items-center gap-2.5">
@@ -174,7 +169,6 @@ export default function BookingSeatMap() {
           </p>
         </div>
 
-        {/* Floor Switcher & Action CTA */}
         <div className="flex flex-wrap items-center gap-3">
           <div className="bg-slate-900/90 border border-white/10 p-1 rounded-xl flex text-xs font-mono">
             <button
@@ -206,9 +200,8 @@ export default function BookingSeatMap() {
         </div>
       </div>
 
-      {/* Main Seat Map Grid & Station Detail */}
       <div className="grid grid-cols-1 lg:grid-cols-12 gap-6">
-        {/* Left: Seat Grid (8 cols) */}
+
         <div className="lg:col-span-8 bg-[#070d1e]/80 border border-white/10 rounded-2xl p-5 sm:p-6 shadow-2xl flex flex-col justify-between">
           <div>
             <div className="flex flex-wrap justify-between items-center pb-4 border-b border-white/10 mb-5 gap-3">
@@ -220,7 +213,6 @@ export default function BookingSeatMap() {
                 </span>
               </div>
 
-              {/* Legend Chú Thích Trực Quan */}
               <div className="flex flex-wrap items-center gap-3 text-[11px] font-mono">
                 <span className="flex items-center gap-1 text-emerald-400 font-bold">
                   <span className="w-2.5 h-2.5 rounded bg-emerald-500 inline-block"></span> Máy Trống
@@ -237,7 +229,6 @@ export default function BookingSeatMap() {
               </div>
             </div>
 
-            {/* Grid Các Máy Trạm */}
             <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-3.5">
               {computedSeats.map((seat) => {
                 const isSelected = selectedSeat === seat.id;
@@ -266,7 +257,7 @@ export default function BookingSeatMap() {
                   >
                     <div className="flex justify-between items-start mb-2">
                       <span className="font-gaming font-black text-base text-white">{seat.id}</span>
-                      
+
                       {isReserved ? (
                         <span className="bg-amber-500 text-black text-[9px] font-mono px-1.5 py-0.5 rounded font-black uppercase flex items-center gap-1 shadow-sm animate-pulse">
                           <span className="w-1.5 h-1.5 rounded-full bg-black"></span> ĐÃ ĐẶT
@@ -288,7 +279,6 @@ export default function BookingSeatMap() {
 
                     <div className="text-[11px] text-slate-400 font-mono">{seat.price}</div>
 
-                    {/* Hiển thị rõ tên khách hàng đã đặt trước */}
                     {isReserved && seat.booking && (
                       <div className="mt-2 pt-1.5 border-t border-amber-500/30 font-mono">
                         <div className="text-[10px] text-amber-300 font-bold truncate flex items-center gap-1">
@@ -318,7 +308,6 @@ export default function BookingSeatMap() {
           </div>
         </div>
 
-        {/* Right: Selected Station Detail & Live Booking Actions (4 cols) */}
         <div className="lg:col-span-4 bg-[#070d1e]/90 border border-white/10 rounded-2xl p-5 sm:p-6 shadow-2xl flex flex-col justify-between">
           <div>
             <div className="pb-4 border-b border-white/10 mb-5 flex justify-between items-center">
@@ -337,7 +326,6 @@ export default function BookingSeatMap() {
               </span>
             </div>
 
-            {/* BẢNG CẢNH BÁO NẾU MÁY NÀY ĐÃ ĐƯỢC KHÁCH ĐẶT TRƯỚC */}
             {activeBooking ? (
               <div className="p-4 rounded-xl bg-amber-950/40 border border-amber-500/70 mb-5 space-y-3 font-mono shadow-lg">
                 <div className="flex items-center gap-2 text-amber-300 font-bold text-xs uppercase">
@@ -372,7 +360,6 @@ export default function BookingSeatMap() {
               </div>
             ) : null}
 
-            {/* Hardware Telemetry Specs */}
             <div className="space-y-2 text-xs font-mono">
               <div className="bg-slate-900/80 p-2.5 rounded-xl border border-white/5 flex justify-between items-center">
                 <span className="text-slate-400 flex items-center gap-1.5">
@@ -407,7 +394,6 @@ export default function BookingSeatMap() {
             </div>
           </div>
 
-          {/* Action Buttons */}
           <div className="mt-6 pt-4 border-t border-white/10 space-y-2.5 font-mono">
             {activeBooking ? (
               <div className="space-y-2">
@@ -447,7 +433,6 @@ export default function BookingSeatMap() {
         </div>
       </div>
 
-      {/* MODAL ĐẶT GIỮ MÁY TẠI CHỖ */}
       {showBookingModal && (
         <div className="fixed inset-0 z-50 bg-black/80 backdrop-blur-md flex items-center justify-center p-4">
           <div className="bg-slate-900 border border-emerald-500/50 rounded-3xl p-6 sm:p-8 max-w-md w-full space-y-4 shadow-2xl relative font-sans">
@@ -535,7 +520,6 @@ export default function BookingSeatMap() {
         </div>
       )}
 
-      {/* MODAL YÊU CẦU ĐĂNG NHẬP */}
       <AuthModal
         isOpen={showAuthModal}
         defaultTab="login"

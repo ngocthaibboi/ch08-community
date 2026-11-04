@@ -120,9 +120,6 @@ export const GAMER_PASS_TIERS: Record<TierCode, TierInfo> = {
 
 export const TIERS_ORDER: TierCode[] = ['ROOKIE', 'SILVER', 'GOLD', 'DIAMOND'];
 
-/**
- * Xác định hạng thẻ dựa trên tổng số tiền nạp tích lũy hoặc số dư hiện tại
- */
 export function determineTierByAmount(amount: number): TierInfo {
   if (amount >= GAMER_PASS_TIERS.DIAMOND.minAmount) {
     return GAMER_PASS_TIERS.DIAMOND;
@@ -136,9 +133,6 @@ export function determineTierByAmount(amount: number): TierInfo {
   return GAMER_PASS_TIERS.ROOKIE;
 }
 
-/**
- * Tìm thông tin hạng theo tên hoặc mã chuỗi
- */
 export function getTierByName(nameOrCode?: string): TierInfo {
   if (!nameOrCode) return GAMER_PASS_TIERS.ROOKIE;
   const upper = nameOrCode.toUpperCase();
@@ -154,9 +148,6 @@ export function getTierByName(nameOrCode?: string): TierInfo {
   return GAMER_PASS_TIERS.ROOKIE;
 }
 
-/**
- * Tính toán tiến trình thăng hạng của hội viên
- */
 export function calculateTierProgression(effectiveAmount: number) {
   const currentTier = determineTierByAmount(effectiveAmount);
 
@@ -181,7 +172,7 @@ export function calculateTierProgression(effectiveAmount: number) {
     neededAmount = Math.max(0, nextTier.minAmount - effectiveAmount);
     progressPercent = Math.min(100, Math.round((currentProgress / range) * 100));
   } else {
-    // DIAMOND: Max tier
+
     nextTier = null;
     neededAmount = 0;
     progressPercent = 100;

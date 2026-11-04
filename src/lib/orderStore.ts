@@ -6,14 +6,10 @@ export const STORAGE_KEY_ORDERS = 'cyber_orders';
 export const STORAGE_KEY_BASE_REVENUE = 'cyber_base_revenue';
 export const STORAGE_EVENT_NAME = 'cyber_orders_updated';
 
-// KHỞI TẠO BAN ĐẦU: 0 ĐƠN (Chỉ khi khách đặt món mới bay sang bếp)
 export const INITIAL_ORDERS: Order[] = [];
 export const BASELINE_REVENUE = 0;
 export const BASELINE_COMPLETED_ORDERS = 0;
 
-/**
- * Get stored orders from localStorage or default empty
- */
 export function getStoredOrders(): Order[] {
   if (typeof window === 'undefined') return INITIAL_ORDERS;
 
@@ -29,9 +25,6 @@ export function getStoredOrders(): Order[] {
   }
 }
 
-/**
- * Broadcast update event so all components and open tabs update synchronously
- */
 export function broadcastOrdersUpdate(orders: Order[]) {
   if (typeof window === 'undefined') return;
   try {
@@ -42,9 +35,6 @@ export function broadcastOrdersUpdate(orders: Order[]) {
   }
 }
 
-/**
- * Add a new order from Menu
- */
 export function addOrder(newOrder: Order): Order[] {
   const current = getStoredOrders();
   const orderWithTime: Order = {
@@ -56,9 +46,6 @@ export function addOrder(newOrder: Order): Order[] {
   return updated;
 }
 
-/**
- * Update order status (PENDING -> COOKING -> READY -> DELIVERED)
- */
 export function updateOrderStatus(orderId: string, nextStatus: OrderStatus): Order[] {
   const current = getStoredOrders();
   const nowIso = new Date().toISOString();
@@ -82,17 +69,11 @@ export function updateOrderStatus(orderId: string, nextStatus: OrderStatus): Ord
   return updated;
 }
 
-/**
- * Reset orders back to empty
- */
 export function resetOrdersToDefault(): Order[] {
   broadcastOrdersUpdate([]);
   return [];
 }
 
-/**
- * Delete a specific order
- */
 export function deleteOrder(orderId: string): Order[] {
   const current = getStoredOrders();
   const updated = current.filter((o) => o.id !== orderId);
@@ -100,9 +81,6 @@ export function deleteOrder(orderId: string): Order[] {
   return updated;
 }
 
-/**
- * Base revenue starts at 0 (Only increases on real orders or topups)
- */
 export function getBaseRevenue(): number {
   if (typeof window === 'undefined') return 0;
   try {
@@ -123,9 +101,6 @@ export function setBaseRevenue(amount: number) {
   }
 }
 
-/**
- * Calculate dynamic revenue and stats matching actual kitchen completion
- */
 export function calculateLiveDashboardStats(orders: Order[]) {
   const completedOrders = orders.filter(
     (o) => o.status === 'READY' || o.status === 'DELIVERED'
@@ -137,7 +112,6 @@ export function calculateLiveDashboardStats(orders: Order[]) {
   const liveCompletedRevenue = completedOrders.reduce((sum, ord) => sum + (ord.totalAmount || 0), 0);
   const totalRevenue = BASELINE_REVENUE + liveCompletedRevenue;
 
-  // Item sales aggregation
   const itemMap: { [name: string]: { count: number; revenue: number } } = {};
 
   completedOrders.forEach((ord) => {
