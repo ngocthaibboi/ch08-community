@@ -14,7 +14,8 @@ import {
   broadcastWalletUpdate,
   getCumulativeTopupAmount,
 } from '@/lib/walletStore';
-import { getLoggedInUser, loginUser, logoutUser, AUTH_EVENT_NAME, AuthUser } from '@/lib/authStore';
+import { getLoggedInUser, loginUser, logoutUser, AUTH_EVENT_NAME, AuthUser, authenticateUser } from '@/lib/authStore';
+import AuthModal from '@/components/auth/AuthModal';
 import { createStaffRequest } from '@/lib/staffRequestStore';
 import {
   getTierByName,
@@ -278,6 +279,7 @@ export default function ClientPcPage() {
   const [wallet, setWallet] = useState<UserWallet>(INITIAL_WALLET);
 
   const [isLocked, setIsLocked] = useState(true);
+  const [isAuthModalOpen, setIsAuthModalOpen] = useState(false);
 
   const [currentStation, setCurrentStation] = useState<StationPreset>(STATION_PRESETS[0]);
   const [customRate, setCustomRate] = useState<number>(22000);
@@ -493,29 +495,28 @@ export default function ClientPcPage() {
 
   const handleClientLogin = (e: React.FormEvent) => {
     e.preventDefault();
+    setLoginError(null);
     if (!loginUsername.trim() || !loginPassword.trim()) {
-      setLoginError('Vui lòng nhập tên tài khoản và mật khẩu hội viên!');
+      setLoginError('Vui lòng nhập đầy đủ tên tài khoản và mật khẩu hội viên!');
       return;
     }
 
-    const currentW = getStoredWallet();
-    const balanceToUse = currentW.balance > 0 ? currentW.balance : 200000;
+    const authRes = authenticateUser(loginUsername, loginPassword);
+    if (!authRes.success) {
+      setLoginError(authRes.error || 'Đăng nhập không thành công! Vui lòng kiểm tra lại.');
+      return;
+    }
 
-    const userObj: AuthUser = {
-      id: `usr-${Date.now()}`,
-      username: loginUsername.trim(),
-      fullName: loginUsername.toLowerCase().includes('thai') ? 'Nguyễn Văn Thái' : loginUsername.trim(),
-      phone: '0988.888.888',
-      userTier: 'HỘI VIÊN VÀNG ⭐',
-      balance: balanceToUse,
-    };
-
+    const userObj = authRes.user!;
     loginUser(userObj);
     setCurrentUser(userObj);
     setWallet(getStoredWallet());
-    updateStationAndRate(currentStation.id, currentStation.zone, customRate);
 
-    const secs = Math.floor((balanceToUse / customRate) * 3600);
+    const effectiveRate = customRate > 0 ? customRate : currentStation.hourlyRate;
+    updateStationAndRate(currentStation.id, currentStation.zone, effectiveRate);
+
+    const actualBalance = userObj.balance;
+    const secs = Math.floor((actualBalance / effectiveRate) * 3600);
     setRemainingSeconds(secs);
     setIsLocked(false);
     setLoginError(null);
@@ -523,25 +524,26 @@ export default function ClientPcPage() {
     setTimeout(() => setAlertSuccess(null), 4000);
   };
 
-  const handleQuickDemoLogin = (name: string, demoBalance: number = 200000) => {
-    const userObj: AuthUser = {
-      id: `demo-${Date.now()}`,
-      username: 'thaibboi',
-      fullName: name,
-      phone: '0912.888.999',
-      userTier: 'HỘI VIÊN VÀNG ⭐',
-      balance: demoBalance,
-    };
+  const handleQuickDemoLogin = (uname: string = 'thaibboi', pass: string = '123') => {
+    setLoginError(null);
+    const authRes = authenticateUser(uname, pass);
+    if (!authRes.success) {
+      setLoginError(authRes.error || 'Đăng nhập mẫu thất bại!');
+      return;
+    }
 
+    const userObj = authRes.user!;
     loginUser(userObj);
-    const updatedWallet = topupWallet(demoBalance - wallet.balance, 'MÔ PHỎNG NẠP MÁY');
-    setWallet(updatedWallet);
-    updateStationAndRate(currentStation.id, currentStation.zone, customRate);
+    setCurrentUser(userObj);
+    setWallet(getStoredWallet());
 
-    const secs = Math.floor((demoBalance / (customRate || currentStation.hourlyRate)) * 3600);
+    const effectiveRate = customRate > 0 ? customRate : currentStation.hourlyRate;
+    updateStationAndRate(currentStation.id, currentStation.zone, effectiveRate);
+
+    const secs = Math.floor((userObj.balance / effectiveRate) * 3600);
     setRemainingSeconds(secs);
     setIsLocked(false);
-    setAlertSuccess(`Đã mở khóa máy ${currentStation.id} với tài khoản Trưởng nhóm Thái (${demoBalance.toLocaleString('vi-VN')}đ • ${formatSecondsToHMS(secs)})!`);
+    setAlertSuccess(`Đã mở khóa máy ${currentStation.id} với tài khoản Trưởng nhóm ${userObj.fullName} (${userObj.balance.toLocaleString('vi-VN')}đ • ${formatSecondsToHMS(secs)})!`);
     setTimeout(() => setAlertSuccess(null), 4000);
   };
 
@@ -774,13 +776,24 @@ export default function ClientPcPage() {
               </button>
             </form>
 
+            <div className="text-center pt-2">
+              <button
+                type="button"
+                onClick={() => setIsAuthModalOpen(true)}
+                className="text-xs text-cyan-400 hover:text-cyan-300 hover:underline font-mono cursor-pointer transition flex items-center justify-center gap-1 mx-auto"
+              >
+                <span>Chưa có tài khoản hội viên?</span>
+                <strong className="text-emerald-400 font-bold">Đăng ký mới ngay &rarr;</strong>
+              </button>
+            </div>
+
             <div className="pt-3 border-t border-white/10 space-y-2">
               <span className="text-[10px] text-slate-400 block text-center uppercase tracking-wider font-mono">
                 TÀI KHOẢN TRẢI NGHIỆM VIP CÓ SẴN (GUEST PASS)
               </span>
               <button
                 type="button"
-                onClick={() => handleQuickDemoLogin('Nguyễn Văn Thái (Hội Viên VIP)', 200000)}
+                onClick={() => handleQuickDemoLogin('thaibboi', '123')}
                 className="w-full py-2.5 bg-slate-800 hover:bg-slate-700 text-emerald-400 border border-emerald-500/40 font-bold rounded-xl transition text-xs font-mono flex items-center justify-center gap-2 cursor-pointer shadow-md"
               >
                 <span className="material-symbols-outlined text-[16px]">verified</span>
@@ -810,6 +823,19 @@ export default function ClientPcPage() {
           <span>Trạm máy: <strong className="text-slate-300">{currentStation.name}</strong> • IP: 192.168.1.{currentStation.id.replace(/\D/g, '') || '8'}</span>
           <span>Hotline hỗ trợ nạp thẻ tại quầy: <strong className="text-emerald-400">1900 8888</strong></span>
         </div>
+
+        <AuthModal
+          isOpen={isAuthModalOpen}
+          defaultTab="register"
+          onClose={() => setIsAuthModalOpen(false)}
+          onSuccess={(u) => {
+            setLoginUsername(u.username);
+            setLoginPassword('');
+            setIsAuthModalOpen(false);
+            setAlertSuccess(`Đã tạo thành công tài khoản "${u.username}"! Vui lòng nhập mật khẩu để mở máy.`);
+            setTimeout(() => setAlertSuccess(null), 4000);
+          }}
+        />
 
         {showStationModal && (
           <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/85 backdrop-blur-md">

@@ -26,6 +26,8 @@ import {
   logoutUser,
   AUTH_EVENT_NAME,
   AuthUser,
+  authenticateUser,
+  registerAccount,
 } from '@/lib/authStore';
 
 export default function AuthAndWallet() {
@@ -48,6 +50,11 @@ export default function AuthAndWallet() {
   const [switchUsername, setSwitchUsername] = useState('');
   const [switchPassword, setSwitchPassword] = useState('');
   const [loginMsg, setLoginMsg] = useState<string | null>(null);
+  const [authSubMode, setAuthSubMode] = useState<'login' | 'register'>('login');
+  const [regUsername, setRegUsername] = useState('');
+  const [regFullName, setRegFullName] = useState('');
+  const [regPhone, setRegPhone] = useState('');
+  const [regPassword, setRegPassword] = useState('');
 
   useEffect(() => {
     const syncAll = () => {
@@ -119,30 +126,83 @@ export default function AuthAndWallet() {
 
   const handleSwitchLogin = (e: React.FormEvent) => {
     e.preventDefault();
-    if (!switchUsername.trim()) {
-      setLoginMsg('Vui lòng nhập tên tài khoản!');
+    setLoginMsg(null);
+    if (!switchUsername.trim() || !switchPassword.trim()) {
+      setLoginMsg('Vui lòng nhập đầy đủ tên tài khoản và mật khẩu!');
       return;
     }
 
-    const uname = switchUsername.trim();
-    const newUser: AuthUser = {
-      id: `usr-${Date.now()}`,
-      username: uname,
-      fullName: uname.toLowerCase().includes('thai') ? 'Nguyễn Văn Thái' : uname,
-      phone: '0988.888.888',
-      userTier: wallet.userTier,
-      balance: wallet.balance,
-    };
+    const res = authenticateUser(switchUsername, switchPassword);
+    if (!res.success) {
+      setLoginMsg(res.error || 'Đăng nhập không thành công!');
+      return;
+    }
 
-    loginUser(newUser);
-    setCurrentUser(newUser);
+    const user = res.user!;
+    loginUser(user);
+    setCurrentUser(user);
     setSwitchUsername('');
     setSwitchPassword('');
     setLoginMsg(null);
     setActiveTab('topup');
     setSuccessToast({
       added: 0,
-      newBalance: wallet.balance,
+      newBalance: user.balance,
+    });
+    setTimeout(() => setSuccessToast(null), 3000);
+  };
+
+  const handleRegisterOnAuthPage = (e: React.FormEvent) => {
+    e.preventDefault();
+    setLoginMsg(null);
+    if (!regUsername.trim() || !regPassword.trim() || !regPhone.trim()) {
+      setLoginMsg('Vui lòng điền đầy đủ các thông tin bắt buộc (*)!');
+      return;
+    }
+
+    const res = registerAccount({
+      username: regUsername.trim(),
+      password: regPassword.trim(),
+      fullName: regFullName.trim(),
+      phone: regPhone.trim(),
+      initialBalance: 50000,
+    });
+
+    if (!res.success) {
+      setLoginMsg(res.error || 'Đăng ký tài khoản thất bại!');
+      return;
+    }
+
+    const user = res.user!;
+    loginUser(user);
+    setCurrentUser(user);
+    setRegUsername('');
+    setRegPassword('');
+    setRegFullName('');
+    setRegPhone('');
+    setLoginMsg(null);
+    setActiveTab('topup');
+    setSuccessToast({
+      added: 50000,
+      newBalance: user.balance,
+    });
+    setTimeout(() => setSuccessToast(null), 4000);
+  };
+
+  const handleQuickDemoLogin = (uname: string, pass: string) => {
+    setLoginMsg(null);
+    const res = authenticateUser(uname, pass);
+    if (!res.success) {
+      setLoginMsg(res.error || 'Đăng nhập thất bại!');
+      return;
+    }
+    const user = res.user!;
+    loginUser(user);
+    setCurrentUser(user);
+    setActiveTab('topup');
+    setSuccessToast({
+      added: 0,
+      newBalance: user.balance,
     });
     setTimeout(() => setSuccessToast(null), 3000);
   };
@@ -556,9 +616,9 @@ export default function AuthAndWallet() {
         )}
 
         {activeTab === 'login' && (
-          <form onSubmit={handleSwitchLogin} className="bg-slate-900 border border-slate-800 rounded-2xl p-6 shadow-2xl space-y-4 font-mono text-xs">
+          <div className="bg-slate-900 border border-slate-800 rounded-2xl p-6 shadow-2xl space-y-4 font-mono text-xs">
             <div className="flex items-center justify-between">
-              <h3 className="text-white font-black text-sm">Đăng Nhập / Đổi Tài Khoản Máy</h3>
+              <h3 className="text-white font-black text-sm">Quản Lý Tài Khoản Thành Viên</h3>
               {currentUser && (
                 <button
                   type="button"
@@ -570,41 +630,162 @@ export default function AuthAndWallet() {
               )}
             </div>
 
+            <div className="flex gap-2 p-1 bg-slate-950 rounded-xl">
+              <button
+                type="button"
+                onClick={() => {
+                  setAuthSubMode('login');
+                  setLoginMsg(null);
+                }}
+                className={`flex-1 py-2 rounded-lg font-bold transition cursor-pointer ${
+                  authSubMode === 'login'
+                    ? 'bg-gradient-to-r from-emerald-400 to-cyan-400 text-black shadow-md'
+                    : 'text-slate-400 hover:text-white'
+                }`}
+              >
+                Đăng Nhập
+              </button>
+              <button
+                type="button"
+                onClick={() => {
+                  setAuthSubMode('register');
+                  setLoginMsg(null);
+                }}
+                className={`flex-1 py-2 rounded-lg font-bold transition cursor-pointer ${
+                  authSubMode === 'register'
+                    ? 'bg-gradient-to-r from-emerald-400 to-cyan-400 text-black shadow-md'
+                    : 'text-slate-400 hover:text-white'
+                }`}
+              >
+                Đăng Ký Mới
+              </button>
+            </div>
+
             {loginMsg && (
-              <div className="p-2.5 rounded-lg bg-rose-500/20 border border-rose-500/40 text-rose-300">
-                {loginMsg}
+              <div className="p-3 rounded-xl bg-rose-500/20 border border-rose-500/40 text-rose-300 leading-relaxed">
+                ⚠️ {loginMsg}
               </div>
             )}
 
-            <div>
-              <label className="text-slate-400 block mb-1">Tên tài khoản hoặc số điện thoại:</label>
-              <input
-                type="text"
-                value={switchUsername}
-                onChange={(e) => setSwitchUsername(e.target.value)}
-                placeholder={displayName}
-                className="bg-slate-800 border border-slate-700 text-white rounded-xl px-4 py-2.5 focus:border-cyan-400 focus:outline-none w-full text-sm font-sans"
-              />
-            </div>
+            {authSubMode === 'login' ? (
+              <form onSubmit={handleSwitchLogin} className="space-y-4">
+                <div>
+                  <label className="text-slate-400 block mb-1">TÊN TÀI KHOẢN HỘI VIÊN (*):</label>
+                  <input
+                    type="text"
+                    required
+                    value={switchUsername}
+                    onChange={(e) => setSwitchUsername(e.target.value)}
+                    placeholder="Ví dụ: thaibboi hoặc admin"
+                    className="bg-slate-800 border border-slate-700 text-white rounded-xl px-4 py-2.5 focus:border-cyan-400 focus:outline-none w-full text-sm font-sans"
+                  />
+                </div>
 
-            <div>
-              <label className="text-slate-400 block mb-1">Mật khẩu:</label>
-              <input
-                type="password"
-                value={switchPassword}
-                onChange={(e) => setSwitchPassword(e.target.value)}
-                placeholder="••••••••"
-                className="bg-slate-800 border border-slate-700 text-white rounded-xl px-4 py-2.5 focus:border-cyan-400 focus:outline-none w-full text-sm font-sans"
-              />
-            </div>
+                <div>
+                  <label className="text-slate-400 block mb-1">MẬT KHẨU (*):</label>
+                  <input
+                    type="password"
+                    required
+                    value={switchPassword}
+                    onChange={(e) => setSwitchPassword(e.target.value)}
+                    placeholder="••••••••"
+                    className="bg-slate-800 border border-slate-700 text-white rounded-xl px-4 py-2.5 focus:border-cyan-400 focus:outline-none w-full text-sm font-sans"
+                  />
+                </div>
 
-            <button
-              type="submit"
-              className="w-full bg-cyan-500 text-black font-extrabold py-3 rounded-xl text-xs shadow-[0_0_12px_rgba(0,240,255,0.3)] hover:bg-cyan-400 transition cursor-pointer"
-            >
-              ĐĂNG NHẬP ĐỒNG BỘ MÁY TRẠM
-            </button>
-          </form>
+                <button
+                  type="submit"
+                  className="w-full bg-cyan-500 hover:bg-cyan-400 text-black font-extrabold py-3 rounded-xl text-xs shadow-[0_0_12px_rgba(0,240,255,0.3)] transition cursor-pointer"
+                >
+                  XÁC NHẬN ĐĂNG NHẬP VÀO MÁY
+                </button>
+
+                <div className="pt-2 border-t border-slate-800 space-y-1.5">
+                  <div className="flex justify-between items-center text-[10px] text-slate-400">
+                    <span>TÀI KHOẢN MẪU KHẢO SÁT / CHẤM ĐIỂM:</span>
+                    <span className="text-emerald-400">MK: 123</span>
+                  </div>
+                  <div className="grid grid-cols-2 gap-2">
+                    <button
+                      type="button"
+                      onClick={() => handleQuickDemoLogin('thaibboi', '123')}
+                      className="p-2 bg-slate-800/80 hover:bg-slate-700 text-cyan-300 border border-cyan-500/30 rounded-lg font-bold text-[10px] cursor-pointer"
+                    >
+                      🥈 thaibboi (200k)
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => handleQuickDemoLogin('admin', '123')}
+                      className="p-2 bg-slate-800/80 hover:bg-slate-700 text-purple-300 border border-purple-500/30 rounded-lg font-bold text-[10px] cursor-pointer"
+                    >
+                      💎 admin (500k)
+                    </button>
+                  </div>
+                </div>
+              </form>
+            ) : (
+              <form onSubmit={handleRegisterOnAuthPage} className="space-y-3">
+                <div>
+                  <label className="text-slate-400 block mb-1">TÊN ĐĂNG NHẬP (*):</label>
+                  <input
+                    type="text"
+                    required
+                    value={regUsername}
+                    onChange={(e) => setRegUsername(e.target.value)}
+                    placeholder="Ví dụ: ngocthai_gamer (tối thiểu 3 ký tự)"
+                    className="bg-slate-800 border border-slate-700 text-white rounded-xl px-4 py-2.5 focus:border-emerald-400 focus:outline-none w-full text-sm font-sans"
+                  />
+                </div>
+
+                <div>
+                  <label className="text-slate-400 block mb-1">HỌ VÀ TÊN (*):</label>
+                  <input
+                    type="text"
+                    required
+                    value={regFullName}
+                    onChange={(e) => setRegFullName(e.target.value)}
+                    placeholder="Ví dụ: Nguyễn Văn Thái"
+                    className="bg-slate-800 border border-slate-700 text-white rounded-xl px-4 py-2.5 focus:border-emerald-400 focus:outline-none w-full text-sm font-sans"
+                  />
+                </div>
+
+                <div>
+                  <label className="text-slate-400 block mb-1">SỐ ĐIỆN THOẠI (*):</label>
+                  <input
+                    type="tel"
+                    required
+                    value={regPhone}
+                    onChange={(e) => setRegPhone(e.target.value)}
+                    placeholder="09xx xxx xxx"
+                    className="bg-slate-800 border border-slate-700 text-white rounded-xl px-4 py-2.5 focus:border-emerald-400 focus:outline-none w-full text-sm font-sans"
+                  />
+                </div>
+
+                <div>
+                  <label className="text-slate-400 block mb-1">MẬT KHẨU (*):</label>
+                  <input
+                    type="password"
+                    required
+                    value={regPassword}
+                    onChange={(e) => setRegPassword(e.target.value)}
+                    placeholder="•••••••• (tối thiểu 3 ký tự)"
+                    className="bg-slate-800 border border-slate-700 text-white rounded-xl px-4 py-2.5 focus:border-emerald-400 focus:outline-none w-full text-sm font-sans"
+                  />
+                </div>
+
+                <div className="p-2 rounded-lg bg-emerald-500/10 border border-emerald-500/20 text-[10px] text-emerald-300">
+                  🎁 <strong>Quà tặng tân thủ:</strong> Tặng ngay 50.000đ khi đăng ký thành công!
+                </div>
+
+                <button
+                  type="submit"
+                  className="w-full bg-gradient-to-r from-emerald-400 to-cyan-400 hover:brightness-110 text-black font-extrabold py-3 rounded-xl text-xs shadow-[0_0_12px_rgba(16,185,129,0.3)] transition cursor-pointer"
+                >
+                  TẠO TÀI KHOẢN MỚI (+50.000Đ)
+                </button>
+              </form>
+            )}
+          </div>
         )}
 
         <div className="text-center mt-6">
