@@ -11,7 +11,12 @@ import AuthModal from '@/components/auth/AuthModal';
 
 export default function GlobalNavBar() {
   const pathname = usePathname();
-  const isClientPc = pathname === '/client-pc';
+  // 4 phân hệ chuyên biệt (Khách tại máy, Máy chủ, Bếp KDS, Quản lý doanh thu) không hiển thị thanh website bán hàng
+  const isDedicatedSystem =
+    pathname === '/client-pc' ||
+    pathname === '/server' ||
+    pathname === '/kds' ||
+    pathname === '/dashboard';
 
   const [pendingOrdersCount, setPendingOrdersCount] = useState(0);
   const [wallet, setWallet] = useState<UserWallet>(INITIAL_WALLET);
@@ -86,8 +91,8 @@ export default function GlobalNavBar() {
 
       return (
     <>
-      {/* NÚT KÉO TRƯỢT GIAO DIỆN HỆ THỐNG TRÊN CLIENT-PC (KHI THANH ĐANG THU GỌN) */}
-      {isClientPc && !isSystemDrawerOpen && !isPinned && (
+      {/* NÚT KÉO TRƯỢT GIAO DIỆN HỆ THỐNG TRÊN 4 PHÂN HỆ CHUYÊN BIỆT (KHI THANH ĐANG THU GỌN) */}
+      {isDedicatedSystem && !isSystemDrawerOpen && !isPinned && (
         <div className="fixed top-0 left-1/2 -translate-x-1/2 z-[100] pointer-events-auto">
           <button
             type="button"
@@ -109,7 +114,7 @@ export default function GlobalNavBar() {
       {/* KHUNG THANH ĐIỀU HƯỚNG */}
       <header
         className={
-          isClientPc
+          isDedicatedSystem
             ? `fixed top-0 left-0 right-0 z-[100] transition-all duration-300 ${
                 isSystemDrawerOpen || isPinned ? 'pointer-events-auto shadow-2xl' : 'pointer-events-none'
               }`
@@ -144,6 +149,9 @@ export default function GlobalNavBar() {
                 <Link
                   key={mode.href}
                   href={mode.href}
+                  onClick={() => {
+                    if (!isPinned) setIsSystemDrawerOpen(false);
+                  }}
                   className={`flex items-center gap-1.5 px-2.5 sm:px-3 py-1 rounded-lg font-bold font-mono text-[10px] sm:text-[11px] transition-all ${
                     isActive
                       ? 'bg-gradient-to-r from-emerald-400 to-cyan-400 text-slate-950 font-black shadow-[0_0_12px_rgba(16,185,129,0.35)] scale-105'
@@ -193,8 +201,8 @@ export default function GlobalNavBar() {
         </div>
       </div>
 
-      {/* THANH ĐIỀU HƯỚNG WEBSITE CZ CYBERZONE - CHỈ HIỂN THỊ TRÊN WEB, ẨN HOÀN TOÀN TRÊN CLIENT-PC */}
-      {!isClientPc && (
+      {/* THANH ĐIỀU HƯỚNG WEBSITE CZ CYBERZONE - CHỈ HIỂN THỊ TRÊN WEB, ẨN TRÊN 4 PHÂN HỆ CHUYÊN BIỆT */}
+      {!isDedicatedSystem && (
         <nav className="border-b border-white/10 bg-[#070d1e] px-4 py-2.5 relative">
         <div className="max-w-7xl mx-auto flex items-center justify-between gap-4">
 
@@ -490,7 +498,7 @@ export default function GlobalNavBar() {
       )}
     </header>
 
-    {!isClientPc && (
+    {!isDedicatedSystem && (
       <AuthModal
         isOpen={isAuthModalOpen}
         defaultTab={authModalTab}
