@@ -11,6 +11,7 @@ import {
   updateStationAndRate,
   deductPlayTimeFee,
   topupWallet,
+  deductWallet,
   calculateRemainingPlayTime,
   broadcastWalletUpdate,
   getCumulativeTopupAmount,
@@ -380,6 +381,8 @@ export default function ClientPcPage() {
   const [topupAmountInput, setTopupAmountInput] = useState('100000');
   const [topupContextTitle, setTopupContextTitle] = useState<string | null>(null);
   const [selectedCombo, setSelectedCombo] = useState<ComboHourPack | null>(null);
+  const [topupPaymentMode, setTopupPaymentMode] = useState<'WALLET' | 'VIETQR'>('WALLET');
+  const [topupErrorMsg, setTopupErrorMsg] = useState<string | null>(null);
 
   const [showCallModal, setShowCallModal] = useState(false);
   const [alertSuccess, setAlertSuccess] = useState<string | null>(null);
@@ -887,6 +890,8 @@ export default function ClientPcPage() {
     setSelectedCombo(pack);
     setTopupAmountInput(String(pack.amount));
     setTopupContextTitle(`ĐẶT MUA ${pack.name.toUpperCase()} (+${pack.amount.toLocaleString('vi-VN')}Đ)`);
+    setTopupPaymentMode('WALLET');
+    setTopupErrorMsg(null);
     setShowTopupModal(true);
   };
 
@@ -898,80 +903,109 @@ export default function ClientPcPage() {
     setShowTopupModal(true);
   };
 
-  const handleConfirmTopupOnClient = (amountToTopup: number) => {
-    if (isNaN(amountToTopup) || amountToTopup <= 0) {
-      alert('Vui lòng chọn hoặc nhập số tiền nạp hợp lệ!');
+  const handleConfirmTopupOnClient = (amountToPay: number, forceMode?: 'WALLET' | 'VIETQR') => {
+    if (isNaN(amountToPay) || amountToPay <= 0) {
+      alert('Vui lòng chọn hoặc nhập số tiền hợp lệ!');
       return;
     }
 
-    const prevTier = getTierByName(currentUser?.userTier || wallet.userTier);
-    const isComboMatch = selectedCombo && selectedCombo.amount === amountToTopup;
-    const bonusBonusSecs = isComboMatch ? selectedCombo.bonusMinutes * 60 : 0;
-    const desc = isComboMatch
-      ? `Nạp ${selectedCombo.name} tại máy ${currentStation.id}`
-      : `Nạp tiền tại máy ${currentStation.id}`;
+    const mode = forceMode || topupPaymentMode;
 
-    const updated = topupWallet(amountToTopup, desc);
-    setWallet(updated);
-
-    const effectiveRate = customRate > 0 ? customRate : currentStation.hourlyRate;
-    const addedSeconds = Math.floor((amountToTopup / effectiveRate) * 3600) + bonusBonusSecs;
-    setRemainingSeconds((prev) => prev + addedSeconds);
-
-    const newBal = (currentUser?.balance || 0) + amountToTopup;
-
-    if (currentUser) {
-      const updatedUser: AuthUser = {
-        ...currentUser,
-        balance: newBal,
-        userTier: updated.userTier,
-      };
-      setCurrentUser(updatedUser);
-      saveClientPcSession(updatedUser);
-
-      if (typeof window !== 'undefined') {
-        try {
-          const rawAccs = localStorage.getItem('cyber_registered_accounts');
-          if (rawAccs) {
-            const accs = JSON.parse(rawAccs);
-            const idx = accs.findIndex((a: any) => a.username.toLowerCase() === currentUser.username.toLowerCase());
-            if (idx !== -1) {
-              accs[idx].balance = newBal;
-              accs[idx].userTier = updated.userTier;
-              localStorage.setItem('cyber_registered_accounts', JSON.stringify(accs));
-            }
-          }
-        } catch {}
+    if (mode === 'WALLET') {
+      // 1. DEDUCT DIRECTLY FROM ACCOUNT BALANCE
+      if (liveBalance < amountToPay) {
+        const needed = amountToPay - liveBalance;
+        setTopupErrorMsg(
+          `⚠️ SỐ DƯ TÀI KHOẢN KHÔNG ĐỦ! Bạn hiện có ${liveBalance.toLocaleString('vi-VN')}đ, cần ${amountToPay.toLocaleString('vi-VN')}đ để nạp gói này. Vui lòng nạp thêm tối thiểu +${needed.toLocaleString('vi-VN')}đ qua VietQR bên dưới!`
+        );
+        setTopupPaymentMode('VIETQR');
+        return;
       }
-    }
 
-    saveActiveClientStation({
-      stationId: currentStation.id,
-      stationName: currentStation.name,
-      zone: currentStation.zone,
-      hourlyRate: effectiveRate,
-      occupantName: currentUser?.fullName || updated.userName,
-      occupantTier: updated.userTier,
-      balance: updated.balance,
-      isOnline: true,
-    });
+      setTopupErrorMsg(null);
+      const isComboMatch = selectedCombo && selectedCombo.amount === amountToPay;
+      const bonusBonusSecs = isComboMatch ? selectedCombo.bonusMinutes * 60 : 0;
+      const desc = isComboMatch
+        ? `Mua ${selectedCombo.name} nạp máy ${currentStation.id}`
+        : `Nạp giờ chơi tại máy ${currentStation.id}`;
 
-    const newTier = getTierByName(updated.userTier);
-    setShowTopupModal(false);
-    setSelectedCombo(null);
-    setTopupContextTitle(null);
+      const deductRes = deductWallet(amountToPay, desc);
+      if (!deductRes.success) {
+        setTopupErrorMsg(deductRes.error || 'Số dư không đủ!');
+        return;
+      }
 
-    if (newTier.minAmount > prevTier.minAmount) {
-      setNewUpgradedTierName(newTier.name);
-      setUpgradePerks(newTier.perks);
-      setShowUpgradeSuccessModal(true);
-    } else {
+      setWallet(deductRes.wallet);
+      const newBal = deductRes.wallet.balance;
+
+      const effectiveRate = customRate > 0 ? customRate : currentStation.hourlyRate;
+      const addedSeconds = Math.floor((amountToPay / effectiveRate) * 3600) + bonusBonusSecs;
+      setRemainingSeconds((prev) => prev + addedSeconds);
+
+      if (currentUser) {
+        const updatedUser: AuthUser = {
+          ...currentUser,
+          balance: newBal,
+        };
+        setCurrentUser(updatedUser);
+        saveClientPcSession(updatedUser);
+      }
+
+      saveActiveClientStation({
+        stationId: currentStation.id,
+        stationName: currentStation.name,
+        zone: currentStation.zone,
+        hourlyRate: effectiveRate,
+        occupantName: currentUser?.fullName || deductRes.wallet.userName,
+        occupantTier: deductRes.wallet.userTier,
+        balance: newBal,
+        isOnline: true,
+      });
+
+      setShowTopupModal(false);
+      setSelectedCombo(null);
+      setTopupContextTitle(null);
+
       const addedTimeStr = formatSecondsToHMS(addedSeconds);
-      const comboBonusMsg = isComboMatch && selectedCombo.bonusMinutes > 0 ? ` (Đã cộng thêm +${selectedCombo.bonusMinutes} phút Free!)` : '';
+      const comboBonusMsg = isComboMatch && selectedCombo.bonusMinutes > 0 ? ` (Tặng thêm +${selectedCombo.bonusMinutes} phút Free!)` : '';
       setAlertSuccess(
-        `🎉 NẠP TIỀN THÀNH CÔNG: Đã nạp +${amountToTopup.toLocaleString('vi-VN')}đ vào máy ${currentStation.id}! Giờ chơi cộng thêm: +${addedTimeStr}${comboBonusMsg}. Số dư ví mới: ${updated.balance.toLocaleString('vi-VN')}đ (Đồng bộ toàn hệ thống).`
+        `🎉 ĐÃ TRỪ -${amountToPay.toLocaleString('vi-VN')}Đ TỪ TÀI KHOẢN! Đã cộng thêm +${addedTimeStr}${comboBonusMsg} vào máy ${currentStation.id}. Số dư tài khoản còn lại: ${newBal.toLocaleString('vi-VN')}đ.`
       );
       setTimeout(() => setAlertSuccess(null), 8000);
+    } else {
+      // 2. TOP UP VIA VIETQR (adds new funds from bank into wallet)
+      setTopupErrorMsg(null);
+      const prevTier = getTierByName(currentUser?.userTier || wallet.userTier);
+      const desc = `Nạp tiền VietQR tại máy ${currentStation.id}`;
+      const updated = topupWallet(amountToPay, desc);
+      setWallet(updated);
+
+      const newBal = (currentUser?.balance || 0) + amountToPay;
+      if (currentUser) {
+        const updatedUser: AuthUser = {
+          ...currentUser,
+          balance: newBal,
+          userTier: updated.userTier,
+        };
+        setCurrentUser(updatedUser);
+        saveClientPcSession(updatedUser);
+      }
+
+      setShowTopupModal(false);
+      setSelectedCombo(null);
+      setTopupContextTitle(null);
+
+      const newTier = getTierByName(updated.userTier);
+      if (newTier.minAmount > prevTier.minAmount) {
+        setNewUpgradedTierName(newTier.name);
+        setUpgradePerks(newTier.perks);
+        setShowUpgradeSuccessModal(true);
+      } else {
+        setAlertSuccess(
+          `💰 NẠP TIỀN VIETQR THÀNH CÔNG: Đã nạp +${amountToPay.toLocaleString('vi-VN')}đ vào tài khoản máy ${currentStation.id}! Số dư khả dụng mới: ${updated.balance.toLocaleString('vi-VN')}đ. Bây giờ bạn có thể dùng số dư để mua giờ chơi hoặc gọi món F&B!`
+        );
+        setTimeout(() => setAlertSuccess(null), 8000);
+      }
     }
   };
 
@@ -2254,45 +2288,112 @@ export default function ClientPcPage() {
             </div>
 
             
-            {(() => {
-              const currentNum = Math.max(10000, parseInt(topupAmountInput || '50000', 10) || 50000);
-              const qrUrl = `https://api.vietqr.io/image/970422-0988888888-HjXq5pM.jpg?accountName=CYBER%20ZONE%20GAMING%20LOUNGE&amount=${currentNum}&addInfo=NAP%20${currentStation.id}%20${encodeURIComponent(currentUser?.username || 'khach')}`;
-              return (
-                <div className="p-3.5 rounded-2xl bg-slate-950 border border-white/10 flex items-center gap-3 font-mono text-xs">
-                  <img
-                    src={qrUrl}
-                    alt="VietQR"
-                    className="w-20 h-20 rounded-xl object-contain bg-white p-1 shrink-0"
-                  />
-                  <div className="text-[11px] space-y-0.5 text-slate-300">
-                    <div className="text-emerald-400 font-bold flex items-center gap-1">
-                      <span className="material-symbols-outlined text-sm">qr_code_scanner</span>
-                      <span>MB BANK • QUÉT MÃ TỰ ĐỘNG CỘNG TIỀN</span>
-                    </div>
-                    <div>STK: <strong className="text-white">0988888888</strong> (CYBER ZONE)</div>
-                    <div className="text-slate-400">
-                      Số tiền: <strong className="text-emerald-400 font-bold">+{currentNum.toLocaleString('vi-VN')}đ</strong>
-                    </div>
-                    <div className="text-slate-400">
-                      Nội dung: <strong className="text-amber-400">NAP {currentStation.id} {currentUser?.username || 'khach'}</strong>
+            {topupErrorMsg && (
+              <div className="p-3 rounded-xl bg-rose-500/20 border border-rose-500/50 text-rose-300 font-mono text-xs flex items-center gap-2">
+                <span className="material-symbols-outlined text-base">warning</span>
+                <span>{topupErrorMsg}</span>
+              </div>
+            )}
+
+            {/* PAYMENT METHOD SELECTOR */}
+            <div className="space-y-2">
+              <span className="text-white font-bold text-xs font-mono block">Hình Thức Thanh Toán:</span>
+              <div className="grid grid-cols-2 gap-2 font-mono text-xs">
+                <button
+                  type="button"
+                  onClick={() => setTopupPaymentMode('WALLET')}
+                  className={`p-3 rounded-xl border flex flex-col items-center gap-1 transition cursor-pointer ${
+                    topupPaymentMode === 'WALLET'
+                      ? 'bg-emerald-500/20 border-emerald-400 text-emerald-300 shadow-md ring-1 ring-emerald-400'
+                      : 'bg-slate-800 border-slate-700 text-slate-400 hover:text-white'
+                  }`}
+                >
+                  <span className="material-symbols-outlined text-xl">account_balance_wallet</span>
+                  <span className="font-bold text-[11px]">Trừ Số Dư Ví</span>
+                  <span className="text-[10px] text-emerald-400">Khả dụng: {liveBalance.toLocaleString('vi-VN')}đ</span>
+                </button>
+
+                <button
+                  type="button"
+                  onClick={() => setTopupPaymentMode('VIETQR')}
+                  className={`p-3 rounded-xl border flex flex-col items-center gap-1 transition cursor-pointer ${
+                    topupPaymentMode === 'VIETQR'
+                      ? 'bg-amber-500/20 border-amber-400 text-amber-300 shadow-md ring-1 ring-amber-400'
+                      : 'bg-slate-800 border-slate-700 text-slate-400 hover:text-white'
+                  }`}
+                >
+                  <span className="material-symbols-outlined text-xl">qr_code_scanner</span>
+                  <span className="font-bold text-[11px]">Nạp Qua VietQR</span>
+                  <span className="text-[10px] text-amber-400">Cộng thêm tiền vào ví</span>
+                </button>
+              </div>
+            </div>
+
+            {topupPaymentMode === 'VIETQR' ? (
+              (() => {
+                const currentNum = Math.max(10000, parseInt(topupAmountInput || '50000', 10) || 50000);
+                const qrUrl = `https://api.vietqr.io/image/970422-0988888888-HjXq5pM.jpg?accountName=CYBER%20ZONE%20GAMING%20LOUNGE&amount=${currentNum}&addInfo=NAP%20${currentStation.id}%20${encodeURIComponent(currentUser?.username || 'khach')}`;
+                return (
+                  <div className="p-3.5 rounded-2xl bg-slate-950 border border-white/10 flex items-center gap-3 font-mono text-xs">
+                    <img
+                      src={qrUrl}
+                      alt="VietQR"
+                      className="w-20 h-20 rounded-xl object-contain bg-white p-1 shrink-0"
+                    />
+                    <div className="text-[11px] space-y-0.5 text-slate-300">
+                      <div className="text-emerald-400 font-bold flex items-center gap-1">
+                        <span className="material-symbols-outlined text-sm">qr_code_scanner</span>
+                        <span>MB BANK • QUÉT MÃ TỰ ĐỘNG CỘNG TIỀN</span>
+                      </div>
+                      <div>STK: <strong className="text-white">0988888888</strong> (CYBER ZONE)</div>
+                      <div className="text-slate-400">
+                        Số tiền nạp: <strong className="text-emerald-400 font-bold">+${currentNum.toLocaleString('vi-VN')}đ</strong>
+                      </div>
+                      <div className="text-slate-400">
+                        Nội dung: <strong className="text-amber-400">NAP ${currentStation.id} ${currentUser?.username || 'khach'}</strong>
+                      </div>
                     </div>
                   </div>
+                );
+              })()
+            ) : (
+              <div className="p-3 rounded-xl bg-slate-950/80 border border-emerald-500/30 text-xs font-mono text-slate-300 space-y-1">
+                <div className="flex justify-between items-center text-slate-400">
+                  <span>Số dư tài khoản hiện tại:</span>
+                  <span className="text-white font-bold">{liveBalance.toLocaleString('vi-VN')}đ</span>
                 </div>
-              );
-            })()}
+                <div className="flex justify-between items-center text-slate-400">
+                  <span>Chi phí gói giờ chơi:</span>
+                  <span className="text-rose-400 font-bold">-{parseInt(topupAmountInput || '0', 10).toLocaleString('vi-VN')}đ</span>
+                </div>
+                <div className="flex justify-between items-center pt-1 border-t border-white/10 text-emerald-400 font-bold">
+                  <span>Số dư sau khi nạp:</span>
+                  <span>{Math.max(0, liveBalance - parseInt(topupAmountInput || '0', 10)).toLocaleString('vi-VN')}đ</span>
+                </div>
+              </div>
+            )}
 
-            
             <div className="space-y-2 pt-1 font-mono">
               <button
                 type="button"
                 onClick={() => handleConfirmTopupOnClient(parseInt(topupAmountInput || '0', 10))}
-                className="w-full py-3.5 bg-gradient-to-r from-amber-400 via-yellow-400 to-amber-500 hover:brightness-110 text-black font-extrabold text-xs uppercase tracking-wider rounded-xl shadow-lg shadow-amber-500/25 transition cursor-pointer font-gaming flex items-center justify-center gap-2"
+                className={`w-full py-3.5 text-black font-extrabold text-xs uppercase tracking-wider rounded-xl shadow-lg transition cursor-pointer font-gaming flex items-center justify-center gap-2 ${
+                  topupPaymentMode === 'WALLET'
+                    ? 'bg-gradient-to-r from-emerald-400 via-teal-400 to-cyan-400 hover:brightness-110 shadow-emerald-500/25'
+                    : 'bg-gradient-to-r from-amber-400 via-yellow-400 to-amber-500 hover:brightness-110 shadow-amber-500/25'
+                }`}
               >
-                <span className="material-symbols-outlined text-sm">payments</span>
+                <span className="material-symbols-outlined text-sm">
+                  {topupPaymentMode === 'WALLET' ? 'check_circle' : 'payments'}
+                </span>
                 <span>
-                  {selectedCombo && selectedCombo.amount === parseInt(topupAmountInput || '0', 10)
-                    ? `XÁC NHẬN NẠP ${selectedCombo.name}: +${parseInt(topupAmountInput || '0', 10).toLocaleString('vi-VN')}Đ`
-                    : `XÁC NHẬN NẠP +${parseInt(topupAmountInput || '0', 10).toLocaleString('vi-VN')}Đ VÀO MÁY`}
+                  {topupPaymentMode === 'WALLET'
+                    ? (liveBalance < parseInt(topupAmountInput || '0', 10)
+                        ? `⚠️ SỐ DƯ KHÔNG ĐỦ (CẦN NẠP THÊM VIETQR)`
+                        : (selectedCombo && selectedCombo.amount === parseInt(topupAmountInput || '0', 10)
+                            ? `XÁC NHẬN MUA ${selectedCombo.name} (TRỪ -${parseInt(topupAmountInput || '0', 10).toLocaleString('vi-VN')}Đ TỪ TÀI KHOẢN)`
+                            : `XÁC NHẬN TRỪ -${parseInt(topupAmountInput || '0', 10).toLocaleString('vi-VN')}Đ TỪ TÀI KHOẢN`))
+                    : `XÁC NHẬN ĐÃ CHUYỂN KHOẢN (+${parseInt(topupAmountInput || '0', 10).toLocaleString('vi-VN')}Đ VÀO VÍ)`}
                 </span>
               </button>
 

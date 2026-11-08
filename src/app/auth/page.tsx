@@ -5,6 +5,7 @@ import Link from 'next/link';
 import {
   getStoredWallet,
   topupWallet,
+  deductWallet,
   resetWalletToDefault,
   calculateRemainingPlayTime,
   getCumulativeTopupAmount,
@@ -42,6 +43,8 @@ export default function AuthAndWallet() {
   const [activeTab, setActiveTab] = useState<'topup' | 'plans' | 'gamerpass' | 'login'>('topup');
   const [amount, setAmount] = useState('200000');
   const [paymentMethod, setPaymentMethod] = useState<'qr' | 'atm' | 'cash'>('qr');
+  const [authTopupMode, setAuthTopupMode] = useState<'BUY_HOURS' | 'DEPOSIT_CASH'>('BUY_HOURS');
+  const [authTopupError, setAuthTopupError] = useState<string | null>(null);
   const [isProcessing, setIsProcessing] = useState(false);
   const [successToast, setSuccessToast] = useState<{
     added: number;
@@ -109,38 +112,86 @@ export default function AuthAndWallet() {
     e.preventDefault();
     const numAmount = parseInt(amount, 10);
     if (isNaN(numAmount) || numAmount <= 0) {
-      alert('Vui lòng nhập số tiền nạp hợp lệ!');
+      alert('Vui lòng nhập số tiền hợp lệ!');
       return;
     }
 
-    setIsProcessing(true);
-
-    setTimeout(() => {
-      const prevTier = getTierByName(wallet.userTier);
-
-      const updated = topupWallet(numAmount, paymentMethod);
-      setWallet(updated);
-      setIsProcessing(false);
-
-      const newTier = getTierByName(updated.userTier);
-
-      if (newTier.minAmount > prevTier.minAmount) {
-        setUpgradeToast({
-          oldTier: prevTier.name,
-          newTier: newTier.name,
-          perks: newTier.perks,
-        });
+    if (authTopupMode === 'BUY_HOURS') {
+      // 1. DEDUCT DIRECTLY FROM ACCOUNT BALANCE
+      if (wallet.balance < numAmount) {
+        const needed = numAmount - wallet.balance;
+        setAuthTopupError(
+          `⚠️ Số dư tài khoản không đủ! Bạn hiện có ${wallet.balance.toLocaleString('vi-VN')}đ, cần ${numAmount.toLocaleString('vi-VN')}đ để nạp giờ chơi. Vui lòng chuyển sang mục "Nạp Thêm Tiền Qua VietQR" bên dưới để nạp thêm tối thiểu +${needed.toLocaleString('vi-VN')}đ!`
+        );
+        return;
       }
 
-      setSuccessToast({
-        added: numAmount,
-        newBalance: updated.balance,
-      });
+      setAuthTopupError(null);
+      setIsProcessing(true);
 
       setTimeout(() => {
-        setSuccessToast(null);
-      }, 5000);
-    }, 600);
+        const deductRes = deductWallet(numAmount, `Nạp giờ chơi máy ${wallet.pcName}`);
+        if (!deductRes.success) {
+          setIsProcessing(false);
+          setAuthTopupError(deductRes.error || 'Số dư ví không đủ!');
+          return;
+        }
+
+        setWallet(deductRes.wallet);
+        setIsProcessing(false);
+
+        if (currentUser) {
+          const updatedUser = {
+            ...currentUser,
+            balance: deductRes.wallet.balance,
+          };
+          setCurrentUser(updatedUser);
+        }
+
+        setSuccessToast({
+          added: 0,
+          newBalance: deductRes.wallet.balance,
+        });
+
+        alert(`🎉 ĐÃ TRỪ -${numAmount.toLocaleString('vi-VN')}Đ TỪ TÀI KHOẢN! Đã quy đổi thành công giờ chơi vào máy ${wallet.pcName}. Số dư ví còn lại: ${deductRes.wallet.balance.toLocaleString('vi-VN')}đ.`);
+
+        setTimeout(() => {
+          setSuccessToast(null);
+        }, 5000);
+      }, 500);
+
+    } else {
+      // 2. DEPOSIT CASH VIA VIETQR / ATM
+      setAuthTopupError(null);
+      setIsProcessing(true);
+
+      setTimeout(() => {
+        const prevTier = getTierByName(wallet.userTier);
+
+        const updated = topupWallet(numAmount, paymentMethod);
+        setWallet(updated);
+        setIsProcessing(false);
+
+        const newTier = getTierByName(updated.userTier);
+
+        if (newTier.minAmount > prevTier.minAmount) {
+          setUpgradeToast({
+            oldTier: prevTier.name,
+            newTier: newTier.name,
+            perks: newTier.perks,
+          });
+        }
+
+        setSuccessToast({
+          added: numAmount,
+          newBalance: updated.balance,
+        });
+
+        setTimeout(() => {
+          setSuccessToast(null);
+        }, 5000);
+      }, 600);
+    }
   };
 
   const handleResetWallet = () => {
@@ -620,9 +671,62 @@ export default function AuthAndWallet() {
 
         {activeTab === 'topup' && (
           <form onSubmit={handleTopup} className="bg-slate-900 border border-slate-800 rounded-2xl p-6 shadow-2xl space-y-4">
+            {authTopupError && (
+              <div className="p-3.5 rounded-xl bg-rose-500/20 border border-rose-500/50 text-rose-300 font-mono text-xs flex items-center gap-2">
+                <span className="material-symbols-outlined text-base">warning</span>
+                <span>{authTopupError}</span>
+              </div>
+            )}
+
+            {/* MODE SWITCHER */}
+            <div className="space-y-1.5 font-mono text-xs">
+              <span className="text-white font-bold block">Phương Thức Thực Hiện:</span>
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
+                <button
+                  type="button"
+                  onClick={() => {
+                    setAuthTopupMode('BUY_HOURS');
+                    setAuthTopupError(null);
+                  }}
+                  className={`p-3 rounded-xl border flex flex-col items-start gap-1 transition cursor-pointer ${
+                    authTopupMode === 'BUY_HOURS'
+                      ? 'bg-emerald-500/20 border-emerald-400 text-emerald-300 shadow-md ring-1 ring-emerald-400'
+                      : 'bg-slate-800/80 border-slate-700 text-slate-400 hover:text-white'
+                  }`}
+                >
+                  <div className="flex items-center gap-1.5 font-bold text-xs">
+                    <span className="material-symbols-outlined text-base">timer</span>
+                    <span>1. Trừ Số Dư Ví Để Nạp Giờ</span>
+                  </div>
+                  <span className="text-[10px] text-emerald-400">Khả dụng: {wallet.balance.toLocaleString('vi-VN')}đ</span>
+                </button>
+
+                <button
+                  type="button"
+                  onClick={() => {
+                    setAuthTopupMode('DEPOSIT_CASH');
+                    setAuthTopupError(null);
+                  }}
+                  className={`p-3 rounded-xl border flex flex-col items-start gap-1 transition cursor-pointer ${
+                    authTopupMode === 'DEPOSIT_CASH'
+                      ? 'bg-amber-500/20 border-amber-400 text-amber-300 shadow-md ring-1 ring-amber-400'
+                      : 'bg-slate-800/80 border-slate-700 text-slate-400 hover:text-white'
+                  }`}
+                >
+                  <div className="flex items-center gap-1.5 font-bold text-xs">
+                    <span className="material-symbols-outlined text-base">qr_code_scanner</span>
+                    <span>2. Nạp Thêm Tiền Qua VietQR</span>
+                  </div>
+                  <span className="text-[10px] text-amber-400">Chuyển khoản cộng tiền vào ví</span>
+                </button>
+              </div>
+            </div>
+
             <div>
               <div className="flex justify-between items-center mb-2">
-                <label className="text-white font-black text-sm">Chọn Mức Tiền Cần Nạp:</label>
+                <label className="text-white font-black text-sm">
+                  {authTopupMode === 'BUY_HOURS' ? 'Chọn Gói Giờ Cần Nạp Vào Máy:' : 'Chọn Mức Tiền Cần Nạp Vào Ví:'}
+                </label>
                 <span className="text-[11px] font-mono text-cyan-400">100% tự động cộng giờ</span>
               </div>
               <div className="grid grid-cols-3 gap-2">
@@ -733,9 +837,19 @@ export default function AuthAndWallet() {
             <button
               type="submit"
               disabled={isProcessing}
-              className="w-full bg-gradient-to-r from-emerald-400 to-cyan-500 hover:from-emerald-300 hover:to-cyan-400 text-black font-black py-3.5 rounded-xl text-sm font-gaming uppercase tracking-wider shadow-[0_0_20px_rgba(16,185,129,0.4)] transition cursor-pointer disabled:opacity-50"
+              className={`w-full text-black font-black py-3.5 rounded-xl text-sm font-gaming uppercase tracking-wider shadow-lg transition cursor-pointer disabled:opacity-50 ${
+                authTopupMode === 'BUY_HOURS'
+                  ? 'bg-gradient-to-r from-emerald-400 to-cyan-500 hover:brightness-110 shadow-emerald-500/30'
+                  : 'bg-gradient-to-r from-amber-400 to-yellow-500 hover:brightness-110 shadow-amber-500/30'
+              }`}
             >
-              {isProcessing ? 'ĐANG XỬ LÝ NẠP TIỀN...' : `XÁC NHẬN NẠP +${parseInt(amount || '0', 10).toLocaleString('vi-VN')}Đ`}
+              {isProcessing
+                ? 'ĐANG XỬ LÝ...'
+                : authTopupMode === 'BUY_HOURS'
+                ? (wallet.balance < parseInt(amount || '0', 10)
+                    ? `⚠️ SỐ DƯ VÍ KHÔNG ĐỦ (CẦN NẠP THÊM TIỀN)`
+                    : `XÁC NHẬN TRỪ -${parseInt(amount || '0', 10).toLocaleString('vi-VN')}Đ TỪ TÀI KHOẢN ĐỂ NẠP GIỜ`)
+                : `XÁC NHẬN ĐÃ CHUYỂN KHOẢN (+${parseInt(amount || '0', 10).toLocaleString('vi-VN')}Đ VÀO VÍ)`}
             </button>
 
             <div className="flex justify-between items-center pt-2 text-[11px] font-mono text-slate-500">

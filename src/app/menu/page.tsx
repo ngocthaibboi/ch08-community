@@ -14,6 +14,7 @@ import {
   calculateRemainingPlayTime,
   WALLET_EVENT_NAME,
 } from '@/lib/walletStore';
+import { getTierByName } from '@/lib/gamerPass';
 
 const INITIAL_MENU_ITEMS: MenuItem[] = [
   {
@@ -771,15 +772,24 @@ function CyberMenuClientContent() {
         </div>
 
         <div className="col-span-12 lg:col-span-4 xl:col-span-3">
-          <CartSidebar
-            cart={cart}
-            pcName={`MÁY ${walletPcName}`}
-            accountBalance={accountBalance}
-            onUpdateQty={handleUpdateQty}
-            onRemoveItem={handleRemoveItem}
-            onClearCart={handleClearCart}
-            onCheckout={handleCheckout}
-          />
+          {(() => {
+            const currentTier = getTierByName(activeUser?.userTier || 'ROOKIE');
+            const fnbDiscountRate = (currentTier.fnbDiscountPercent || 0) / 100;
+            return (
+              <CartSidebar
+                cart={cart}
+                pcName={`MÁY ${walletPcName}`}
+                accountBalance={accountBalance}
+                vipDiscountRate={fnbDiscountRate}
+                tierName={currentTier.name}
+                tierDiscountPercent={currentTier.fnbDiscountPercent}
+                onUpdateQty={handleUpdateQty}
+                onRemoveItem={handleRemoveItem}
+                onClearCart={handleClearCart}
+                onCheckout={handleCheckout}
+              />
+            );
+          })()}
         </div>
       </main>
 

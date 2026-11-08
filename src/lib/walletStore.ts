@@ -298,17 +298,14 @@ export function topupWallet(amount: number, method: string = 'QR'): UserWallet {
 export function deductWallet(
   amount: number,
   description: string = 'Thanh toán đồ ăn F&B'
-): { success: boolean; wallet: UserWallet } {
+): { success: boolean; wallet: UserWallet; error?: string } {
   const current = getStoredWallet();
   if (current.balance < amount) {
-    const refilled: UserWallet = {
-      ...current,
-      balance: 100000,
+    return {
+      success: false,
+      wallet: current,
+      error: `Số dư tài khoản (${current.balance.toLocaleString('vi-VN')}đ) không đủ để thanh toán ${amount.toLocaleString('vi-VN')}đ! Vui lòng nạp thêm tiền vào tài khoản.`,
     };
-    if (typeof window !== 'undefined') {
-      localStorage.setItem(STORAGE_KEY_WALLET, JSON.stringify(refilled));
-    }
-    return { success: true, wallet: refilled };
   }
   const newBalance = current.balance - amount;
   const tx: WalletTransaction = {
@@ -337,6 +334,16 @@ export function deductWallet(
           authUser.balance = newBalance;
           localStorage.setItem('cyber_auth_current_user', JSON.stringify(authUser));
           window.dispatchEvent(new CustomEvent('cyber_auth_updated', { detail: authUser }));
+
+          const rawAccs = localStorage.getItem('cyber_registered_accounts');
+          if (rawAccs) {
+            const accs = JSON.parse(rawAccs);
+            const idx = accs.findIndex((a: any) => a.username.toLowerCase() === authUser.username.toLowerCase());
+            if (idx !== -1) {
+              accs[idx].balance = newBalance;
+              localStorage.setItem('cyber_registered_accounts', JSON.stringify(accs));
+            }
+          }
         }
       }
     } catch {}

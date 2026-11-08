@@ -102,11 +102,12 @@ export const GAMER_PASS_TIERS: Record<TierCode, TierInfo> = {
     icon: 'diamond',
     tagline: 'Mức nạp tích lũy từ 1.500.000đ - ĐẲNG CẤP VIP ELITE (Thời hạn 30 ngày)',
     playDiscountPercent: 35,
-    fnbDiscountPercent: 15,
+    fnbDiscountPercent: 20,
     reserveDurationMinutes: 999,
     freeVipHours: 20,
     perks: [
       'Giảm 35% tất cả các loại phòng máy (VIP, Pro, Stream, Couple, Bida, PS5)',
+      'Giảm 20% toàn bộ thực đơn Bếp F&B (Mì, Cơm, Nước, Snack)',
       'Tặng 20 Giờ chơi VIP cao cấp mỗi tháng',
       'Free Refill nước ngọt có ga không giới hạn suốt ca chơi',
       'Tặng Áo thi đấu Gaming Jersey Cyber Zone in tên độc quyền',

@@ -7,6 +7,8 @@ interface CartSidebarProps {
   cart: CartItem[];
   pcName?: string;
   vipDiscountRate?: number;
+  tierName?: string;
+  tierDiscountPercent?: number;
   accountBalance?: number;
   onUpdateQty: (id: string, delta: number) => void;
   onRemoveItem: (id: string) => void;
@@ -18,6 +20,8 @@ export default function CartSidebar({
   cart,
   pcName = 'MÁY VIP-08',
   vipDiscountRate = 0.05,
+  tierName,
+  tierDiscountPercent,
   accountBalance = 250000,
   onUpdateQty,
   onRemoveItem,
@@ -213,8 +217,18 @@ export default function CartSidebar({
           <span className="text-emerald-400 font-bold font-mono">MIỄN PHÍ</span>
         </div>
         <div className="flex items-center justify-between text-slate-400">
-          <span>Ưu đãi VIP (-5%):</span>
-          <span className="text-emerald-400 font-mono">-{vipDiscount.toLocaleString('vi-VN')}đ</span>
+          <span>
+            {typeof tierDiscountPercent === 'number'
+              ? (tierDiscountPercent > 0
+                  ? `Ưu đãi ${tierName || 'Hội viên'} (-${tierDiscountPercent}%):`
+                  : 'Ưu đãi Thành viên Tân thủ (0%):')
+              : (vipDiscountRate > 0
+                  ? `Ưu đãi ${tierName || 'VIP'} (-${Math.round(vipDiscountRate * 100)}%):`
+                  : 'Ưu đãi Hội viên (0%):')}
+          </span>
+          <span className={vipDiscount > 0 ? "text-emerald-400 font-mono font-bold" : "text-slate-500 font-mono"}>
+            {vipDiscount > 0 ? `-${vipDiscount.toLocaleString('vi-VN')}đ` : '0đ'}
+          </span>
         </div>
         <div className="pt-2 mt-1 border-t border-slate-800 flex items-center justify-between">
           <span className="text-white font-black text-xs uppercase">Tổng thanh toán:</span>

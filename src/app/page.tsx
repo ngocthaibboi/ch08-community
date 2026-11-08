@@ -230,6 +230,81 @@ function getZoneForSeat(seat: BaseSeat): 'STANDARD' | 'PRO' | 'VIP' | 'ARENA' | 
   return 'STANDARD';
 }
 
+const INITIAL_COMMUNITY_REVIEWS = [
+  {
+    id: 'rev-1',
+    author: 'Faker (Lee Sang-hyeok)',
+    verified: true,
+    role: 'Đội trưởng T1 • 5 Lần Vô Địch CKTG LoL',
+    avatar: 'T1',
+    avatarBg: 'bg-red-600/20 text-red-400 border-red-500/40',
+    cardBorder: 'border-red-500/30 hover:border-red-500/60',
+    rating: 5,
+    comment: 'Màn hình OLED 540Hz và ping mạng 1ms ở Cyber Zone cho độ mượt không tưởng, cảm giác thi đấu chuẩn y hệt như trên sân khấu Chung Kết Thế Giới. Thao tác né chiêu và combo Azir, Orianna hoàn toàn không có độ trễ.',
+    timeAgo: 'Tuyển Thủ Huyền Thoại',
+  },
+  {
+    id: 'rev-2',
+    author: 'Độ Mixi (Phùng Thanh Độ)',
+    verified: true,
+    role: 'Tộc Trưởng MixiGaming • Streamer Top 1',
+    avatar: 'ĐM',
+    avatarBg: 'bg-amber-500/20 text-amber-400 border-amber-500/40',
+    cardBorder: 'border-amber-500/30 hover:border-amber-500/60',
+    rating: 5,
+    comment: 'Từ ngày ghé Cyber Zone bắn CS2 với anh em Bộ Tộc, máy mượt quá sấy toàn vào mồm! Phòng Stream Studio cách âm kín đét không sợ ồn, còn quả mì trộn tóp mỡ trứng lòng đào thì ngon nhức cái nách anh em ạ!',
+    timeAgo: 'Top Streamer',
+  },
+  {
+    id: 'rev-3',
+    author: 'Elon Musk',
+    verified: true,
+    role: 'CEO Tesla, SpaceX & xAI',
+    avatar: 'X',
+    avatarBg: 'bg-cyan-500/20 text-cyan-400 border-cyan-500/40',
+    cardBorder: 'border-cyan-500/30 hover:border-cyan-500/60',
+    rating: 5,
+    comment: 'Đây quả thật là công nghệ vượt xa tầm vũ trụ! Hạ tầng mạng 10Gbps Multi-ISP Trunk và hệ thống làm mát tản nhiệt đối lưu ở Cyber Zone đỉnh cao không khác gì kỹ thuật tên lửa Falcon 9 của SpaceX.',
+    timeAgo: 'Công Nghệ Vũ Trụ',
+  },
+  {
+    id: 'rev-4',
+    author: 'Nguyễn Hoàng Long',
+    verified: true,
+    role: 'Hội Viên Kim Cương • 320h Chơi',
+    avatar: 'NL',
+    avatarBg: 'bg-purple-500/20 text-purple-400 border-purple-500/40',
+    cardBorder: 'border-purple-500/30 hover:border-purple-500/60',
+    rating: 5,
+    comment: 'Hệ thống tự động quy đổi giờ chơi khi chuyển từ Standard lên Ultra VIP cực kỳ thông minh và minh bạch! Đổi phòng là đồng hồ nhảy giờ chuẩn đến từng giây, không lo bị tính lố tiền.',
+    timeAgo: '2 ngày trước',
+  },
+  {
+    id: 'rev-5',
+    author: 'Trần Linh Chi',
+    verified: false,
+    role: 'Khách Thường Xuyên Couple Zone',
+    avatar: 'LC',
+    avatarBg: 'bg-pink-500/20 text-pink-400 border-pink-500/30',
+    cardBorder: 'border-pink-500/20 hover:border-pink-500/50',
+    rating: 5,
+    comment: 'Phòng đôi Couple Sanctuary ghế sofa bọc da Nappa siêu êm ngả 180°, tai nghe đôi riêng tư không bị lẫn tiếng ồn bên ngoài. Mình và bạn trai tuần nào cũng tới đây hẹn hò chơi game.',
+    timeAgo: '3 ngày trước',
+  },
+  {
+    id: 'rev-6',
+    author: 'Lê Quốc Tuấn',
+    verified: true,
+    role: 'Đội Trưởng Clan Hades CS2',
+    avatar: 'QT',
+    avatarBg: 'bg-emerald-500/20 text-emerald-400 border-emerald-500/30',
+    cardBorder: 'border-white/10 hover:border-emerald-500/50',
+    rating: 5,
+    comment: 'Bàn phím cơ Wooting 60HE Rapid Trigger 0.1mm và dịch vụ lube switch tại sảnh làm rất kỹ. Cân wire không còn tiếng lọc xọc, cảm giác nhấn phím mượt mà như bơ.',
+    timeAgo: '5 ngày trước',
+  },
+];
+
 export default function Home() {
   const [isMounted, setIsMounted] = useState(false);
   const [currentUser, setCurrentUser] = useState<AuthUser | null>(null);
@@ -297,6 +372,15 @@ export default function Home() {
 
   const [activeCommunityTab, setActiveCommunityTab] = useState<'tournaments' | 'lfg' | 'reviews'>('tournaments');
   const [tournamentSuccessToast, setTournamentSuccessToast] = useState<string | null>(null);
+  const [communityReviews, setCommunityReviews] = useState(INITIAL_COMMUNITY_REVIEWS);
+  const [isReviewModalOpen, setIsReviewModalOpen] = useState(false);
+  const [reviewRating, setReviewRating] = useState(5);
+  const [reviewHoverRating, setReviewHoverRating] = useState(0);
+  const [reviewAuthor, setReviewAuthor] = useState('');
+  const [reviewRole, setReviewRole] = useState('Hội Viên Kim Cương 💎');
+  const [reviewStation, setReviewStation] = useState('Phòng Ultra VIP Suite (VIP-08)');
+  const [reviewComment, setReviewComment] = useState('');
+  const [reviewSuccessToast, setReviewSuccessToast] = useState<string | null>(null);
   const [lfgPosts, setLfgPosts] = useState([
     {
       id: 'lfg-1',
@@ -470,6 +554,15 @@ export default function Home() {
       setServiceStationId(activeStation.stationId);
     }
     setStoredBookings(getStoredBookings());
+    try {
+      const savedRev = localStorage.getItem('CYBER_COMMUNITY_REVIEWS');
+      if (savedRev) {
+        const parsed = JSON.parse(savedRev);
+        if (Array.isArray(parsed) && parsed.length > 0) {
+          setCommunityReviews(parsed);
+        }
+      }
+    } catch {}
     try {
       const savedRates = localStorage.getItem('CYBER_CUSTOM_SEAT_RATES');
       if (savedRates) setCustomSeatRates(JSON.parse(savedRates));
@@ -750,6 +843,62 @@ export default function Home() {
     setServiceSuccessModal(appointment);
     setGearSuccessToast(`🎉 Đặt lịch hẹn dịch vụ "${serviceBookingItem.name}" thành công! Mã hẹn: ${appointment.code}`);
     setTimeout(() => setGearSuccessToast(null), 7000);
+  };
+
+  const handleOpenReviewModal = () => {
+    if (currentUser) {
+      setReviewAuthor(currentUser.fullName || currentUser.username || '');
+      setReviewRole(currentUser.userTier || 'Hội Viên Kim Cương 💎');
+    } else {
+      setReviewAuthor('');
+      setReviewRole('Hội Viên Trải Nghiệm');
+    }
+    setReviewComment('');
+    setReviewRating(5);
+    setIsReviewModalOpen(true);
+  };
+
+  const handleSubmitReview = (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!reviewAuthor.trim() || !reviewComment.trim()) {
+      alert('Vui lòng nhập họ tên và nội dung đánh giá!');
+      return;
+    }
+
+    const initials = reviewAuthor
+      .trim()
+      .split(' ')
+      .map((w) => w[0])
+      .slice(-2)
+      .join('')
+      .toUpperCase() || 'KH';
+
+    const newRev = {
+      id: `rev-${Date.now()}`,
+      author: reviewAuthor.trim(),
+      verified: Boolean(currentUser),
+      role: `${reviewRole} • ${reviewStation}`,
+      avatar: initials,
+      avatarBg: reviewRating >= 5
+        ? 'bg-amber-500/20 text-amber-300 border-amber-400'
+        : 'bg-cyan-500/20 text-cyan-300 border-cyan-400',
+      cardBorder: reviewRating >= 5
+        ? 'border-amber-500/40 hover:border-amber-400'
+        : 'border-cyan-500/40 hover:border-cyan-400',
+      rating: reviewRating,
+      comment: reviewComment.trim(),
+      timeAgo: 'Vừa xong',
+    };
+
+    const updated = [newRev, ...communityReviews];
+    setCommunityReviews(updated);
+    try {
+      localStorage.setItem('CYBER_COMMUNITY_REVIEWS', JSON.stringify(updated));
+    } catch {}
+
+    setIsReviewModalOpen(false);
+    setReviewSuccessToast(`🎉 CẢM ƠN BẠN ĐÃ ĐÁNH GIÁ! Nhận xét ${reviewRating} sao của bạn đã được xuất bản lên Bảng vinh danh Cyber Zone.`);
+    setTimeout(() => setReviewSuccessToast(null), 6000);
   };
 
   const handleRequestGear = (gearName: string) => {
@@ -2359,122 +2508,73 @@ export default function Home() {
 
           {activeCommunityTab === 'reviews' && (
             <div className="space-y-6">
+              {reviewSuccessToast && (
+                <div className="p-3.5 rounded-xl bg-amber-500/20 border border-amber-400 text-amber-300 font-mono text-xs flex items-center gap-2 animate-bounce">
+                  <span className="material-symbols-outlined text-[18px]">verified</span>
+                  <span>{reviewSuccessToast}</span>
+                </div>
+              )}
 
-              <div className="grid grid-cols-1 md:grid-cols-3 gap-6 font-sans">
-
-                <div className="p-6 rounded-2xl bg-slate-900/60 border border-red-500/30 space-y-4 hover:border-red-500/60 transition flex flex-col justify-between">
-                  <div className="text-amber-400 text-xs tracking-widest">★★★★★</div>
-                  <p className="text-xs text-slate-300 italic leading-relaxed">
-                    &ldquo;Màn hình OLED 540Hz và ping mạng 1ms ở Cyber Zone cho độ mượt không tưởng, cảm giác thi đấu chuẩn y hệt như trên sân khấu Chung Kết Thế Giới. Thao tác né chiêu và combo Azir, Orianna hoàn toàn không có độ trễ.&rdquo;
-                  </p>
-                  <div className="flex items-center gap-3 pt-2 border-t border-white/10">
-                    <div className="w-10 h-10 rounded-full bg-red-600/20 text-red-400 font-bold flex items-center justify-center font-mono text-sm border border-red-500/40">
-                      T1
-                    </div>
-                    <div>
-                      <div className="text-xs font-bold text-white flex items-center gap-1.5">
-                        <span>Faker (Lee Sang-hyeok)</span>
-                        <span className="text-cyan-400 text-xs">✓</span>
-                      </div>
-                      <div className="text-[10px] text-red-400 font-mono">
-                        Đội trưởng T1 • 5 Lần Vô Địch CKTG LoL
-                      </div>
-                    </div>
+              {/* HEADER WITH VIẾT ĐÁNH GIÁ BUTTON */}
+              <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 p-4 rounded-2xl bg-slate-900/80 border border-white/10 font-mono text-xs">
+                <div className="space-y-1">
+                  <div className="flex items-center gap-2">
+                    <span className="text-amber-400 font-bold text-sm">⭐ 5.0 / 5.0</span>
+                    <span className="text-slate-400">({communityReviews.length} Đánh giá từ Tuyển Thủ &amp; Hội Viên)</span>
                   </div>
+                  <p className="text-[11px] text-slate-400 font-sans">
+                    Đánh giá minh bạch 100% từ tuyển thủ thi đấu và hội viên trải nghiệm thực tế tại phòng máy.
+                  </p>
                 </div>
 
-                <div className="p-6 rounded-2xl bg-slate-900/60 border border-amber-500/30 space-y-4 hover:border-amber-500/60 transition flex flex-col justify-between">
-                  <div className="text-amber-400 text-xs tracking-widest">★★★★★</div>
-                  <p className="text-xs text-slate-300 italic leading-relaxed">
-                    &ldquo;Từ ngày ghé Cyber Zone bắn CS2 với anh em Bộ Tộc, máy mượt quá sấy toàn vào mồm! Phòng Stream Studio cách âm kín đét không sợ ồn, còn quả mì trộn tóp mỡ trứng lòng đào thì ngon nhức cái nách anh em ạ!&rdquo;
-                  </p>
-                  <div className="flex items-center gap-3 pt-2 border-t border-white/10">
-                    <div className="w-10 h-10 rounded-full bg-amber-500/20 text-amber-400 font-bold flex items-center justify-center font-mono text-sm border border-amber-500/40">
-                      ĐM
-                    </div>
-                    <div>
-                      <div className="text-xs font-bold text-white flex items-center gap-1.5">
-                        <span>Độ Mixi (Phùng Thanh Độ)</span>
-                        <span className="text-cyan-400 text-xs">✓</span>
-                      </div>
-                      <div className="text-[10px] text-amber-400 font-mono">
-                        Tộc Trưởng MixiGaming • Streamer Top 1
-                      </div>
-                    </div>
-                  </div>
-                </div>
-
-                <div className="p-6 rounded-2xl bg-slate-900/60 border border-cyan-500/30 space-y-4 hover:border-cyan-500/60 transition flex flex-col justify-between">
-                  <div className="text-amber-400 text-xs tracking-widest">★★★★★</div>
-                  <p className="text-xs text-slate-300 italic leading-relaxed">
-                    &ldquo;Đây quả thật là công nghệ vượt xa tầm vũ trụ! Hạ tầng mạng 10Gbps Multi-ISP Trunk và hệ thống làm mát tản nhiệt đối lưu ở Cyber Zone đỉnh cao không khác gì kỹ thuật tên lửa Falcon 9 của SpaceX.&rdquo;
-                  </p>
-                  <div className="flex items-center gap-3 pt-2 border-t border-white/10">
-                    <div className="w-10 h-10 rounded-full bg-cyan-500/20 text-cyan-400 font-bold flex items-center justify-center font-mono text-sm border border-cyan-500/40">
-                      X
-                    </div>
-                    <div>
-                      <div className="text-xs font-bold text-white flex items-center gap-1.5">
-                        <span>Elon Musk</span>
-                        <span className="text-cyan-400 text-xs">✓</span>
-                      </div>
-                      <div className="text-[10px] text-cyan-400 font-mono">
-                        CEO Tesla, SpaceX &amp; xAI
-                      </div>
-                    </div>
-                  </div>
-                </div>
+                <button
+                  type="button"
+                  onClick={handleOpenReviewModal}
+                  className="px-4 py-2.5 rounded-xl bg-gradient-to-r from-amber-400 via-yellow-400 to-amber-500 hover:brightness-110 text-slate-950 font-bold text-xs uppercase font-mono shadow-lg shadow-amber-500/25 flex items-center gap-2 transition cursor-pointer shrink-0"
+                >
+                  <span className="material-symbols-outlined text-[16px]">rate_review</span>
+                  <span>Viết Đánh Giá &amp; Chấm Sao</span>
+                </button>
               </div>
 
-              <div className="grid grid-cols-1 md:grid-cols-3 gap-6 font-sans">
-
-                <div className="p-6 rounded-2xl bg-slate-900/40 border border-white/10 space-y-4 flex flex-col justify-between">
-                  <div className="text-amber-400 text-xs tracking-widest">★★★★★</div>
-                  <p className="text-xs text-slate-300 leading-relaxed italic">
-                    &ldquo;Hệ thống tự động quy đổi giờ chơi khi chuyển từ Standard lên Ultra VIP cực kỳ thông minh và minh bạch! Đổi phòng là đồng hồ nhảy giờ chuẩn đến từng giây, không lo bị tính lố tiền.&rdquo;
-                  </p>
-                  <div className="flex items-center gap-3 pt-2 border-t border-white/10 font-mono">
-                    <div className="w-9 h-9 rounded-full bg-emerald-500/20 text-emerald-400 font-bold flex items-center justify-center text-xs">
-                      NL
+              {/* REVIEWS GRID */}
+              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 font-sans">
+                {communityReviews.map((rev) => (
+                  <div
+                    key={rev.id}
+                    className={`p-6 rounded-2xl bg-slate-900/60 border ${rev.cardBorder || 'border-white/10'} space-y-4 hover:border-amber-400/60 transition flex flex-col justify-between`}
+                  >
+                    <div className="flex justify-between items-center">
+                      <div className="text-amber-400 text-sm tracking-widest flex items-center gap-0.5">
+                        {Array.from({ length: 5 }).map((_, idx) => (
+                          <span key={idx} className={idx < rev.rating ? 'text-amber-400 drop-shadow-[0_0_5px_rgba(251,191,36,0.5)]' : 'text-slate-600'}>
+                            ★
+                          </span>
+                        ))}
+                      </div>
+                      <span className="text-[10px] text-slate-500 font-mono">{rev.timeAgo}</span>
                     </div>
-                    <div>
-                      <div className="text-xs font-bold text-white">Nguyễn Hoàng Long</div>
-                      <div className="text-[10px] text-emerald-400">Hội Viên Kim Cương • 320h Chơi</div>
+
+                    <p className="text-xs text-slate-300 italic leading-relaxed">
+                      &ldquo;{rev.comment}&rdquo;
+                    </p>
+
+                    <div className="flex items-center gap-3 pt-2 border-t border-white/10 font-mono">
+                      <div className={`w-10 h-10 rounded-full font-bold flex items-center justify-center text-xs border ${rev.avatarBg || 'bg-slate-800 text-white'}`}>
+                        {rev.avatar}
+                      </div>
+                      <div>
+                        <div className="text-xs font-bold text-white flex items-center gap-1.5">
+                          <span>{rev.author}</span>
+                          {rev.verified && <span className="text-cyan-400 text-xs">✓</span>}
+                        </div>
+                        <div className="text-[10px] text-slate-400 line-clamp-1">
+                          {rev.role}
+                        </div>
+                      </div>
                     </div>
                   </div>
-                </div>
-
-                <div className="p-6 rounded-2xl bg-slate-900/40 border border-pink-500/20 space-y-4 flex flex-col justify-between">
-                  <div className="text-amber-400 text-xs tracking-widest">★★★★★</div>
-                  <p className="text-xs text-slate-300 leading-relaxed italic">
-                    &ldquo;Phòng đôi Couple Sanctuary ghế sofa bọc da Nappa siêu êm ngả 180°, tai nghe đôi riêng tư không bị lẫn tiếng ồn bên ngoài. Mình và bạn trai tuần nào cũng tới đây hẹn hò chơi game.&rdquo;
-                  </p>
-                  <div className="flex items-center gap-3 pt-2 border-t border-white/10 font-mono">
-                    <div className="w-9 h-9 rounded-full bg-pink-500/20 text-pink-400 font-bold flex items-center justify-center text-xs">
-                      LC
-                    </div>
-                    <div>
-                      <div className="text-xs font-bold text-white">Trần Linh Chi</div>
-                      <div className="text-[10px] text-pink-400">Khách Thường Xuyên Couple Zone</div>
-                    </div>
-                  </div>
-                </div>
-
-                <div className="p-6 rounded-2xl bg-slate-900/40 border border-white/10 space-y-4 flex flex-col justify-between">
-                  <div className="text-amber-400 text-xs tracking-widest">★★★★★</div>
-                  <p className="text-xs text-slate-300 leading-relaxed italic">
-                    &ldquo;Bàn phím cơ Wooting 60HE Rapid Trigger 0.1mm và dịch vụ lube switch tại sảnh làm rất kỹ. Cân wire không còn tiếng lọc xọc, cảm giác nhấn phím mượt mà như bơ.&rdquo;
-                  </p>
-                  <div className="flex items-center gap-3 pt-2 border-t border-white/10 font-mono">
-                    <div className="w-9 h-9 rounded-full bg-cyan-500/20 text-cyan-400 font-bold flex items-center justify-center text-xs">
-                      QT
-                    </div>
-                    <div>
-                      <div className="text-xs font-bold text-white">Lê Quốc Tuấn</div>
-                      <div className="text-[10px] text-cyan-400">Đội Trưởng Clan Hades CS2</div>
-                    </div>
-                  </div>
-                </div>
+                ))}
               </div>
 
             </div>
@@ -3216,6 +3316,156 @@ export default function Home() {
                 Đã Hiểu &amp; Đóng
               </button>
             </div>
+          </div>
+        </div>
+      )}
+
+      {/* MODAL ĐÁNH GIÁ & CHẤM SAO FEEDBACK */}
+      {isReviewModalOpen && (
+        <div className="fixed inset-0 z-[80] flex items-center justify-center p-4 bg-black/85 backdrop-blur-md animate-fadeIn">
+          <div className="relative w-full max-w-lg bg-gradient-to-br from-slate-900 via-[#0a1424] to-slate-950 border border-amber-500/40 rounded-3xl p-6 sm:p-8 shadow-2xl space-y-5 text-white max-h-[90vh] overflow-y-auto font-sans">
+            <div className="flex justify-between items-start border-b border-white/10 pb-4">
+              <div>
+                <span className="text-[10px] font-mono text-amber-400 font-bold uppercase tracking-wider flex items-center gap-1.5">
+                  <span className="material-symbols-outlined text-[15px]">rate_review</span>
+                  CYBER ZONE FEEDBACK &amp; REVIEW
+                </span>
+                <h3 className="text-xl sm:text-2xl font-black text-white font-gaming mt-1">
+                  Gửi Đánh Giá &amp; Chấm Sao
+                </h3>
+                <p className="text-xs text-slate-400 mt-0.5">
+                  Ý kiến của bạn giúp Cyber Zone ngày càng hoàn thiện dịch vụ và nâng tầm trải nghiệm!
+                </p>
+              </div>
+              <button
+                type="button"
+                onClick={() => setIsReviewModalOpen(false)}
+                className="w-8 h-8 rounded-xl bg-white/5 hover:bg-white/10 text-slate-400 hover:text-white flex items-center justify-center text-sm transition cursor-pointer"
+              >
+                ✕
+              </button>
+            </div>
+
+            <form onSubmit={handleSubmitReview} className="space-y-4 text-xs">
+              {/* STAR RATING INTERACTION */}
+              <div className="p-4 rounded-2xl bg-slate-950 border border-amber-500/30 text-center space-y-2">
+                <span className="text-[11px] font-mono text-slate-300 font-bold block">
+                  Bạn chấm Cyber Zone bao nhiêu sao? (Bấm để chọn):
+                </span>
+                <div className="flex items-center justify-center gap-2">
+                  {[1, 2, 3, 4, 5].map((star) => (
+                    <button
+                      key={star}
+                      type="button"
+                      onMouseEnter={() => setReviewHoverRating(star)}
+                      onMouseLeave={() => setReviewHoverRating(0)}
+                      onClick={() => setReviewRating(star)}
+                      className="text-3xl transition-transform hover:scale-125 focus:outline-none cursor-pointer"
+                    >
+                      <span
+                        className={
+                          star <= (reviewHoverRating || reviewRating)
+                            ? 'text-amber-400 drop-shadow-[0_0_8px_rgba(251,191,36,0.6)]'
+                            : 'text-slate-700'
+                        }
+                      >
+                        ★
+                      </span>
+                    </button>
+                  ))}
+                </div>
+                <div className="text-[11px] font-mono text-amber-300 font-bold">
+                  {reviewRating === 5 && '⭐⭐⭐⭐⭐ 5/5: Quá tuyệt vời! Máy siêu mượt, đồ ăn ngon, dịch vụ đỉnh cao!'}
+                  {reviewRating === 4 && '⭐⭐⭐⭐ 4/5: Rất tốt! Cấu hình khủng, phòng mát, ping thấp.'}
+                  {reviewRating === 3 && '⭐⭐⭐ 3/5: Hài lòng! Trải nghiệm ổn định và thoải mái.'}
+                  {reviewRating === 2 && '⭐⭐ 2/5: Bình thường, cần cải thiện thêm một số điểm.'}
+                  {reviewRating === 1 && '⭐ 1/5: Chưa hài lòng với trải nghiệm.'}
+                </div>
+              </div>
+
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 font-mono">
+                <div>
+                  <label className="block text-[11px] text-slate-300 mb-1 font-semibold">
+                    Họ &amp; Tên Người Đánh Giá <span className="text-rose-400">*</span>
+                  </label>
+                  <input
+                    type="text"
+                    required
+                    value={reviewAuthor}
+                    onChange={(e) => setReviewAuthor(e.target.value)}
+                    placeholder="VD: Trần Ngọc Thái"
+                    className="w-full px-3 py-2 rounded-xl bg-slate-800 border border-white/10 text-white text-xs focus:border-amber-400 focus:outline-none"
+                  />
+                </div>
+                <div>
+                  <label className="block text-[11px] text-slate-300 mb-1 font-semibold">
+                    Hạng Hội Viên / Danh Hiệu
+                  </label>
+                  <select
+                    value={reviewRole}
+                    onChange={(e) => setReviewRole(e.target.value)}
+                    className="w-full px-3 py-2 rounded-xl bg-slate-800 border border-white/10 text-amber-300 text-xs focus:border-amber-400 focus:outline-none cursor-pointer"
+                  >
+                    <option value="Hội Viên Kim Cương 💎">Hội Viên Kim Cương 💎</option>
+                    <option value="Hội Viên Vàng ⭐">Hội Viên Vàng ⭐</option>
+                    <option value="Hội Viên Bạc 🥈">Hội Viên Bạc 🥈</option>
+                    <option value="Thành Viên Tân Thủ">Thành Viên Tân Thủ</option>
+                    <option value="Tuyển Thủ eSports 🏆">Tuyển Thủ eSports 🏆</option>
+                    <option value="Khách Trải Nghiệm Couple">Khách Trải Nghiệm Couple</option>
+                  </select>
+                </div>
+              </div>
+
+              <div className="font-mono">
+                <label className="block text-[11px] text-slate-300 mb-1 font-semibold">
+                  Khu Máy Hoặc Dịch Vụ Đã Trải Nghiệm:
+                </label>
+                <select
+                  value={reviewStation}
+                  onChange={(e) => setReviewStation(e.target.value)}
+                  className="w-full px-3 py-2 rounded-xl bg-slate-800 border border-white/10 text-white text-xs focus:border-amber-400 focus:outline-none cursor-pointer"
+                >
+                  <option value="Phòng Ultra VIP Suite (VIP-08)">Phòng Ultra VIP Suite (VIP-08) • 240Hz Fast-IPS</option>
+                  <option value="Sàn Đấu Arena 5vs5 (Tầng 1)">Sàn Đấu Arena 5vs5 (Tầng 1) • OLED 540Hz</option>
+                  <option value="Khu Máy FPS Cyber Pro 540Hz">Khu Máy FPS Cyber Pro 540Hz</option>
+                  <option value="Phòng Stream Studio Cách Âm">Phòng Stream Studio Cách Âm (Mic Shure SM7B)</option>
+                  <option value="Phòng Đôi Couple Sanctuary">Phòng Đôi Couple Sanctuary (Sofa Nappa 180°)</option>
+                  <option value="Bếp F&B Đồ Ăn & Nước Uống">Bếp F&B Đồ Ăn &amp; Nước Uống</option>
+                  <option value="Showroom & Trạm Mod Phím Lab">Showroom &amp; Trạm Mod Phím Lab</option>
+                </select>
+              </div>
+
+              <div>
+                <label className="block text-[11px] font-mono text-slate-300 mb-1 font-semibold">
+                  Nội Dung Đánh Giá &amp; Nhận Xét (Bình luận chi tiết) <span className="text-rose-400">*</span>
+                </label>
+                <textarea
+                  required
+                  rows={3}
+                  value={reviewComment}
+                  onChange={(e) => setReviewComment(e.target.value)}
+                  placeholder="Chia sẻ cảm nhận chi tiết của bạn về độ mượt của máy, màn hình, tốc độ mạng, món ăn thức uống, hoặc thái độ phục vụ của nhân viên..."
+                  className="w-full px-3.5 py-2.5 rounded-xl bg-slate-800 border border-white/10 text-white text-xs focus:border-amber-400 focus:outline-none resize-none leading-relaxed font-sans"
+                />
+              </div>
+
+              <div className="flex justify-end gap-3 pt-3 border-t border-white/10 font-mono">
+                <button
+                  type="button"
+                  onClick={() => setIsReviewModalOpen(false)}
+                  className="px-4 py-2.5 rounded-xl bg-slate-800 hover:bg-slate-700 text-white text-xs font-bold transition cursor-pointer"
+                >
+                  Hủy Bỏ
+                </button>
+                <button
+                  type="submit"
+                  className="px-6 py-2.5 rounded-xl bg-gradient-to-r from-amber-400 via-yellow-400 to-amber-500 hover:brightness-110 text-slate-950 font-black text-xs shadow-lg shadow-amber-500/25 flex items-center gap-2 transition cursor-pointer"
+                >
+                  <span className="material-symbols-outlined text-[16px]">send</span>
+                  <span>Gửi Đánh Giá Ngay</span>
+                </button>
+              </div>
+            </form>
           </div>
         </div>
       )}
