@@ -5,6 +5,7 @@ import Link from 'next/link';
 import {
   getStoredWallet,
   WALLET_EVENT_NAME,
+  STORAGE_KEY_WALLET,
   UserWallet,
   INITIAL_WALLET,
   updateStationAndRate,
@@ -24,6 +25,9 @@ import {
   CLIENT_PC_EVENT_NAME,
   AuthUser,
   authenticateUser,
+  getLoggedInUser,
+  loginUser,
+  AUTH_EVENT_NAME,
 } from '@/lib/authStore';
 import AuthModal from '@/components/auth/AuthModal';
 import { createStaffRequest } from '@/lib/staffRequestStore';
@@ -276,7 +280,7 @@ const STATION_PRESETS: StationPreset[] = [
   },
 ];
 
-export interface ComboHourPack {
+interface ComboHourPack {
   id: string;
   name: string;
   amount: number;
@@ -288,7 +292,7 @@ export interface ComboHourPack {
   bonusText: string;
 }
 
-export const COMBO_HOUR_PACKS: ComboHourPack[] = [
+const COMBO_HOUR_PACKS: ComboHourPack[] = [
   {
     id: 'combo-1h',
     name: 'GÓI 1 GIỜ CHƠI',
@@ -343,11 +347,20 @@ function formatSecondsToHMS(totalSecs: number): string {
   return `${String(h).padStart(2, '0')}:${String(m).padStart(2, '0')}:${String(s).padStart(2, '0')}`;
 }
 
+const MarqueeTag = 'marquee' as any;
+
+
+
 export default function ClientPcPage() {
   const [currentUser, setCurrentUser] = useState<AuthUser | null>(null);
   const [wallet, setWallet] = useState<UserWallet>(INITIAL_WALLET);
 
-  const [isLocked, setIsLocked] = useState(true);
+  const [isLocked, setIsLocked] = useState<boolean>(() => {
+    if (typeof window === 'undefined') return false;
+    const explicitlyLocked = localStorage.getItem('CYBER_CLIENT_PC_EXPLICITLY_LOCKED');
+    if (explicitlyLocked === 'true') return true;
+    return false;
+  });
   const [isAuthModalOpen, setIsAuthModalOpen] = useState(false);
 
   const [currentStation, setCurrentStation] = useState<StationPreset>(STATION_PRESETS[0]);
@@ -378,12 +391,63 @@ export default function ClientPcPage() {
   const [upgradePerks, setUpgradePerks] = useState<string[]>([]);
   const [activeBroadcast, setActiveBroadcast] = useState<string | null>(null);
   const [directAdminMessage, setDirectAdminMessage] = useState<string | null>(null);
+  const [isRebooting, setIsRebooting] = useState(false);
+
   const [isFullscreen, setIsFullscreen] = useState(false);
+    const isOrderDismissed = (orderNumber?: number) => {
+    if (!orderNumber || typeof window === 'undefined') return false;
+    try {
+      const dismissed = JSON.parse(localStorage.getItem('CYBER_KDS_DISMISSED_ORDERS') || '[]');
+      return Array.isArray(dismissed) && dismissed.includes(orderNumber);
+    } catch {
+      return false;
+    }
+  };
+
+  const handleAcknowledgeFoodNotice = () => {
+    if (kdsFoodNotice?.orderNumber && typeof window !== 'undefined') {
+      try {
+        const dismissed = JSON.parse(localStorage.getItem('CYBER_KDS_DISMISSED_ORDERS') || '[]');
+        if (Array.isArray(dismissed) && !dismissed.includes(kdsFoodNotice.orderNumber)) {
+          dismissed.push(kdsFoodNotice.orderNumber);
+          localStorage.setItem('CYBER_KDS_DISMISSED_ORDERS', JSON.stringify(dismissed));
+        }
+      } catch {}
+    }
+    setKdsFoodNotice(null);
+    if (typeof window !== 'undefined') {
+      try {
+        localStorage.removeItem('cyber_kds_food_ready');
+      } catch {}
+    }
+  };
+
   const [kdsFoodNotice, setKdsFoodNotice] = useState<{
     orderNumber: number | string;
     pcName: string;
     items?: any[];
   } | null>(null);
+
+  const [activePlayingGame, setActivePlayingGame] = useState<string | null>(null);
+
+  useEffect(() => {
+    const checkActiveGame = () => {
+      try {
+        const saved = localStorage.getItem('CYBER_ACTIVE_PLAYING_GAME');
+        if (saved) {
+          const parsed = JSON.parse(saved);
+          setActivePlayingGame(parsed?.gameName || null);
+        } else {
+          setActivePlayingGame(null);
+        }
+      } catch {
+        setActivePlayingGame(null);
+      }
+    };
+    checkActiveGame();
+    window.addEventListener('storage', checkActiveGame);
+    return () => window.removeEventListener('storage', checkActiveGame);
+  }, []);
 
   const playDingSound = () => {
     try {
@@ -435,16 +499,31 @@ export default function ClientPcPage() {
 
   useEffect(() => {
     const handleKdsReady = (detail: any) => {
-      if (!detail) return;
-      if (!detail.pcName || detail.pcName === currentStation.id || currentStation.id === 'VIP-08' || detail.pcName.includes('VIP')) {
-        playDingSound();
-        setKdsFoodNotice({
-          orderNumber: detail.orderNumber,
-          pcName: detail.pcName,
-          items: detail.items,
-        });
-      }
+      if (!detail || !detail.orderNumber) return;
+      if (isOrderDismissed(detail.orderNumber)) return;
+      playDingSound();
+      setKdsFoodNotice({
+        orderNumber: detail.orderNumber,
+        pcName: detail.pcName || currentStation.id,
+        items: detail.items || [],
+      });
     };
+
+    try {
+      const rawKds = localStorage.getItem('cyber_kds_food_ready');
+      if (rawKds) {
+        const parsed = JSON.parse(rawKds);
+        if (parsed.orderNumber && isOrderDismissed(parsed.orderNumber)) {
+          localStorage.removeItem('cyber_kds_food_ready');
+        } else if (Date.now() - (parsed.timestamp || 0) < 600000) {
+          setKdsFoodNotice({
+            orderNumber: parsed.orderNumber,
+            pcName: parsed.pcName || currentStation.id,
+            items: parsed.items || [],
+          });
+        }
+      }
+    } catch {}
 
     const handleCustomKdsEvent = (e: any) => {
       handleKdsReady(e.detail);
@@ -469,79 +548,224 @@ export default function ClientPcPage() {
   }, [currentStation.id]);
 
   useEffect(() => {
-    // ══════════ MÔI TRƯỜNG MÁY TRẠM ĐỘC LẬP (TÁCH BIỆT HOÀN TOÀN VỚI WEB TRANG CHỦ) ══════════
-    // Chỉ đọc phiên đăng nhập riêng của máy trạm. Đăng nhập trang chủ sẽ KHÔNG tự động mở máy trạm!
-    const stationUser = getClientPcSession();
-    const storedWallet = getStoredWallet();
+    const isExplicitlyLocked = typeof window !== 'undefined' && (
+      localStorage.getItem('CYBER_CLIENT_PC_EXPLICITLY_LOCKED') === 'true' ||
+      localStorage.getItem('CYBER_CLIENT_PC_UNLOCKED') === 'false'
+    );
+    const activeUser = getLoggedInUser() || getClientPcSession();
 
-    setWallet(storedWallet);
-    setCurrentUser(stationUser);
+    if (isExplicitlyLocked || !activeUser) {
+      setIsLocked(true);
+      setCurrentUser(null);
+      setRemainingSeconds(0);
+      return;
+    }
+
+    let storedWallet = getStoredWallet();
 
     const matched = STATION_PRESETS.find((s) => s.id === storedWallet.pcName) || STATION_PRESETS[0];
     setCurrentStation(matched);
-    const initialRate = storedWallet.hourlyRate || matched.hourlyRate;
+    const initialRate = storedWallet.hourlyRate || matched.hourlyRate || 22000;
     setCustomRate(initialRate);
     setNewRateInput(String(initialRate));
 
-    const isUnlocked = !!(stationUser && stationUser.balance > 0 && initialRate > 0);
-    if (isUnlocked) {
-      const secs = Math.floor((stationUser.balance / initialRate) * 3600);
-      setRemainingSeconds(secs);
-      setIsLocked(false);
-    } else {
-      setIsLocked(true);
-      setRemainingSeconds(0);
+    saveClientPcSession(activeUser);
+    setCurrentUser(activeUser);
+
+    storedWallet = {
+      ...storedWallet,
+      userName: activeUser.fullName,
+      userTier: activeUser.userTier,
+      tierExpiresAt: activeUser.tierExpiresAt,
+      balance: activeUser.balance,
+    };
+    if (typeof window !== 'undefined') {
+      localStorage.setItem(STORAGE_KEY_WALLET, JSON.stringify(storedWallet));
+    }
+    setWallet(storedWallet);
+
+    const secs = Math.max(1800, Math.floor((activeUser.balance / initialRate) * 3600));
+    setRemainingSeconds(secs);
+    setIsLocked(false);
+    if (typeof window !== 'undefined') {
+      localStorage.setItem('CYBER_CLIENT_PC_UNLOCKED', 'true');
     }
 
-    // ĐỒNG BỘ TRẠM MÁY HOẠT ĐỘNG SANG SERVER VÀ TRANG CHỦ
     saveActiveClientStation({
       stationId: matched.id,
       stationName: matched.name,
       zone: matched.zone,
       hourlyRate: initialRate,
-      occupantName: stationUser ? stationUser.fullName : (currentUser?.fullName || 'Trần Ngọc Thái'),
-      occupantTier: stationUser ? stationUser.userTier : 'TÂN THỦ (ROOKIE)',
-      balance: stationUser ? stationUser.balance : storedWallet.balance,
-      isOnline: isUnlocked,
+      occupantName: activeUser.fullName,
+      occupantTier: activeUser.userTier,
+      balance: activeUser.balance,
+      isOnline: true,
     });
 
-    const handleStationSync = () => {
-      const sUser = getClientPcSession();
-      setCurrentUser(sUser);
-      if (!sUser) {
+    const handleStationSync = (e?: any) => {
+      const isExplicitlyLocked = typeof window !== 'undefined' && (
+        localStorage.getItem('CYBER_CLIENT_PC_EXPLICITLY_LOCKED') === 'true' ||
+        localStorage.getItem('CYBER_CLIENT_PC_UNLOCKED') === 'false'
+      );
+      const sUser = e?.detail || getLoggedInUser() || getClientPcSession();
+      if (isExplicitlyLocked || !sUser) {
         setIsLocked(true);
+        setCurrentUser(null);
         setRemainingSeconds(0);
+      } else {
+        setCurrentUser(sUser);
+        setIsLocked(false);
+        const w = getStoredWallet();
+        setWallet(w);
+        const activeRate = customRate > 0 ? customRate : currentStation.hourlyRate;
+        const calcSeconds = activeRate > 0 ? Math.floor((sUser.balance / activeRate) * 3600) : 0;
+        setRemainingSeconds(calcSeconds);
       }
     };
 
     window.addEventListener(CLIENT_PC_EVENT_NAME, handleStationSync);
+    window.addEventListener(AUTH_EVENT_NAME, handleStationSync);
 
     const handleBroadcast = (e: any) => {
-      setActiveBroadcast(e.detail || null);
+      setActiveBroadcast(e.detail?.message || e.detail || null);
+      playDingSound();
     };
 
     const handleDirectMessage = (e: any) => {
-      if (!e.detail?.seatId || e.detail?.seatId === currentStation.id || e.detail?.seatId === 'VIP-08') {
-        setDirectAdminMessage(e.detail?.message || 'Có tin nhắn mới từ quầy lễ tân!');
+      const detail = e.detail;
+      const isTarget = !detail?.targetSeatId || detail?.targetSeatId === currentStation.id || detail?.targetSeatId === 'ALL' || detail?.seatId === currentStation.id;
+      if (isTarget) {
+        setDirectAdminMessage(detail?.message || 'Có tin nhắn mới từ quầy lễ tân!');
+        playDingSound();
       }
     };
 
-    const handleRemoteLock = (e: any) => {
-      if (!e.detail?.seatId || e.detail?.seatId === currentStation.id || e.detail?.seatId === 'VIP-08') {
-        setIsLocked(true);
-        setAlertSuccess('⚠️ MÁY ĐÃ ĐƯỢC KHÓA TỪ XA BỞI QUẦY LỄ TÂN SERVER!');
+    const handleRemoteReboot = (e: any) => {
+      const detail = e.detail;
+      const isTarget = !detail?.targetSeatId || detail?.targetSeatId === currentStation.id || detail?.targetSeatId === 'ALL' || detail?.seatId === currentStation.id;
+      if (isTarget) {
+        setIsRebooting(true);
+        setAlertSuccess('🔄 ĐANG KHỞI ĐỘNG LẠI MÁY THEO LỆNH TỪ SERVER...');
+        playDingSound();
+        setTimeout(() => {
+          setIsRebooting(false);
+          setIsLocked(true);
+          localStorage.removeItem('CYBER_CLIENT_PC_UNLOCKED');
+          setAlertSuccess('✅ MÁY ĐÃ KHỞI ĐỘNG LẠI THÀNH CÔNG! VUI LÒNG ĐĂNG NHẬP LẠI.');
+        }, 3000);
+      }
+    };
+
+    const handleLocalWalletUpdate = () => {
+      const updatedWallet = getStoredWallet();
+      setWallet(updatedWallet);
+      const activeRate = customRate > 0 ? customRate : currentStation.hourlyRate;
+      const calcSeconds = activeRate > 0 ? Math.floor((updatedWallet.balance / activeRate) * 3600) : 0;
+      setRemainingSeconds(calcSeconds);
+      if (calcSeconds > 0 && isLocked) {
+        setIsLocked(false);
+        localStorage.setItem('CYBER_CLIENT_PC_UNLOCKED', 'true');
+        setAlertSuccess('🎉 QUẦY LỄ TÂN ĐÃ NẠP TIỀN CHO BẠN! Máy đã tự động mở khóa.');
+        playDingSound();
+      }
+    };
+
+
+
+    const handleStorageCrossTab = (e: StorageEvent) => {
+      if (!e.newValue) return;
+
+
+
+      if (e.key === 'CYBER_REMOTE_COMMAND') {
+        try {
+          const cmd = JSON.parse(e.newValue);
+          const isTarget = !cmd.targetSeatId || cmd.targetSeatId === currentStation.id || cmd.targetSeatId === 'ALL';
+          if (isTarget && cmd.action === 'REBOOT') {
+            setIsRebooting(true);
+            setAlertSuccess('🔄 ĐANG KHỞI ĐỘNG LẠI MÁY THEO LỆNH TỪ SERVER...');
+            playDingSound();
+            setTimeout(() => {
+              setIsRebooting(false);
+              setIsLocked(true);
+              localStorage.removeItem('CYBER_CLIENT_PC_UNLOCKED');
+              setAlertSuccess('✅ MÁY ĐÃ KHỞI ĐỘNG LẠI THÀNH CÔNG! VUI LÒNG ĐĂNG NHẬP LẠI.');
+            }, 3000);
+          }
+        } catch {}
+      }
+
+      if (e.key === 'CYBER_ACTIVE_BROADCAST') {
+        try {
+          const bcast = JSON.parse(e.newValue);
+          if (bcast.message) {
+            setActiveBroadcast(bcast.message);
+            playDingSound();
+          }
+        } catch {
+          setActiveBroadcast(e.newValue);
+          playDingSound();
+        }
+      }
+
+      if (e.key === 'CYBER_DIRECT_MESSAGE') {
+        try {
+          const dm = JSON.parse(e.newValue);
+          const isTarget = !dm.targetSeatId || dm.targetSeatId === currentStation.id || dm.targetSeatId === 'ALL';
+          if (isTarget) {
+            setDirectAdminMessage(dm.message || 'Có tin nhắn mới từ quầy lễ tân!');
+            playDingSound();
+          }
+        } catch {}
+      }
+
+      if (e.key === STORAGE_KEY_WALLET) {
+        try {
+          const updatedWallet = getStoredWallet();
+          setWallet(updatedWallet);
+          const activeRate = customRate > 0 ? customRate : currentStation.hourlyRate;
+          const calcSeconds = activeRate > 0 ? Math.floor((updatedWallet.balance / activeRate) * 3600) : 0;
+          setRemainingSeconds(calcSeconds);
+          if (calcSeconds > 0 && isLocked) {
+            setIsLocked(false);
+            localStorage.setItem('CYBER_CLIENT_PC_UNLOCKED', 'true');
+            setAlertSuccess('🎉 QUẦY LỄ TÂN ĐÃ NẠP TIỀN CHO BẠN! Máy đã tự động mở khóa.');
+            playDingSound();
+          } else if (calcSeconds > 0) {
+            setAlertSuccess('🎉 TÀI KHOẢN VỪA ĐƯỢC NẠP THÊM TIỀN TẠI QUẦY!');
+            playDingSound();
+          }
+        } catch {}
+      }
+
+      if (e.key === 'CYBER_CUSTOM_SEAT_RATES') {
+        try {
+          const rates = JSON.parse(e.newValue);
+          if (rates && rates[currentStation.id]) {
+            const newRate = Number(rates[currentStation.id]);
+            if (!isNaN(newRate) && newRate > 0) {
+              setCustomRate(newRate);
+              const calcSeconds = Math.floor((wallet.balance / newRate) * 3600);
+              setRemainingSeconds(calcSeconds);
+            }
+          }
+        } catch {}
       }
     };
 
     window.addEventListener('cyber_broadcast_alert', handleBroadcast);
     window.addEventListener('cyber_client_direct_message', handleDirectMessage);
-    window.addEventListener('cyber_remote_lock_command', handleRemoteLock);
+    window.addEventListener('cyber_remote_reboot_command', handleRemoteReboot);
+        window.addEventListener(WALLET_EVENT_NAME, handleLocalWalletUpdate);
+    window.addEventListener('storage', handleStorageCrossTab);
 
     return () => {
       window.removeEventListener(CLIENT_PC_EVENT_NAME, handleStationSync);
       window.removeEventListener('cyber_broadcast_alert', handleBroadcast);
       window.removeEventListener('cyber_client_direct_message', handleDirectMessage);
-      window.removeEventListener('cyber_remote_lock_command', handleRemoteLock);
+      window.removeEventListener('cyber_remote_reboot_command', handleRemoteReboot);
+            window.removeEventListener(WALLET_EVENT_NAME, handleLocalWalletUpdate);
+      window.removeEventListener('storage', handleStorageCrossTab);
     };
   }, []);
 
@@ -596,15 +820,13 @@ export default function ClientPcPage() {
     }
 
     const userObj = authRes.user!;
-    // Lưu phiên máy trạm riêng (không ảnh hưởng và không can thiệp phiên Web Trang chủ)
-    saveClientPcSession(userObj);
+    loginUser(userObj);
     setCurrentUser(userObj);
 
     const effectiveRate = customRate > 0 ? customRate : currentStation.hourlyRate;
     updateStationAndRate(currentStation.id, currentStation.zone, effectiveRate);
 
-    const actualBalance = userObj.balance;
-    const secs = Math.floor((actualBalance / effectiveRate) * 3600);
+    const secs = Math.floor((userObj.balance / effectiveRate) * 3600);
     setRemainingSeconds(secs);
     setIsLocked(false);
     setLoginError(null);
@@ -621,7 +843,7 @@ export default function ClientPcPage() {
     }
 
     const userObj = authRes.user!;
-    saveClientPcSession(userObj);
+    loginUser(userObj);
     setCurrentUser(userObj);
 
     const effectiveRate = customRate > 0 ? customRate : currentStation.hourlyRate;
@@ -650,6 +872,10 @@ export default function ClientPcPage() {
       setCurrentUser(null);
       setIsLocked(true);
       setRemainingSeconds(0);
+      if (typeof window !== 'undefined') {
+        localStorage.setItem('CYBER_CLIENT_PC_EXPLICITLY_LOCKED', 'true');
+        localStorage.setItem('CYBER_CLIENT_PC_UNLOCKED', 'false');
+      }
       saveActiveClientStation({
         stationId: currentStation.id,
         isOnline: false,
@@ -774,7 +1000,6 @@ export default function ClientPcPage() {
     setWallet(updatedWallet);
     setShowStationModal(false);
 
-    // Đồng bộ sang Server và Trang chủ ngay lập tức khi đổi phòng máy
     saveActiveClientStation({
       stationId: preset.id,
       stationName: preset.name,
@@ -818,6 +1043,8 @@ export default function ClientPcPage() {
     );
     setTimeout(() => setAlertSuccess(null), 6000);
   };
+
+
 
   const handleSimulatePlayTime = (minutes: number) => {
     const deductSeconds = minutes * 60;
@@ -869,7 +1096,17 @@ export default function ClientPcPage() {
     }
   };
 
-  const liveBalance = Math.max(0, Math.round((remainingSeconds / 3600) * (customRate || currentStation.hourlyRate)));
+  const liveBalance = Math.max(0, wallet.balance > 0 ? wallet.balance : Math.round((remainingSeconds / 3600) * (customRate || currentStation.hourlyRate)));
+
+  if (isRebooting) {
+    return (
+      <div className="fixed inset-0 z-[100] flex flex-col items-center justify-center bg-black text-white p-6 font-mono text-center space-y-4 animate-fadeIn select-none">
+        <div className="w-16 h-16 border-4 border-amber-400 border-t-transparent rounded-full animate-spin mx-auto"></div>
+        <div className="text-xl font-bold text-amber-400">🔄 ĐANG KHỞI ĐỘNG LẠI MÁY TRẠM (PXE BOOTROM)...</div>
+        <p className="text-xs text-slate-400 max-w-md">Lệnh điều khiển từ Quầy Lễ Tân Server. Hệ thống đang giải phóng RAM và tải lại phiên máy trạm mới.</p>
+      </div>
+    );
+  }
 
   if (isLocked) {
     return (
@@ -877,6 +1114,53 @@ export default function ClientPcPage() {
 
         <div className="absolute inset-0 bg-[radial-gradient(ellipse_at_top,_var(--tw-gradient-stops))] from-cyan-950/40 via-slate-950 to-black pointer-events-none"></div>
         <div className="absolute top-1/4 left-1/2 -translate-x-1/2 w-96 h-96 bg-emerald-500/10 rounded-full blur-3xl pointer-events-none"></div>
+
+        {activeBroadcast && (
+          <div className="relative z-20 w-full mb-3 bg-gradient-to-r from-purple-700 via-pink-600 to-indigo-700 text-white py-2 px-3 rounded-xl shadow-2xl overflow-hidden flex items-center border border-white/30 animate-fadeIn select-none">
+            <span className="shrink-0 flex items-center gap-1.5 font-gaming font-black text-xs uppercase bg-black/50 px-2 py-0.5 rounded text-amber-300 mr-2 border border-amber-400/50">
+              <span className="material-symbols-outlined text-sm animate-pulse">campaign</span>
+              <span>LOA:</span>
+            </span>
+            <div className="flex-1 overflow-hidden whitespace-nowrap">
+              <MarqueeTag scrollamount="7" className="text-xs font-mono font-bold tracking-wider">
+                🔥 {activeBroadcast} &nbsp;&nbsp;&nbsp;&nbsp; ★ &nbsp;&nbsp;&nbsp;&nbsp; 🔥 {activeBroadcast}
+              </MarqueeTag>
+            </div>
+            <button onClick={() => setActiveBroadcast(null)} className="ml-2 text-white/80 hover:text-white px-2 cursor-pointer font-bold">✕</button>
+          </div>
+        )}
+
+        {kdsFoodNotice && (
+          <div className="relative z-20 w-full mb-3 bg-gradient-to-r from-emerald-500 via-teal-500 to-emerald-400 text-slate-950 py-3 px-4 rounded-xl shadow-[0_0_35px_rgba(16,185,129,0.6)] flex items-center justify-between font-mono text-xs font-black animate-bounce border-2 border-white">
+            <div className="flex items-center gap-2.5">
+              <span className="material-symbols-outlined text-2xl text-slate-950 animate-spin">soup_kitchen</span>
+              <div>
+                <span className="text-xs uppercase font-gaming block tracking-wide">
+                  🔔 BẾP TRẠM KDS BÁO GIAO: ĐƠN #{kdsFoodNotice.orderNumber}
+                </span>
+                <span className="text-[11px] font-sans font-bold text-slate-950">
+                  Món ăn của bạn đã làm xong và đang được bưng tới máy {kdsFoodNotice.pcName || currentStation.id}!
+                </span>
+              </div>
+            </div>
+            <button
+              onClick={handleAcknowledgeFoodNotice}
+              className="bg-slate-950 text-white px-3 py-1 rounded text-xs uppercase font-bold cursor-pointer"
+            >
+              ĐÃ NHẬN ✓
+            </button>
+          </div>
+        )}
+
+        {directAdminMessage && (
+          <div className="relative z-20 w-full mb-3 bg-amber-400 text-slate-950 py-2.5 px-4 rounded-xl shadow-2xl flex items-center justify-between font-mono text-xs font-bold animate-bounce">
+            <span className="flex items-center gap-2">
+              <span className="material-symbols-outlined text-lg">sms</span>
+              <span>💬 LỄ TÂN NHẮN RIÊNG: &quot;{directAdminMessage}&quot;</span>
+            </span>
+            <button onClick={() => setDirectAdminMessage(null)} className="bg-slate-950 text-white px-3 py-1 rounded-lg text-[10px] cursor-pointer font-bold">ĐÃ ĐỌC</button>
+          </div>
+        )}
 
         <div className="relative z-10 max-w-6xl mx-auto w-full flex justify-between items-center pb-4 border-b border-white/10">
           <div className="flex items-center gap-3">
@@ -985,22 +1269,30 @@ export default function ClientPcPage() {
                 <span>TÀI KHOẢN TRẢI NGHIỆM CÓ SẴN:</span>
                 <span className="text-emerald-400">MK: 123</span>
               </div>
-              <div className="grid grid-cols-2 gap-2">
+              <div className="grid grid-cols-3 gap-2">
                 <button
                   type="button"
                   onClick={() => handleQuickDemoLogin('admin1', '123')}
-                  className="py-2.5 px-2 bg-slate-800 hover:bg-slate-700 text-cyan-300 border border-cyan-500/40 font-bold rounded-xl transition text-xs font-mono flex items-center justify-center gap-1.5 cursor-pointer shadow-md"
+                  className="py-2 px-1 bg-slate-800 hover:bg-slate-700 text-cyan-300 border border-cyan-500/40 font-bold rounded-xl transition text-[11px] font-mono flex items-center justify-center gap-1 cursor-pointer shadow-md"
                 >
-                  <span className="material-symbols-outlined text-[15px]">verified</span>
-                  <span>🥈 admin1 (200k)</span>
+                  <span className="material-symbols-outlined text-[14px]">verified</span>
+                  <span>admin1 (200k)</span>
                 </button>
                 <button
                   type="button"
                   onClick={() => handleQuickDemoLogin('admin2', '123')}
-                  className="py-2.5 px-2 bg-slate-800 hover:bg-slate-700 text-purple-300 border border-purple-500/40 font-bold rounded-xl transition text-xs font-mono flex items-center justify-center gap-1.5 cursor-pointer shadow-md"
+                  className="py-2 px-1 bg-slate-800 hover:bg-slate-700 text-purple-300 border border-purple-500/40 font-bold rounded-xl transition text-[11px] font-mono flex items-center justify-center gap-1 cursor-pointer shadow-md"
                 >
-                  <span className="material-symbols-outlined text-[15px]">diamond</span>
-                  <span>💎 admin2 (500k)</span>
+                  <span className="material-symbols-outlined text-[14px]">diamond</span>
+                  <span>admin2 (500k)</span>
+                </button>
+                <button
+                  type="button"
+                  onClick={() => handleQuickDemoLogin('gamer01', '123')}
+                  className="py-2 px-1 bg-slate-800 hover:bg-slate-700 text-emerald-300 border border-emerald-500/40 font-bold rounded-xl transition text-[11px] font-mono flex items-center justify-center gap-1 cursor-pointer shadow-md"
+                >
+                  <span className="material-symbols-outlined text-[14px]">sports_esports</span>
+                  <span>gamer01 (50k)</span>
                 </button>
               </div>
             </div>
@@ -1091,19 +1383,23 @@ export default function ClientPcPage() {
       <div className={`absolute top-0 left-1/2 -translate-x-1/2 w-full max-w-5xl h-80 ${currentStation.theme.glowAura} rounded-full blur-3xl pointer-events-none opacity-30 transition-all duration-700`}></div>
 
       {activeBroadcast && (
-        <div className="bg-gradient-to-r from-purple-600 via-pink-600 to-cyan-500 text-white py-2 px-4 shadow-xl flex items-center justify-between animate-fadeIn z-50">
-          <div className="max-w-7xl mx-auto w-full flex items-center justify-between gap-3 text-xs font-mono font-bold">
-            <span className="flex items-center gap-2">
-              <span className="material-symbols-outlined text-base animate-pulse">campaign</span>
-              <span>📢 THÔNG BÁO TỪ QUẦY: {activeBroadcast}</span>
-            </span>
-            <button
-              onClick={() => setActiveBroadcast(null)}
-              className="text-white/80 hover:text-white px-2 cursor-pointer font-bold"
-            >
-              ✕
-            </button>
+        <div className="bg-gradient-to-r from-purple-700 via-pink-600 to-indigo-700 text-white py-2 px-3 shadow-2xl z-50 overflow-hidden flex items-center border-b-2 border-white/30 animate-fadeIn select-none">
+          <span className="shrink-0 flex items-center gap-1.5 font-gaming font-black text-xs uppercase bg-black/50 px-2.5 py-1 rounded text-amber-300 mr-2 border border-amber-400/50">
+            <span className="material-symbols-outlined text-sm animate-pulse">campaign</span>
+            <span>LOA PHÒNG MÁY:</span>
+          </span>
+          <div className="flex-1 overflow-hidden whitespace-nowrap">
+            <MarqueeTag scrollamount="7" className="text-xs font-mono font-bold tracking-wider">
+              🔥 {activeBroadcast} &nbsp;&nbsp;&nbsp;&nbsp; ★ &nbsp;&nbsp;&nbsp;&nbsp; 🔥 {activeBroadcast}
+            </MarqueeTag>
           </div>
+          <button
+            onClick={() => setActiveBroadcast(null)}
+            className="ml-2 shrink-0 bg-black/40 hover:bg-black/70 text-white/90 hover:text-white px-2 py-0.5 rounded text-xs font-bold cursor-pointer transition"
+            title="Đóng thông báo"
+          >
+            ✕
+          </button>
         </div>
       )}
 
@@ -1139,7 +1435,7 @@ export default function ClientPcPage() {
               </div>
             </div>
             <button
-              onClick={() => setKdsFoodNotice(null)}
+              onClick={handleAcknowledgeFoodNotice}
               className="bg-slate-950 hover:bg-slate-900 text-white px-3.5 py-1.5 rounded-lg text-xs uppercase cursor-pointer shadow font-mono font-bold"
             >
               ĐÃ NHẬN MÓN ✓
@@ -1188,7 +1484,7 @@ export default function ClientPcPage() {
             </div>
           </div>
 
-          {/* ĐIỀU HƯỚNG TRANG CHỦ & CHUYỂN PHÂN HỆ HỆ THỐNG (THAY CHO THANH TRÊN) */}
+          
           <div className="flex items-center gap-1.5 font-mono">
             <Link
               href="/"
@@ -1242,10 +1538,14 @@ export default function ClientPcPage() {
 
             <Link
               href="/games"
-              className="px-3 py-1.5 rounded-xl bg-slate-800 hover:bg-slate-700 text-cyan-300 hover:text-white border border-cyan-500/40 text-xs font-mono font-bold transition flex items-center gap-1.5 cursor-pointer"
+              className={`px-3 py-1.5 rounded-xl text-xs font-mono font-bold transition flex items-center gap-1.5 cursor-pointer ${
+                activePlayingGame
+                  ? 'bg-rose-500/20 text-rose-300 border border-rose-500 hover:bg-rose-500/30 shadow-[0_0_12px_rgba(244,63,94,0.4)]'
+                  : 'bg-slate-800 hover:bg-slate-700 text-cyan-300 hover:text-white border border-cyan-500/40'
+              }`}
             >
-              <span className="material-symbols-outlined text-[16px] text-cyan-400">sports_esports</span>
-              <span>KHO GAME</span>
+              <span className={`material-symbols-outlined text-[16px] ${activePlayingGame ? 'text-rose-400 animate-pulse' : 'text-cyan-400'}`}>sports_esports</span>
+              <span>{activePlayingGame ? `TRẬN: ${activePlayingGame}` : 'KHO GAME'}</span>
             </Link>
 
             <button
@@ -1314,6 +1614,34 @@ export default function ClientPcPage() {
       )}
 
       <div className="max-w-7xl mx-auto px-4 pt-8 space-y-8">
+
+        {activePlayingGame && (
+          <div className="p-4 rounded-2xl bg-gradient-to-r from-rose-950/90 via-slate-900 to-rose-950/90 border-2 border-rose-500/60 shadow-[0_0_25px_rgba(244,63,94,0.35)] flex flex-wrap items-center justify-between gap-3">
+            <div className="flex items-center gap-3">
+              <div className="w-10 h-10 rounded-xl bg-rose-500/20 border border-rose-500/60 flex items-center justify-center text-rose-400">
+                <span className="material-symbols-outlined text-[24px] animate-pulse">sports_esports</span>
+              </div>
+              <div>
+                <div className="flex items-center gap-2">
+                  <span className="text-[10px] font-bold uppercase tracking-wider text-rose-300 bg-rose-950/80 px-2 py-0.5 rounded border border-rose-500/40 font-mono">
+                    ĐANG TRONG TRẬN ĐẤU
+                  </span>
+                  <span className="text-white font-gaming font-black text-base">{activePlayingGame}</span>
+                </div>
+                <div className="text-xs text-slate-300 font-mono mt-0.5">
+                  Bạn đang có trận game đang chơi. Bấm nút bên phải để quay lại kho game và tiếp tục trận đấu!
+                </div>
+              </div>
+            </div>
+            <Link
+              href="/games"
+              className="px-5 py-2.5 bg-gradient-to-r from-rose-500 via-orange-500 to-amber-400 hover:brightness-110 text-slate-950 font-black rounded-xl text-xs uppercase font-mono shadow-lg transition active:scale-95 flex items-center gap-1.5"
+            >
+              <span>VÀO LẠI TRẬN GAME</span>
+              <span>&rarr;</span>
+            </Link>
+          </div>
+        )}
 
         <div className="relative rounded-3xl overflow-hidden p-6 sm:p-10 bg-gradient-to-r from-[#0c1833] via-[#081224] to-[#040812] border border-white/10 shadow-2xl">
           <div className="absolute right-0 top-0 bottom-0 w-1/2 opacity-20 pointer-events-none bg-[radial-gradient(circle_at_center,_var(--tw-gradient-stops))] from-cyan-400 via-transparent to-transparent"></div>
@@ -1810,7 +2138,7 @@ export default function ClientPcPage() {
         </div>
       )}
 
-      {/* MODAL NẠP TIỀN TRỰC TUYẾN TẠI MÁY (ĐỒNG BỘ SANG TRANG CHỦ) */}
+      
       {showTopupModal && (
         <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/85 backdrop-blur-md animate-fadeIn">
           <div className="w-full max-w-lg bg-slate-900 border border-amber-500/50 rounded-3xl p-6 sm:p-7 shadow-2xl space-y-5 font-sans">
@@ -1839,7 +2167,7 @@ export default function ClientPcPage() {
               </button>
             </div>
 
-            {/* BANNER THÔNG BÁO GÓI COMBO HOẶC NẠP LÊN HẠNG */}
+            
             {topupContextTitle && (
               <div className="p-3.5 rounded-2xl bg-amber-500/15 border border-amber-500/40 flex items-start gap-2.5 font-mono text-xs">
                 <span className="material-symbols-outlined text-amber-400 text-xl shrink-0 mt-0.5">verified</span>
@@ -1858,7 +2186,7 @@ export default function ClientPcPage() {
               </div>
             )}
 
-            {/* THÔNG TIN SỐ DƯ & QUY ĐỔI GIỜ */}
+            
             <div className="grid grid-cols-2 gap-3 font-mono text-xs">
               <div className="p-3 rounded-2xl bg-slate-800/80 border border-emerald-500/30">
                 <span className="text-[10px] text-slate-400 block mb-0.5">Số Dư Hiện Tại:</span>
@@ -1874,7 +2202,7 @@ export default function ClientPcPage() {
               </div>
             </div>
 
-            {/* MỨC TIỀN CHỌN NHANH */}
+            
             <div className="space-y-2">
               <div className="flex justify-between items-center text-xs font-mono">
                 <span className="text-white font-bold">Chọn Mức Tiền / Combo Nạp:</span>
@@ -1911,7 +2239,7 @@ export default function ClientPcPage() {
               </div>
             </div>
 
-            {/* NHẬP TÙY CHỌN */}
+            
             <div className="space-y-1 font-mono text-xs">
               <label className="text-slate-400 text-[11px] block">Hoặc nhập số tiền khác (VNĐ):</label>
               <input
@@ -1925,7 +2253,7 @@ export default function ClientPcPage() {
               />
             </div>
 
-            {/* THẺ VIETQR */}
+            
             {(() => {
               const currentNum = Math.max(10000, parseInt(topupAmountInput || '50000', 10) || 50000);
               const qrUrl = `https://api.vietqr.io/image/970422-0988888888-HjXq5pM.jpg?accountName=CYBER%20ZONE%20GAMING%20LOUNGE&amount=${currentNum}&addInfo=NAP%20${currentStation.id}%20${encodeURIComponent(currentUser?.username || 'khach')}`;
@@ -1953,7 +2281,7 @@ export default function ClientPcPage() {
               );
             })()}
 
-            {/* NÚT XÁC NHẬN NẠP VÀ LINK SANG TRANG CHỦ */}
+            
             <div className="space-y-2 pt-1 font-mono">
               <button
                 type="button"
@@ -1983,7 +2311,7 @@ export default function ClientPcPage() {
         </div>
       )}
 
-      {/* MODAL CHUYỂN ĐỔI 5 GIAO DIỆN HỆ THỐNG */}
+      
       {showSystemSwitcher && (
         <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/85 backdrop-blur-md animate-fadeIn">
           <div className="w-full max-w-xl bg-slate-900 border border-emerald-500/50 rounded-3xl p-6 shadow-2xl space-y-4 font-mono text-xs">
@@ -2381,10 +2709,14 @@ export default function ClientPcPage() {
         </Link>
         <Link
           href="/games"
-          className="px-3.5 py-1.5 bg-slate-800 hover:bg-slate-700 text-white font-bold text-xs rounded-xl flex items-center gap-1.5 border border-slate-700 transition cursor-pointer"
+          className={`px-3.5 py-1.5 font-bold text-xs rounded-xl flex items-center gap-1.5 transition cursor-pointer ${
+            activePlayingGame
+              ? 'bg-gradient-to-r from-rose-500 to-amber-500 text-slate-950 font-black shadow-[0_0_15px_rgba(244,63,94,0.4)]'
+              : 'bg-slate-800 hover:bg-slate-700 text-white border border-slate-700'
+          }`}
         >
-          <span className="material-symbols-outlined text-[16px] text-cyan-400">sports_esports</span>
-          <span>KHO GAME</span>
+          <span className={`material-symbols-outlined text-[16px] ${activePlayingGame ? 'text-slate-950' : 'text-cyan-400'}`}>sports_esports</span>
+          <span>{activePlayingGame ? `VÀO LẠI: ${activePlayingGame} \u2192` : 'KHO GAME'}</span>
         </Link>
         <button
           onClick={() => setShowCallModal(true)}
@@ -2395,6 +2727,6 @@ export default function ClientPcPage() {
         </button>
       </div>
 
-    </div>
+      </div>
   );
 }

@@ -69,7 +69,6 @@ export default function AuthAndWallet() {
   const [regPhone, setRegPhone] = useState('');
   const [regPassword, setRegPassword] = useState('');
 
-  // Cài đặt tài khoản: Đổi họ tên & Đổi mật khẩu
   const [editFullName, setEditFullName] = useState('');
   const [currentPass, setCurrentPass] = useState('');
   const [newPass, setNewPass] = useState('');
@@ -411,7 +410,7 @@ export default function AuthAndWallet() {
           </div>
         )}
 
-        {/* NẾU CHƯA ĐĂNG NHẬP: KHÔNG HIỆN THẺ HỘI VIÊN GIẢ MẠO HAY 50K */}
+        
         {!currentUser ? (
           <div className="bg-slate-900 border border-amber-500/30 rounded-2xl p-6 sm:p-8 mb-6 shadow-2xl relative overflow-hidden">
             <div className="text-center space-y-3">
@@ -429,7 +428,6 @@ export default function AuthAndWallet() {
             </div>
           </div>
         ) : (
-          /* NẾU ĐÃ ĐĂNG NHẬP: HIỆN THÔNG TIN TÀI KHOẢN THỰC VÀ THỜI HẠN GÓI */
           (() => {
             const effectiveBalance = typeof currentUser.balance === 'number' ? currentUser.balance : wallet.balance;
             const expInfo = currentUser.tierExpiresAt ? getTierRemainingDays(currentUser.tierExpiresAt) : null;
@@ -459,7 +457,7 @@ export default function AuthAndWallet() {
                     </div>
                   </div>
 
-                  {/* THỜI HẠN GÓI VÀ TỤT HẠNG */}
+                  
                   <div className="text-right font-mono text-xs">
                     {currentUser.tierExpiresAt && expInfo ? (
                       <div className="p-2 rounded-xl bg-emerald-500/10 border border-emerald-500/30 text-emerald-300">
@@ -521,7 +519,7 @@ export default function AuthAndWallet() {
                   )}
                 </div>
 
-                {/* CÔNG CỤ DEMO KIỂM THỬ TỤT HẠNG CHO GIÁO VIÊN / ĐỒ ÁN */}
+                
                 <div className="mt-4 pt-3 border-t border-slate-800/80 flex flex-wrap items-center justify-between gap-2 text-[10px] font-mono">
                   <span className="text-slate-500">🧪 Công cụ kiểm thử thăng / tụt hạng:</span>
                   <div className="flex items-center gap-2">
@@ -548,7 +546,7 @@ export default function AuthAndWallet() {
           })()
         )}
 
-        {/* THÔNG BÁO GÓI HỘI VIÊN */}
+        
         {planToast && (
           <div className={`p-4 rounded-xl mb-4 font-mono text-xs border leading-relaxed shadow-lg flex items-center justify-between ${
             planToast.success
@@ -566,7 +564,7 @@ export default function AuthAndWallet() {
           </div>
         )}
 
-        {/* CÁC TAB ĐIỀU HƯỚNG TRONG CỔNG TÀI KHOẢN */}
+        
         <div className="flex gap-1.5 mb-4 bg-slate-900 border border-slate-800 p-1.5 rounded-xl font-mono text-xs overflow-x-auto">
           <button
             onClick={() => setActiveTab('topup')}
@@ -914,7 +912,7 @@ export default function AuthAndWallet() {
         {activeTab === 'login' && (
           currentUser && !isSwitchingAccount ? (
             <div className="space-y-6 font-mono text-xs">
-              {/* THANH ĐIỀU HƯỚNG TÀI KHOẢN HEADER */}
+              
               <div className="bg-slate-900 border border-slate-800 rounded-2xl p-5 shadow-2xl flex flex-col sm:flex-row justify-between items-start sm:items-center gap-3">
                 <div className="flex items-center gap-3">
                   <div className="w-10 h-10 rounded-xl bg-gradient-to-br from-emerald-400 to-cyan-500 text-black font-black flex items-center justify-center text-xl shadow-lg shadow-emerald-500/20">
@@ -953,7 +951,7 @@ export default function AuthAndWallet() {
               </div>
 
               <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-                {/* KHỐI 1: CẬP NHẬT HỌ VÀ TÊN (NGƯỜI DÙNG ĐẶT TÊN GÌ THÌ LẤY TÊN ĐÓ LUÔN 100%) */}
+                
                 <div className="bg-slate-900 border border-slate-800 rounded-2xl p-6 shadow-2xl flex flex-col justify-between space-y-4">
                   <div>
                     <div className="flex items-center gap-2.5 border-b border-slate-800 pb-3 mb-4">
@@ -1024,7 +1022,7 @@ export default function AuthAndWallet() {
                   </div>
                 </div>
 
-                {/* KHỐI 2: ĐỔI MẬT KHẨU BẢO MẬT (XÁC NHẬN MẬT KHẨU 2 LẦN) */}
+                
                 <div className="bg-slate-900 border border-slate-800 rounded-2xl p-6 shadow-2xl flex flex-col justify-between space-y-4">
                   <div>
                     <div className="flex items-center gap-2.5 border-b border-slate-800 pb-3 mb-4">

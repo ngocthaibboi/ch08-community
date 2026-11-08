@@ -25,8 +25,8 @@ export default function ClientHeader({
   zoneName = 'Tầng 2',
   balance = 250000,
   remainingTime = '03:45:12',
-  userName = 'ProGamer_VN',
-  userTier = 'Hội viên VIP',
+  userName = 'Tài khoản Hội viên',
+  userTier = 'Hội viên Cyber',
   onCallStaff,
   onTopup,
   currentOrderTicker = {
@@ -42,6 +42,21 @@ export default function ClientHeader({
   const [requestNote, setRequestNote] = useState('');
   const [destination, setDestination] = useState<'SERVER' | 'KITCHEN'>('SERVER');
   const [displayTime, setDisplayTime] = useState(remainingTime);
+  const [activeGame, setActiveGame] = useState<string | null>(null);
+
+  useEffect(() => {
+    if (typeof window !== 'undefined') {
+      const saved = localStorage.getItem('CYBER_ACTIVE_PLAYING_GAME');
+      if (saved) {
+        try {
+          const parsed = JSON.parse(saved);
+          if (parsed && parsed.gameName) {
+            setActiveGame(parsed.gameName);
+          }
+        } catch (e) {}
+      }
+    }
+  }, []);
 
   useEffect(() => {
     const parts = remainingTime.split(':').map(Number);
@@ -159,6 +174,15 @@ export default function ClientHeader({
           </div>
 
           <div className="flex items-center gap-2">
+            <a
+              href="/games"
+              className="flex items-center gap-1.5 px-3 py-1.5 rounded bg-emerald-500/20 hover:bg-emerald-500/30 text-emerald-400 border border-emerald-500/50 text-xs font-bold font-gaming tracking-wide transition cursor-pointer shrink-0 shadow-[0_0_12px_rgba(16,185,129,0.25)]"
+              title="Quay lại giao diện kho trò chơi"
+            >
+              <span className="material-symbols-outlined text-[16px]">sports_esports</span>
+              <span className="hidden sm:inline">{activeGame ? `VỀ GAME (${activeGame}) \u2192` : 'VỀ KHO GAME \u2192'}</span>
+            </a>
+
             <button
               onClick={() => setShowCallModal(true)}
               className={`flex items-center gap-1.5 px-3.5 py-1.5 rounded border transition-all font-headline-sm font-bold text-[13px] uppercase tracking-wider active:scale-95 ${

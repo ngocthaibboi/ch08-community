@@ -20,7 +20,6 @@ def register():
         db.session.add(new_user)
         db.session.commit()
 
-        # Tạo ví tiền với số dư 0đ và tích lũy nạp 0đ
         new_wallet = Wallet(user_id=new_user.id, balance=0.0, total_deposited=0.0)
         db.session.add(new_wallet)
         db.session.commit()
@@ -46,13 +45,11 @@ def login():
 
     return render_template('auth/login.html')
 
-# TRANG HỒ SƠ & NẠP TIỀN NÂNG HẠNG (THÀNH VIÊN 1)
 @auth_bp.route('/profile')
 @login_required
 def profile():
     return render_template('auth/profile.html', user=current_user)
 
-# XỬ LÝ NẠP TIỀN VÀ TỰ ĐỘNG NÂNG HẠNG
 @auth_bp.route('/topup', methods=['POST'])
 @login_required
 def topup():
@@ -61,7 +58,6 @@ def topup():
         flash('Số tiền nạp không hợp lệ!', 'danger')
         return redirect(url_for('auth.profile'))
 
-    # Khuyến mãi nạp giờ vàng
     bonus = 0
     if amount >= 1000000:
         bonus = 600000

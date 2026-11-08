@@ -207,6 +207,7 @@ export default function MainServerPage() {
   const [activeStation, setActiveStation] = useState<ActiveStationInfo | null>(null);
 
   const [directMessageText, setDirectMessageText] = useState('');
+
   const [sentMessageToast, setSentMessageToast] = useState<string | null>(null);
 
   const playServerChime = () => {
@@ -409,45 +410,47 @@ export default function MainServerPage() {
   const handleDispatchBroadcast = (msg: string) => {
     if (!msg.trim()) return;
     playServerChime();
-    setActiveBroadcast(msg.trim());
+    const trimmed = msg.trim();
+    setActiveBroadcast(trimmed);
     if (typeof window !== 'undefined') {
-      localStorage.setItem('CYBER_ACTIVE_BROADCAST', msg.trim());
-      window.dispatchEvent(new CustomEvent('cyber_broadcast_alert', { detail: msg.trim() }));
+      const payload = { message: trimmed, timestamp: Date.now() };
+      localStorage.setItem('CYBER_ACTIVE_BROADCAST', JSON.stringify(payload));
+      window.dispatchEvent(new CustomEvent('cyber_broadcast_alert', { detail: trimmed }));
     }
     setShowBroadcastModal(false);
     setBroadcastText('');
-    setNotificationMsg(`📢 ĐÃ PHÁT LOA TOÀN BỘ 42 MÁY: "${msg.trim()}"`);
+    setNotificationMsg(`📢 ĐÃ PHÁT LOA TOÀN BỘ 42 MÁY: "${trimmed}"`);
     setTimeout(() => setNotificationMsg(null), 6000);
   };
 
   const handleSendDirectMessage = (seatId: string) => {
-    if (!directMessageText.trim()) return;
-    const msg = directMessageText.trim();
+    const textToSend = directMessageText.trim();
+    if (!textToSend) return;
     if (typeof window !== 'undefined') {
-      localStorage.setItem(`CYBER_DIRECT_MSG_${seatId}`, msg);
-      window.dispatchEvent(
-        new CustomEvent('cyber_client_direct_message', {
-          detail: { seatId, message: msg, time: new Date().toLocaleTimeString('vi-VN') },
-        })
-      );
+      localStorage.setItem('CYBER_DIRECT_MESSAGE', JSON.stringify({
+        targetSeatId: seatId,
+        message: textToSend,
+        time: new Date().toLocaleTimeString('vi-VN', { hour: '2-digit', minute: '2-digit' }),
+        timestamp: Date.now(),
+      }));
+      window.dispatchEvent(new CustomEvent('cyber_client_direct_message', {
+        detail: { targetSeatId: seatId, message: textToSend }
+      }));
     }
-    setSentMessageToast(`Đã gửi tin nhắn riêng tới máy ${seatId}: "${msg}"`);
+    setSentMessageToast(`Đã gửi tin nhắn riêng xuống máy ${seatId}: "${textToSend}"`);
     setDirectMessageText('');
-    setTimeout(() => setSentMessageToast(null), 4000);
+    setTimeout(() => setSentMessageToast(null), 3000);
   };
 
-  const handleRemoteLockSeat = (seatId: string) => {
-    if (confirm(`Bạn có chắc muốn KHÓA MÀN HÌNH từ xa máy ${seatId}?`)) {
-      if (typeof window !== 'undefined') {
-        window.dispatchEvent(new CustomEvent('cyber_remote_lock_command', { detail: { seatId } }));
-      }
-      setNotificationMsg(`🔒 Đã phát tín hiệu KHÓA MÁY ${seatId} từ xa thành công!`);
-      setTimeout(() => setNotificationMsg(null), 4000);
-    }
-  };
+
 
   const handleRemoteRebootSeat = (seatId: string) => {
     if (confirm(`Gửi lệnh KHỞI ĐỘNG LẠI (Reboot) máy ${seatId}?`)) {
+      if (typeof window !== 'undefined') {
+        const payload = { targetSeatId: seatId, action: 'REBOOT', timestamp: Date.now() };
+        localStorage.setItem('CYBER_REMOTE_COMMAND', JSON.stringify(payload));
+        window.dispatchEvent(new CustomEvent('cyber_remote_reboot_command', { detail: { seatId } }));
+      }
       setNotificationMsg(`🔄 Đang phát lệnh khởi động lại máy ${seatId} qua BootROM LAN...`);
       setTimeout(() => {
         setNotificationMsg(`✅ Máy ${seatId} đã khởi động lại hoàn tất!`);
@@ -1091,21 +1094,13 @@ export default function MainServerPage() {
                   ⚡ TÁC VỤ ĐIỀU KHIỂN TỪ XA KHÁC:
                 </span>
 
-                <div className="grid grid-cols-1 sm:grid-cols-2 gap-2.5">
-                  <button
-                    onClick={() => handleRemoteLockSeat(selectedSeat.id)}
-                    className="p-2.5 rounded-xl bg-rose-500/20 hover:bg-rose-500/30 text-rose-300 border border-rose-500/40 font-bold transition flex items-center justify-center gap-1.5 cursor-pointer"
-                  >
-                    <span className="material-symbols-outlined text-base">lock</span>
-                    <span>Khóa Màn Hình Từ Xa</span>
-                  </button>
-
+                <div className="flex justify-end">
                   <button
                     onClick={() => handleRemoteRebootSeat(selectedSeat.id)}
-                    className="p-2.5 rounded-xl bg-amber-500/20 hover:bg-amber-500/30 text-amber-300 border border-amber-500/40 font-bold transition flex items-center justify-center gap-1.5 cursor-pointer"
+                    className="px-4 py-2.5 rounded-xl bg-amber-500/20 hover:bg-amber-500/30 text-amber-300 border border-amber-500/40 font-bold transition flex items-center gap-1.5 cursor-pointer text-xs"
                   >
                     <span className="material-symbols-outlined text-base">restart_alt</span>
-                    <span>Khởi Động Lại (Reboot)</span>
+                    <span>Khởi Động Lại Trạm Máy (Reboot)</span>
                   </button>
                 </div>
 
@@ -1342,7 +1337,7 @@ export default function MainServerPage() {
                           <span>{r.title}</span>
                         </div>
 
-                        {/* HIỂN THỊ ĐẦY ĐỦ NỘI DUNG LỜI NHẮN CHI TIẾT CỦA KHÁCH TẠI MÁY */}
+                        
                         {r.details ? (
                           <div className="p-2.5 rounded-xl bg-black/60 border border-rose-500/30 text-slate-100 text-xs font-mono break-words whitespace-pre-wrap leading-relaxed shadow-inner">
                             <span className="text-amber-400 text-[10px] font-bold block mb-1 flex items-center gap-1">

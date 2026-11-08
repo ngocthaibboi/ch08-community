@@ -3,7 +3,7 @@
 {% block content %}
 <div class="max-w-6xl mx-auto w-full py-8 px-4 space-y-10 text-left">
 
-    <!-- Thông báo Flash -->
+    
     {% with messages = get_flashed_messages(with_categories=true) %}
       {% if messages %}
         {% for category, message in messages %}
@@ -14,7 +14,7 @@
       {% endif %}
     {% endwith %}
 
-    <!-- 1. THẺ THÀNH VIÊN GAMER PASS 3D PHÁT SÁNG -->
+    
     <div class="grid grid-cols-1 lg:grid-cols-12 gap-8 items-center p-8 md:p-12 rounded-3xl bg-gradient-to-r from-slate-900 via-[#0a1428] to-slate-900 border border-emerald-500/30 shadow-2xl relative overflow-hidden">
         <div class="lg:col-span-7 space-y-5">
             <div class="flex items-center gap-3">
@@ -28,7 +28,7 @@
                 XIN CHÀO, <span class="text-emerald-400">{{ user.username | upper }}</span>!
             </h1>
 
-            <!-- Thanh tiến trình thăng hạng VIP -->
+            
             <div class="space-y-2 font-mono text-xs max-w-lg">
                 <div class="flex justify-between text-slate-300">
                     <span>Tiến trình thăng hạng:</span>
@@ -44,7 +44,7 @@
                 {% endif %}
             </div>
 
-            <!-- Đặc quyền đang được hưởng -->
+            
             <div class="flex flex-wrap gap-3 pt-2 text-xs font-mono">
                 <span class="px-3 py-1.5 rounded-lg bg-black/40 border border-white/10 text-emerald-400">
                     <i class="fa-solid fa-percent mr-1"></i> Giảm {{ user.rank_info.discount_pc }}% tiền giờ chơi
@@ -55,7 +55,7 @@
             </div>
         </div>
 
-        <!-- Khung Số Dư Ví -->
+        
         <div class="lg:col-span-5 bg-black/60 border border-emerald-500/40 rounded-2xl p-6 text-center space-y-4">
             <span class="text-xs font-mono text-slate-400 uppercase tracking-widest block">SỐ DƯ VÍ KHẢ DỤNG</span>
             <div class="text-4xl font-black text-emerald-400 font-gaming">
@@ -70,10 +70,10 @@
         </div>
     </div>
 
-    <!-- 2. KHU VỰC NẠP TIỀN NHANH & BẢNG SO SÁNH 4 HẠNG -->
+    
     <div id="nap-tien" class="grid grid-cols-1 lg:grid-cols-12 gap-8 items-start">
         
-        <!-- Khung nạp tiền -->
+        
         <div class="lg:col-span-7 bg-slate-900/60 border border-white/10 rounded-3xl p-8 space-y-6">
             <div>
                 <span class="text-xs font-mono text-emerald-400 font-bold uppercase">CỔNG NẠP TIỀN TỰ ĐỘNG</span>
@@ -81,7 +81,7 @@
             </div>
 
             <form action="/auth/topup" method="POST" class="space-y-6">
-                <!-- Các mốc nạp tiền nhanh -->
+                
                 <div class="grid grid-cols-2 sm:grid-cols-3 gap-3 font-mono text-xs">
                     <label class="cursor-pointer">
                         <input type="radio" name="amount" value="50000" class="peer hidden" checked>
@@ -120,7 +120,7 @@
                     </label>
                 </div>
 
-                <!-- Phương thức nạp tiền -->
+                
                 <div class="p-4 rounded-2xl bg-black/50 border border-white/10 flex items-center justify-between text-xs font-mono">
                     <div class="flex items-center gap-3">
                         <div class="w-8 h-8 rounded-lg bg-pink-500/20 text-pink-400 flex items-center justify-center"><i class="fa-solid fa-qrcode"></i></div>
@@ -138,7 +138,7 @@
             </form>
         </div>
 
-        <!-- Bảng so sánh 4 cấp bậc VIP -->
+        
         <div class="lg:col-span-5 bg-slate-900/60 border border-white/10 rounded-3xl p-6 space-y-4 font-mono text-xs">
             <h4 class="font-bold text-white uppercase text-sm border-b border-white/10 pb-3 flex items-center gap-2">
                 <i class="fa-solid fa-award text-amber-400"></i> Bảng Đặc Quyền 4 Cấp Độ

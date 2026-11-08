@@ -7,6 +7,7 @@ import FoodCard from '@/components/fnb/FoodCard';
 import CartSidebar from '@/components/fnb/CartSidebar';
 import { MenuItem, CartItem, PaymentMethod, Order } from '@/types/fnb';
 import { addOrder } from '@/lib/orderStore';
+import { getLoggedInUser, getClientPcSession, AUTH_EVENT_NAME, CLIENT_PC_EVENT_NAME } from '@/lib/authStore';
 import {
   getStoredWallet,
   deductWallet,
@@ -376,6 +377,23 @@ function CyberMenuClientContent() {
 
   const [accountBalance, setAccountBalance] = useState(250000);
   const [walletPcName, setWalletPcName] = useState(seatParam || 'VIP-08');
+  const [activeUser, setActiveUser] = useState<any>(null);
+
+  useEffect(() => {
+    const user = getLoggedInUser() || getClientPcSession();
+    setActiveUser(user);
+
+    const handleUserUpdate = (e: any) => {
+      setActiveUser(e?.detail || getLoggedInUser() || getClientPcSession());
+    };
+
+    window.addEventListener(AUTH_EVENT_NAME, handleUserUpdate);
+    window.addEventListener(CLIENT_PC_EVENT_NAME, handleUserUpdate);
+    return () => {
+      window.removeEventListener(AUTH_EVENT_NAME, handleUserUpdate);
+      window.removeEventListener(CLIENT_PC_EVENT_NAME, handleUserUpdate);
+    };
+  }, []);
 
   useEffect(() => {
     if (seatParam) {
@@ -401,6 +419,22 @@ function CyberMenuClientContent() {
       window.removeEventListener('storage', updateWallet);
     };
   }, [seatParam]);
+
+  const [activePlayingGame, setActivePlayingGame] = useState<string | null>(null);
+
+  useEffect(() => {
+    if (typeof window !== 'undefined') {
+      const saved = localStorage.getItem('CYBER_ACTIVE_PLAYING_GAME');
+      if (saved) {
+        try {
+          const parsed = JSON.parse(saved);
+          if (parsed && parsed.gameName) {
+            setActivePlayingGame(parsed.gameName);
+          }
+        } catch (e) {}
+      }
+    }
+  }, []);
 
   const [orderSuccessModal, setOrderSuccessModal] = useState<{
     orderNumber: number;
@@ -577,11 +611,31 @@ function CyberMenuClientContent() {
         zoneName="Tầng 2 (Màn 240Hz)"
         balance={accountBalance}
         remainingTime={formattedRemainingTime}
-        userName="ProGamer_VN"
-        userTier="Hội viên VIP"
+        userName={activeUser?.fullName || 'Tài khoản Hội viên'}
+        userTier={activeUser?.userTier || 'Hội viên Cyber'}
         onTopup={() => (window.location.href = '/auth')}
         currentOrderTicker={currentTicker}
       />
+
+      <div className="bg-gradient-to-r from-emerald-950 via-slate-900 to-cyan-950 border-b border-emerald-500/30 px-4 py-2 flex items-center justify-between text-xs font-mono">
+        <div className="flex items-center gap-2 text-emerald-400 font-bold">
+          <span className="w-2 h-2 rounded-full bg-emerald-400 animate-ping"></span>
+          <span>BẠN ĐANG ĐẶT MÓN CHO MÁY: <strong>{walletPcName || 'VIP-08'}</strong></span>
+          {activePlayingGame && (
+            <span className="hidden md:inline-flex items-center gap-1 text-rose-300 bg-rose-950/60 border border-rose-500/40 px-2 py-0.5 rounded ml-2">
+              <span className="material-symbols-outlined text-[14px] text-rose-400 animate-pulse">sports_esports</span>
+              <span>Đang trong trận: <strong className="text-white">{activePlayingGame}</strong></span>
+            </span>
+          )}
+        </div>
+        <a
+          href="/games"
+          className="flex items-center gap-1.5 px-3 py-1 rounded-lg bg-emerald-500 hover:bg-emerald-400 text-slate-950 font-black font-gaming tracking-wide transition shadow shadow-emerald-500/30 cursor-pointer"
+        >
+          <span className="material-symbols-outlined text-[16px]">sports_esports</span>
+          <span>{activePlayingGame ? `QUAY LẠI TRẬN GAME ${activePlayingGame.toUpperCase()} \u2192` : 'QUAY LẠI KHO GAME \u2192'}</span>
+        </a>
+      </div>
 
       <main className="flex-1 w-full p-3 lg:p-4 grid grid-cols-12 gap-3 max-w-[1920px] mx-auto">
         <div className="col-span-12 lg:col-span-8 xl:col-span-9 flex flex-col gap-3">
@@ -786,10 +840,18 @@ function CyberMenuClientContent() {
             </div>
 
             <button
-              onClick={() => setOrderSuccessModal(null)}
-              className="w-full bg-primary hover:bg-[#38f8ff] text-black font-gaming font-black py-3 rounded-lg uppercase tracking-wider transition-all shadow-[0_0_15px_rgba(0,240,255,0.4)]"
+              onClick={() => {
+                if (typeof window !== 'undefined') {
+                  localStorage.removeItem('CYBER_CLIENT_PC_EXPLICITLY_LOCKED');
+                  localStorage.setItem('CYBER_CLIENT_PC_UNLOCKED', 'true');
+                }
+                setOrderSuccessModal(null);
+                window.location.href = '/games';
+              }}
+              className="w-full bg-primary hover:bg-[#38f8ff] text-black font-gaming font-black py-3 rounded-lg uppercase tracking-wider transition-all shadow-[0_0_15px_rgba(0,240,255,0.4)] flex items-center justify-center gap-2 cursor-pointer"
             >
-              TIẾP TỤC CHƠI GAME
+              <span className="material-symbols-outlined">sports_esports</span>
+              <span>{activePlayingGame ? `QUAY LẠI TRẬN GAME ${activePlayingGame.toUpperCase()} NGAY \u2192` : 'QUAY LẠI KHO GAME NGAY \u2192'}</span>
             </button>
           </div>
         </div>

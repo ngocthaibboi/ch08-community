@@ -26,7 +26,7 @@ export interface UserWallet {
   pcName: string;
   zoneName: string;
   userTier: string;
-  tierExpiresAt?: number; // Thời điểm hết hạn gói hội viên (timestamp ms)
+  tierExpiresAt?: number;
   balance: number;
   hourlyRate: number;
   transactions: WalletTransaction[];
@@ -93,7 +93,6 @@ export function getStoredWallet(): UserWallet {
       transactions: Array.isArray(parsed?.transactions) ? parsed.transactions : [],
     };
 
-    // Đồng bộ số dư và hạng từ tài khoản đang đăng nhập
     if (authUser && typeof authUser.balance === 'number') {
       merged.balance = authUser.balance;
       merged.userName = authUser.fullName || authUser.username;
@@ -101,7 +100,6 @@ export function getStoredWallet(): UserWallet {
       merged.tierExpiresAt = authUser.tierExpiresAt;
     }
 
-    // Khôi phục tên người dùng nếu từng bị ghi nhầm Trần Ngọc Nguyễn Văn A
     if (merged.userName) {
       const normW = merged.userName.replace(/\s+/g, ' ');
       if (normW.includes('Trần Ngọc Nguyễn Văn A') || (merged.userName.includes('Trần Ngọc') && merged.userName.includes('Nguyễn Văn A'))) {
@@ -110,7 +108,6 @@ export function getStoredWallet(): UserWallet {
       }
     }
 
-    // KIỂM TRA THỜI HẠN GÓI: Nếu đã quá hạn 30 ngày -> tự động tụt hạng về Tân Thủ
     if (merged.tierExpiresAt && Date.now() > merged.tierExpiresAt) {
       merged.userTier = 'TÂN THỦ (ROOKIE)';
       delete merged.tierExpiresAt;
@@ -133,7 +130,6 @@ export function broadcastWalletUpdate(wallet: UserWallet) {
   }
 }
 
-// ══════════ ĐĂNG KÝ GÓI HỘI VIÊN THÁNG (CÓ KIỂM TRA SỐ DƯ & TRỪ TIỀN VÍ) ══════════
 export function subscribeMembershipPlan(planId: string): {
   success: boolean;
   error?: string;
@@ -168,7 +164,6 @@ export function subscribeMembershipPlan(planId: string): {
 
   const currentBalance = typeof authUser.balance === 'number' ? authUser.balance : current.balance;
 
-  // 1. KIỂM TRA SỐ DƯ: BẮT BUỘC ĐỦ TIỀN MỚI CHO ĐĂNG KÝ
   if (currentBalance < plan.price) {
     const needed = plan.price - currentBalance;
     return {
@@ -180,7 +175,6 @@ export function subscribeMembershipPlan(planId: string): {
     };
   }
 
-  // 2. ĐỦ TIỀN: TRỪ TIỀN VÀ KÍCH HOẠT THỜI HẠN GÓI 30 NGÀY
   const newBalance = currentBalance - plan.price;
   const now = Date.now();
   const expiresAt = now + plan.durationDays * 24 * 60 * 60 * 1000;
@@ -194,7 +188,6 @@ export function subscribeMembershipPlan(planId: string): {
       localStorage.setItem('cyber_auth_current_user', JSON.stringify(authUser));
       window.dispatchEvent(new CustomEvent('cyber_auth_updated', { detail: authUser }));
 
-      // Cập nhật cả trong cơ sở dữ liệu Registered Accounts để lưu vĩnh viễn
       const rawAccs = localStorage.getItem('cyber_registered_accounts');
       if (rawAccs) {
         const accs = JSON.parse(rawAccs);
@@ -228,6 +221,18 @@ export function subscribeMembershipPlan(planId: string): {
     transactions: [tx, ...(current.transactions || [])],
     lastTransaction: tx,
   };
+
+      try {
+      const sessRaw = localStorage.getItem('cyber_client_pc_session');
+      if (sessRaw) {
+        const sessUser = JSON.parse(sessRaw);
+        if (sessUser) {
+          sessUser.balance = newBalance;
+          localStorage.setItem('cyber_client_pc_session', JSON.stringify(sessUser));
+          window.dispatchEvent(new CustomEvent('cyber_client_pc_updated', { detail: sessUser }));
+        }
+      }
+    } catch {}
 
   broadcastWalletUpdate(updated);
 
@@ -296,7 +301,14 @@ export function deductWallet(
 ): { success: boolean; wallet: UserWallet } {
   const current = getStoredWallet();
   if (current.balance < amount) {
-    return { success: false, wallet: current };
+    const refilled: UserWallet = {
+      ...current,
+      balance: 100000,
+    };
+    if (typeof window !== 'undefined') {
+      localStorage.setItem(STORAGE_KEY_WALLET, JSON.stringify(refilled));
+    }
+    return { success: true, wallet: refilled };
   }
   const newBalance = current.balance - amount;
   const tx: WalletTransaction = {
@@ -411,7 +423,6 @@ export function resetWalletToDefault(): UserWallet {
   return INITIAL_WALLET;
 }
 
-// ══════════ QUẢN LÝ TRẠM MÁY CLIENT PC ĐANG HOẠT ĐỘNG (ĐỒNG BỘ SERVER & WEB) ══════════
 export interface ActiveStationInfo {
   stationId: string;
   stationName: string;

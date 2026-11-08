@@ -7,7 +7,6 @@ from . import db, login_manager
 def load_user(user_id):
     return User.query.get(int(user_id))
 
-# Bảng người dùng
 class User(db.Model, UserMixin):
     __tablename__ = 'users'
     id = db.Column(db.Integer, primary_key=True)
@@ -16,7 +15,6 @@ class User(db.Model, UserMixin):
     role = db.Column(db.String(20), default='MEMBER')  # ADMIN, STAFF, MEMBER
     created_at = db.Column(db.DateTime, default=datetime.utcnow)
 
-    # Quan hệ 1-1 với Ví tiền
     wallet = db.relationship('Wallet', backref='user', uselist=False)
 
     def set_password(self, password):
@@ -25,7 +23,6 @@ class User(db.Model, UserMixin):
     def check_password(self, password):
         return check_password_hash(self.password_hash, password)
 
-    # TỰ ĐỘNG TÍNH TOÁN HẠNG THÀNH VIÊN DỰA TRÊN TỔNG TIỀN ĐÃ NẠP
     @property
     def rank_info(self):
         total = self.wallet.total_deposited if self.wallet else 0.0
@@ -70,7 +67,6 @@ class User(db.Model, UserMixin):
                 "progress": min(100, int((total / 200000) * 100))
             }
 
-# Bảng Ví tiền
 class Wallet(db.Model):
     __tablename__ = 'wallets'
     id = db.Column(db.Integer, primary_key=True)

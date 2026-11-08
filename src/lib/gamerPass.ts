@@ -118,7 +118,6 @@ export const GAMER_PASS_TIERS: Record<TierCode, TierInfo> = {
 
 export const TIERS_ORDER: TierCode[] = ['ROOKIE', 'SILVER', 'GOLD', 'DIAMOND'];
 
-// ══════════ ĐỊNH NGHĨA 3 GÓI THẺ HỘI VIÊN THÁNG CHÍNH THỨC ══════════
 export interface MembershipPlan {
   id: string;
   code: TierCode;
@@ -213,7 +212,6 @@ export function getTierByName(nameOrCode?: string): TierInfo {
   return GAMER_PASS_TIERS.ROOKIE;
 }
 
-// Tính toán thời gian hết hạn của gói và số ngày còn lại
 export function getTierRemainingDays(expiresAt?: number): {
   isExpired: boolean;
   daysRemaining: number;

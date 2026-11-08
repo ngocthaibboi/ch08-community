@@ -46,7 +46,6 @@ def create_app():
     app.register_blueprint(auth_bp, url_prefix='/auth')
     app.register_blueprint(api_bp, url_prefix='/api')
 
-    # ══════════ CHAPTER 10: MIDDLEWARE FUNCTIONS ══════════
     @app.before_request
     def before_request_middleware():
         """Middleware tiền xử lý: Bắt đầu phiên request, kiểm tra bảo mật"""

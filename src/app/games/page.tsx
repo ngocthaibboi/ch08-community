@@ -183,6 +183,24 @@ export default function GameMenuPage() {
   }, []);
 
   useEffect(() => {
+    if (typeof window !== 'undefined') {
+      const saved = localStorage.getItem('CYBER_ACTIVE_PLAYING_GAME');
+      if (saved) {
+        try {
+          const parsed = JSON.parse(saved);
+          if (parsed && parsed.gameName) {
+            setActivePlayingGame(parsed.gameName);
+            const now = Date.now();
+            const start = typeof parsed.startTime === 'number' ? parsed.startTime : now;
+            const elapsed = Math.max(0, Math.floor((now - start) / 1000));
+            setInGameSeconds(elapsed);
+          }
+        } catch (e) {}
+      }
+    }
+  }, []);
+
+  useEffect(() => {
     let interval: NodeJS.Timeout | null = null;
     if (activePlayingGame) {
       interval = setInterval(() => {
@@ -238,6 +256,16 @@ export default function GameMenuPage() {
     setLaunchingGame(gameName);
     setLaunchProgress(20);
     setLaunchStatus('ĐANG TẢI DỮ LIỆU CLOUD...');
+    if (typeof window !== 'undefined') {
+      localStorage.setItem(
+        'CYBER_ACTIVE_PLAYING_GAME',
+        JSON.stringify({
+          gameName,
+          startTime: Date.now(),
+          elapsedSeconds: 0,
+        })
+      );
+    }
 
     setTimeout(() => {
       setLaunchProgress(65);
@@ -253,6 +281,17 @@ export default function GameMenuPage() {
   const handleEnterGameNow = () => {
     if (launchingGame) {
       setActivePlayingGame(launchingGame);
+      setInGameSeconds(0);
+      if (typeof window !== 'undefined') {
+        localStorage.setItem(
+          'CYBER_ACTIVE_PLAYING_GAME',
+          JSON.stringify({
+            gameName: launchingGame,
+            startTime: Date.now(),
+            elapsedSeconds: 0,
+          })
+        );
+      }
       setLaunchingGame(null);
       setLaunchProgress(0);
     }
@@ -261,6 +300,9 @@ export default function GameMenuPage() {
   const handleCloseActiveGame = () => {
     setActivePlayingGame(null);
     setInGameSeconds(0);
+    if (typeof window !== 'undefined') {
+      localStorage.removeItem('CYBER_ACTIVE_PLAYING_GAME');
+    }
   };
 
   const handleCallQuickService = (title: string, details: string) => {
@@ -293,12 +335,11 @@ export default function GameMenuPage() {
         <div className="flex items-center gap-3">
           <Link
             href="/client-pc"
-            className="flex items-center gap-1.5 bg-slate-900 hover:bg-slate-800 text-slate-200 border border-slate-700 hover:border-cyan-400 px-3 py-1 rounded-lg transition"
+            className="flex items-center gap-2 bg-gradient-to-r from-emerald-500 to-cyan-500 hover:brightness-110 text-slate-950 font-black font-gaming text-xs px-3.5 py-1.5 rounded-lg shadow-[0_0_15px_rgba(16,185,129,0.4)] transition active:scale-95"
             title="Quay lại giao diện máy trạm"
           >
-            <span className="material-symbols-outlined text-[16px] text-cyan-400">desktop_windows</span>
-            <span className="font-gaming font-black text-white">{wallet.pcName || 'VIP-08'}</span>
-            <span className="text-[10px] text-slate-400">&larr; Máy Trạm</span>
+            <span className="material-symbols-outlined text-[18px]">sports_esports</span>
+            <span>VỀ MÁY TRẠM ({wallet.pcName || 'VIP-08'}) &rarr;</span>
           </Link>
 
           <div className="hidden sm:flex items-center gap-1 text-slate-400">
@@ -556,6 +597,21 @@ export default function GameMenuPage() {
                 </button>
                 <Link
                   href={`/menu?seat=${wallet.pcName || 'VIP-08'}`}
+                  onClick={() => {
+                    if (launchingGame) {
+                      setActivePlayingGame(launchingGame);
+                      if (typeof window !== 'undefined') {
+                        localStorage.setItem(
+                          'CYBER_ACTIVE_PLAYING_GAME',
+                          JSON.stringify({
+                            gameName: launchingGame,
+                            startTime: Date.now(),
+                            elapsedSeconds: 0,
+                          })
+                        );
+                      }
+                    }
+                  }}
                   className="w-full py-2.5 bg-amber-500/20 hover:bg-amber-500/30 text-amber-300 border border-amber-400/50 font-bold rounded-xl text-xs uppercase flex items-center justify-center gap-1.5 transition"
                 >
                   <span className="material-symbols-outlined text-[16px]">restaurant_menu</span>

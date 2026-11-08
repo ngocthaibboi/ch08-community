@@ -9,7 +9,7 @@ export interface AuthUser {
   phone: string;
   email?: string;
   userTier: string;
-  tierExpiresAt?: number; // Thời điểm hết hạn gói hội viên (timestamp ms)
+  tierExpiresAt?: number;
   balance: number;
 }
 
@@ -26,17 +26,13 @@ export interface RegisteredAccount {
   createdAt: string;
 }
 
-// ══════════ KHÓA LƯU TRỮ MÔI TRƯỜNG 1: WEB PORTAL / TRANG CHỦ / VÍ TRỰC TUYẾN ══════════
 export const AUTH_STORAGE_KEY = 'cyber_auth_current_user';
 export const AUTH_EVENT_NAME = 'cyber_auth_updated';
 export const REGISTERED_ACCOUNTS_STORAGE_KEY = 'cyber_registered_accounts';
 
-// ══════════ KHÓA LƯU TRỮ MÔI TRƯỜNG 2: MÁY TRẠM PHÒNG GAME (CLIENT PC / MÁY ĐANG NGỒI) ══════════
-// Hai môi trường hoàn toàn độc lập: Đăng nhập Web Portal không tự ý mở khóa Client PC!
 export const CLIENT_PC_STORAGE_KEY = 'cyber_client_pc_session';
 export const CLIENT_PC_EVENT_NAME = 'cyber_client_pc_updated';
 
-// Hàm kiểm tra định dạng số điện thoại di động Việt Nam (10 chữ số hợp lệ: 03, 05, 07, 08, 09)
 export function isValidVietnamesePhone(phone: string): boolean {
   if (!phone) return false;
   const clean = phone.replace(/[\s.-]/g, '');
@@ -45,8 +41,6 @@ export function isValidVietnamesePhone(phone: string): boolean {
   return standard10.test(clean) || international.test(clean);
 }
 
-// Danh sách tài khoản mặc định khởi tạo ban đầu cho hệ thống (admin1, admin2, gamer01)
-// Mỗi gói có thời hạn 30 ngày (Date.now() + 30 ngày)
 export const DEFAULT_ACCOUNTS: RegisteredAccount[] = [
   {
     id: 'usr-admin1',
@@ -85,7 +79,6 @@ export const DEFAULT_ACCOUNTS: RegisteredAccount[] = [
   },
 ];
 
-// Lấy danh sách tất cả tài khoản đã đăng ký trong hệ thống
 export function getRegisteredAccounts(): RegisteredAccount[] {
   if (typeof window === 'undefined') return DEFAULT_ACCOUNTS;
   try {
@@ -100,7 +93,6 @@ export function getRegisteredAccounts(): RegisteredAccount[] {
       return DEFAULT_ACCOUNTS;
     }
 
-    // Tự động khôi phục nếu trước đó bị đổi nhầm tên "Trần Ngọc Nguyễn Văn A" -> "Trần Ngọc Thái"
     let migrated = false;
     accounts = accounts.map((acc) => {
       let changed = false;
@@ -145,7 +137,6 @@ export function getRegisteredAccounts(): RegisteredAccount[] {
   }
 }
 
-// Lưu danh sách tài khoản
 export function saveRegisteredAccounts(accounts: RegisteredAccount[]): void {
   if (typeof window === 'undefined') return;
   try {
@@ -155,14 +146,12 @@ export function saveRegisteredAccounts(accounts: RegisteredAccount[]): void {
   }
 }
 
-// Tìm tài khoản theo username (không phân biệt hoa thường)
 export function findAccountByUsername(username: string): RegisteredAccount | null {
   const accounts = getRegisteredAccounts();
   const cleanUsername = username.trim().toLowerCase();
   return accounts.find((acc) => acc.username.trim().toLowerCase() === cleanUsername) || null;
 }
 
-// Đăng ký tài khoản mới vào hệ thống (Kiểm tra đầy đủ Tên đăng nhập, Họ tên, SĐT 10 số, Mật khẩu)
 export function registerAccount(data: {
   username: string;
   password: string;
@@ -204,7 +193,6 @@ export function registerAccount(data: {
     return { success: false, error: 'Mật khẩu phải có ít nhất 3 ký tự!' };
   }
 
-  // Kiểm tra tài khoản đã tồn tại chưa
   const existing = findAccountByUsername(cleanUsername);
   if (existing) {
     return {
@@ -245,7 +233,6 @@ export function registerAccount(data: {
   return { success: true, user: authUser };
 }
 
-// Xác thực đăng nhập: Bắt buộc đúng tài khoản và đúng mật khẩu
 export function authenticateUser(
   username: string,
   password: string
@@ -272,7 +259,6 @@ export function authenticateUser(
     };
   }
 
-  // Kiểm tra nếu tài khoản đã hết hạn gói hội viên -> tự động tụt hạng về Tân thủ
   let currentTierName = account.userTier;
   let currentExpiry = account.tierExpiresAt;
   if (currentExpiry && Date.now() > currentExpiry) {
@@ -303,7 +289,6 @@ export function authenticateUser(
   return { success: true, user: authUser };
 }
 
-// ══════════ MÔI TRƯỜNG 1: QUẢN LÝ PHIÊN WEB TRANG CHỦ / PORTAL ══════════
 export function getLoggedInUser(): AuthUser | null {
   if (typeof window === 'undefined') return null;
   try {
@@ -311,7 +296,6 @@ export function getLoggedInUser(): AuthUser | null {
     if (!raw) return null;
     const user: AuthUser = JSON.parse(raw);
 
-    // Di chuyển dữ liệu cũ nếu còn lưu thaibboi hoặc tên bị đổi nhầm
     if (user.username === 'thaibboi') {
       user.username = 'admin1';
       user.fullName = 'Nguyễn Văn A';
@@ -328,7 +312,6 @@ export function getLoggedInUser(): AuthUser | null {
       }
     }
 
-    // KIỂM TRA THỜI HẠN GÓI: Nếu đã hết hạn thời gian riêng của hạng -> tự động tụt hạng về Tân Thủ!
     if (user.tierExpiresAt && Date.now() > user.tierExpiresAt) {
       user.userTier = 'TÂN THỦ (ROOKIE)';
       delete user.tierExpiresAt;
@@ -353,9 +336,12 @@ export function loginUser(userData: AuthUser) {
   if (typeof window === 'undefined') return;
   try {
     localStorage.setItem(AUTH_STORAGE_KEY, JSON.stringify(userData));
+    localStorage.setItem(CLIENT_PC_STORAGE_KEY, JSON.stringify(userData));
+    localStorage.removeItem('CYBER_CLIENT_PC_EXPLICITLY_LOCKED');
+    localStorage.setItem('CYBER_CLIENT_PC_UNLOCKED', 'true');
     window.dispatchEvent(new CustomEvent(AUTH_EVENT_NAME, { detail: userData }));
+    window.dispatchEvent(new CustomEvent(CLIENT_PC_EVENT_NAME, { detail: userData }));
 
-    // Cập nhật số dư & hạng & thời hạn vào cơ sở dữ liệu Registered Accounts để ghi nhớ vĩnh viễn
     const accounts = getRegisteredAccounts();
     const idx = accounts.findIndex((a) => a.username.toLowerCase() === userData.username.toLowerCase());
     if (idx !== -1) {
@@ -371,28 +357,40 @@ export function loginUser(userData: AuthUser) {
       saveRegisteredAccounts(accounts);
     }
 
+    let w: any = null;
     const walletRaw = localStorage.getItem('cyber_user_wallet');
     if (walletRaw) {
       try {
-        const w = JSON.parse(walletRaw);
-        w.userName = userData.fullName || userData.username;
-        if (userData.userTier) w.userTier = userData.userTier;
-        if (userData.tierExpiresAt) {
-          w.tierExpiresAt = userData.tierExpiresAt;
-        } else {
-          delete w.tierExpiresAt;
-        }
-        if (typeof userData.balance === 'number') w.balance = userData.balance;
-        localStorage.setItem('cyber_user_wallet', JSON.stringify(w));
-        window.dispatchEvent(new CustomEvent('cyber_wallet_updated', { detail: w }));
+        w = JSON.parse(walletRaw);
       } catch {}
     }
+    if (!w) {
+      w = {
+        userName: userData.fullName || userData.username,
+        pcName: 'VIP-08',
+        zoneName: 'PHÒNG RIÊNG VIP TẦNG 2',
+        userTier: userData.userTier,
+        balance: userData.balance,
+        hourlyRate: 22000,
+        transactions: [],
+      };
+    } else {
+      w.userName = userData.fullName || userData.username;
+      w.userTier = userData.userTier;
+      w.balance = userData.balance;
+      if (userData.tierExpiresAt) {
+        w.tierExpiresAt = userData.tierExpiresAt;
+      } else {
+        delete w.tierExpiresAt;
+      }
+    }
+    localStorage.setItem('cyber_user_wallet', JSON.stringify(w));
+    window.dispatchEvent(new CustomEvent('cyber_wallet_updated', { detail: w }));
   } catch (err) {
     console.error('Failed to save auth state:', err);
   }
 }
 
-// Hàm giả lập hết hạn gói hội viên để kiểm thử việc tụt hạng về Tân thủ
 export function simulateTierExpiration(): AuthUser | null {
   const current = getLoggedInUser();
   if (!current) return null;
@@ -430,7 +428,6 @@ export function simulateTierExpiration(): AuthUser | null {
   return expiredUser;
 }
 
-// Hàm gia hạn hoặc phục hồi gói hội viên 30 ngày (phục vụ kiểm thử / demo)
 export function restoreTier30Days(tierName: string = 'HỘI VIÊN BẠC 🥈'): AuthUser | null {
   const current = getLoggedInUser();
   if (!current) return null;
@@ -486,13 +483,19 @@ export function logoutUser() {
   if (typeof window === 'undefined') return;
   try {
     localStorage.removeItem(AUTH_STORAGE_KEY);
+    localStorage.removeItem(CLIENT_PC_STORAGE_KEY);
+    localStorage.setItem('CYBER_CLIENT_PC_EXPLICITLY_LOCKED', 'true');
+    localStorage.setItem('CYBER_CLIENT_PC_UNLOCKED', 'false');
     window.dispatchEvent(new CustomEvent(AUTH_EVENT_NAME, { detail: null }));
+    window.dispatchEvent(new CustomEvent(CLIENT_PC_EVENT_NAME, { detail: null }));
 
     const walletRaw = localStorage.getItem('cyber_user_wallet');
     if (walletRaw) {
       try {
         const w = JSON.parse(walletRaw);
         w.userName = 'Tài khoản Hội viên';
+        w.balance = 0;
+        w.userTier = 'TÂN THỦ (ROOKIE)';
         delete w.tierExpiresAt;
         localStorage.setItem('cyber_user_wallet', JSON.stringify(w));
         window.dispatchEvent(new CustomEvent('cyber_wallet_updated', { detail: w }));
@@ -503,27 +506,21 @@ export function logoutUser() {
   }
 }
 
-// ══════════ MÔI TRƯỜNG 2: QUẢN LÝ PHIÊN MÁY TRẠM CLIENT PC (ĐỘC LẬP HOÀN TOÀN VỚI WEB) ══════════
 export function getClientPcSession(): AuthUser | null {
   if (typeof window === 'undefined') return null;
   try {
+    const isExplicitlyLocked = localStorage.getItem('CYBER_CLIENT_PC_EXPLICITLY_LOCKED') === 'true' ||
+      localStorage.getItem('CYBER_CLIENT_PC_UNLOCKED') === 'false';
+    if (isExplicitlyLocked) {
+      return null;
+    }
+    const logged = getLoggedInUser();
+    if (logged) {
+      return logged;
+    }
     const raw = localStorage.getItem(CLIENT_PC_STORAGE_KEY);
     if (!raw) return null;
     const session: AuthUser = JSON.parse(raw);
-    if (session.username === 'thaibboi') {
-      session.username = 'admin1';
-      session.fullName = 'Nguyễn Văn A';
-    } else {
-      const normSess = (session.fullName || '').replace(/\s+/g, ' ');
-      if (
-        normSess.includes('Trần Ngọc Nguyễn Văn A') ||
-        (session.fullName && session.fullName.includes('Trần Ngọc') && session.fullName.includes('Nguyễn Văn A')) ||
-        (session.username && session.username.toLowerCase() === 'thai1' && session.fullName && session.fullName.includes('Nguyễn Văn A'))
-      ) {
-        session.fullName = 'Trần Ngọc Thái';
-        localStorage.setItem(CLIENT_PC_STORAGE_KEY, JSON.stringify(session));
-      }
-    }
     return session;
   } catch {
     return null;
@@ -544,15 +541,17 @@ export function clearClientPcSession(): void {
   if (typeof window === 'undefined') return;
   try {
     localStorage.removeItem(CLIENT_PC_STORAGE_KEY);
+    localStorage.removeItem(AUTH_STORAGE_KEY);
+    localStorage.setItem('CYBER_CLIENT_PC_EXPLICITLY_LOCKED', 'true');
+    localStorage.setItem('CYBER_CLIENT_PC_UNLOCKED', 'false');
     window.dispatchEvent(new CustomEvent(CLIENT_PC_EVENT_NAME, { detail: null }));
+    window.dispatchEvent(new CustomEvent(AUTH_EVENT_NAME, { detail: null }));
   } catch (err) {
     console.error('Failed to clear client pc session:', err);
   }
 }
 
-// ══════════ CHỨC NĂNG CẬP NHẬT TÀI KHOẢN: ĐỔI HỌ TÊN & ĐỔI MẬT KHẨU ══════════
 
-// Cập nhật họ và tên của người dùng (người dùng đặt tên gì thì lưu và lấy đúng tên đó 100%)
 export function updateUserFullName(newFullName: string): { success: boolean; error?: string; user?: AuthUser } {
   const cleanName = newFullName.trim();
   if (!cleanName || cleanName.length < 2) {
@@ -569,7 +568,6 @@ export function updateUserFullName(newFullName: string): { success: boolean; err
     try {
       localStorage.setItem(AUTH_STORAGE_KEY, JSON.stringify(current));
 
-      // Cập nhật trong cơ sở dữ liệu tài khoản registered accounts
       const accounts = getRegisteredAccounts();
       const idx = accounts.findIndex((a) => a.username.toLowerCase() === current.username.toLowerCase());
       if (idx !== -1) {
@@ -577,7 +575,6 @@ export function updateUserFullName(newFullName: string): { success: boolean; err
         saveRegisteredAccounts(accounts);
       }
 
-      // Cập nhật ví và active station
       const walletRaw = localStorage.getItem('cyber_user_wallet');
       if (walletRaw) {
         const w = JSON.parse(walletRaw);
@@ -603,7 +600,6 @@ export function updateUserFullName(newFullName: string): { success: boolean; err
   return { success: true, user: current };
 }
 
-// Thay đổi mật khẩu người dùng (có xác nhận mật khẩu 2 lần)
 export function changeUserPassword(currentPassword: string, newPassword: string, confirmPassword: string): { success: boolean; error?: string } {
   const cleanCurrent = currentPassword.trim();
   const cleanNew = newPassword.trim();

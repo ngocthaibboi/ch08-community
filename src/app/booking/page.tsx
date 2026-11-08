@@ -355,7 +355,6 @@ export default function BookingSeatMap() {
                   </div>
                 </div>
                 <p className="text-[10px] text-amber-400/80 italic">
-                  * Máy này được giữ riêng cho khách. Khách đến đọc mã để nhận máy hoặc bạn có thể đặt trước đồ ăn để nhân viên phục vụ sẵn.
                 </p>
               </div>
             ) : null}

@@ -11,7 +11,6 @@ import AuthModal from '@/components/auth/AuthModal';
 
 export default function GlobalNavBar() {
   const pathname = usePathname();
-  // 4 phân hệ chuyên biệt (Khách tại máy, Máy chủ, Bếp KDS, Quản lý doanh thu) không hiển thị thanh website bán hàng
   const isDedicatedSystem =
     pathname === '/client-pc' ||
     pathname === '/server' ||
@@ -97,7 +96,7 @@ export default function GlobalNavBar() {
 
       return (
     <>
-      {/* NÚT KÉO TRƯỢT GIAO DIỆN HỆ THỐNG TRÊN 4 PHÂN HỆ CHUYÊN BIỆT (KHI THANH ĐANG THU GỌN) */}
+      
       {isDedicatedSystem && !isSystemDrawerOpen && !isPinned && (
         <div className="fixed top-0 left-1/2 -translate-x-1/2 z-[100] pointer-events-auto">
           <button
@@ -117,7 +116,7 @@ export default function GlobalNavBar() {
         </div>
       )}
 
-      {/* KHUNG THANH ĐIỀU HƯỚNG */}
+      
       <header
         className={
           isDedicatedSystem
@@ -207,7 +206,7 @@ export default function GlobalNavBar() {
         </div>
       </div>
 
-      {/* THANH ĐIỀU HƯỚNG WEBSITE CZ CYBERZONE - CHỈ HIỂN THỊ TRÊN WEB, ẨN TRÊN 4 PHÂN HỆ CHUYÊN BIỆT */}
+      
       {!isDedicatedSystem && (
         <nav className="border-b border-white/10 bg-[#070d1e] px-4 py-2.5 relative">
         <div className="max-w-7xl mx-auto flex items-center justify-between gap-4">

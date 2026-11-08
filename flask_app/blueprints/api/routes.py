@@ -6,9 +6,7 @@ from flask_app import db
 
 api_bp = Blueprint('api', __name__)
 
-# ══════════ CHAPTER 9: RESTFUL API ENDPOINTS (JSON RESPONSE & HTTP CODES) ══════════
 
-# 1. GET /api/stations - Lấy danh sách 6 phân khu phòng máy (READ)
 @api_bp.route('/stations', methods=['GET'])
 def get_stations():
     stations = [
@@ -25,7 +23,6 @@ def get_stations():
         "data": stations
     }), 200
 
-# 2. GET /api/combos - Lấy danh sách các gói combo giờ chơi (READ)
 @api_bp.route('/combos', methods=['GET'])
 def get_combos():
     combos = [
@@ -40,7 +37,6 @@ def get_combos():
         "combos": combos
     }), 200
 
-# 3. GET /api/user/profile - Xem thông tin người dùng & hạng Gamer Pass (READ)
 @api_bp.route('/user/profile', methods=['GET'])
 @login_required
 def get_user_profile():
@@ -57,7 +53,6 @@ def get_user_profile():
         }
     }), 200
 
-# 4. POST /api/topup - API Nạp tiền & Thăng hạng tự động (CREATE/UPDATE)
 @api_bp.route('/topup', methods=['POST'])
 @login_required
 def api_topup():
@@ -98,7 +93,6 @@ def api_topup():
         "rank": current_user.rank_info
     }), 200
 
-# 5. GET /api/admin/users - API Quản trị viên lấy danh sách hội viên (Bảo vệ bằng Decorator @admin_required)
 @api_bp.route('/admin/users', methods=['GET'])
 @admin_required
 def admin_get_users():

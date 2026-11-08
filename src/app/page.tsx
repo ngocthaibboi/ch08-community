@@ -421,7 +421,7 @@ export default function Home() {
     const handleWalletSync = () => {
       setWallet(getStoredWallet());
       const u = getLoggedInUser();
-      if (u) setCurrentUser(u);
+      setCurrentUser(u);
     };
 
     const handleAuthChange = () => {
@@ -1074,7 +1074,7 @@ export default function Home() {
             </p>
           </div>
 
-          {/* TAB CHUYỂN ĐỔI: 1. CÁC GÓI THẺ HỘI VIÊN | 2. CỔNG VÍ & GAMER PASS */}
+          
           <div className="flex justify-center">
             <div className="inline-flex p-1.5 bg-slate-900/90 border border-slate-800 rounded-2xl max-w-lg w-full font-mono text-xs shadow-2xl">
               <button
@@ -1111,7 +1111,7 @@ export default function Home() {
             </div>
           </div>
 
-          {/* CẢNH BÁO LỖI KHÔNG ĐỦ TIỀN */}
+          
           {membershipErrorToast && (
             <div className="p-4 sm:p-5 rounded-2xl bg-rose-950/90 border-2 border-rose-500 text-rose-200 font-mono text-xs flex flex-col sm:flex-row items-center justify-between gap-4 shadow-2xl animate-shake">
               <div className="flex items-center gap-3">
@@ -1139,7 +1139,7 @@ export default function Home() {
             </div>
           )}
 
-          {/* THÔNG BÁO THÀNH CÔNG */}
+          
           {membershipToast && (
             <div className="p-4 rounded-2xl bg-emerald-500/20 border border-emerald-400 text-emerald-300 font-mono text-xs flex items-center justify-between shadow-2xl animate-bounce">
               <span className="flex items-center gap-2">
@@ -1156,11 +1156,11 @@ export default function Home() {
             </div>
           )}
 
-          {/* TAB 1: DANH SÁCH 3 GÓI THẺ HỘI VIÊN THÁNG */}
+          
           {membershipTab === 'plans' && (
             <div className="space-y-6">
               <div className="grid grid-cols-1 md:grid-cols-3 gap-6 items-stretch">
-                {/* 1. GÓI BẠC */}
+                
                 {(() => {
                   const isCurrentActive =
                     currentUser &&
@@ -1225,7 +1225,7 @@ export default function Home() {
                   );
                 })()}
 
-                {/* 2. GÓI VÀNG */}
+                
                 {(() => {
                   const isCurrentActive =
                     currentUser &&
@@ -1295,7 +1295,7 @@ export default function Home() {
                   );
                 })()}
 
-                {/* 3. GÓI KIM CƯƠNG */}
+                
                 {(() => {
                   const isCurrentActive =
                     currentUser &&
@@ -1365,7 +1365,7 @@ export default function Home() {
                 })()}
               </div>
 
-              {/* THÔNG BÁO VỀ THỜI HẠN VÀ TỤT HẠNG */}
+              
               <div className="p-4 md:p-5 rounded-2xl bg-slate-900 border border-emerald-500/30 flex flex-col sm:flex-row justify-between items-center gap-4 text-xs font-mono">
                 <div className="flex items-center gap-3">
                   <span className="material-symbols-outlined text-emerald-400 text-2xl shrink-0">timer</span>
@@ -1384,11 +1384,10 @@ export default function Home() {
             </div>
           )}
 
-          {/* TAB 2: CỔNG VÍ & GAMER PASS CỦA BẠN */}
+          
           {membershipTab === 'portal' && (
             <div className="space-y-6">
               {!currentUser ? (
-                /* CHƯA ĐĂNG NHẬP: KHÔNG HIỆN THẺ GIẢ, YÊU CẦU ĐĂNG NHẬP */
                 <div className="rounded-3xl bg-slate-900 border border-amber-500/40 p-8 sm:p-12 text-center space-y-4 shadow-2xl">
                   <div className="w-16 h-16 rounded-2xl bg-amber-500/10 text-amber-400 flex items-center justify-center mx-auto text-3xl border border-amber-500/30">
                     <span className="material-symbols-outlined text-4xl">lock</span>
@@ -1417,7 +1416,6 @@ export default function Home() {
                   </div>
                 </div>
               ) : (
-                /* ĐÃ ĐĂNG NHẬP: HIỆN THÔNG TIN THẬT CỦA USER */
                 (() => {
                   const effectiveBalance = typeof currentUser.balance === 'number' ? currentUser.balance : wallet.balance;
                   const expiryInfo = currentUser.tierExpiresAt ? getTierRemainingDays(currentUser.tierExpiresAt) : null;
@@ -1446,7 +1444,7 @@ export default function Home() {
                           </div>
                         </div>
 
-                        {/* THỜI HẠN GÓI VÀ TỤT HẠNG */}
+                        
                         <div className="font-mono text-right text-xs">
                           {currentUser.tierExpiresAt && expiryInfo ? (
                             <div className="p-2.5 rounded-xl bg-emerald-500/10 border border-emerald-500/30 text-emerald-300">
@@ -1467,7 +1465,7 @@ export default function Home() {
                         </div>
                       </div>
 
-                      {/* SỐ DƯ & QUY ĐỔI GIỜ CHƠI */}
+                      
                       <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 font-mono">
                         <div className="bg-slate-800/80 p-5 rounded-2xl border border-emerald-500/30 shadow-[inset_0_0_15px_rgba(16,185,129,0.1)]">
                           <div className="flex justify-between items-center mb-1">
@@ -1495,7 +1493,7 @@ export default function Home() {
                         </div>
                       </div>
 
-                      {/* HÀNH ĐỘNG VÀ CÔNG CỤ KIỂM THỬ TỤT HẠNG */}
+                      
                       <div className="pt-4 border-t border-slate-800 flex flex-col sm:flex-row items-center justify-between gap-4 font-mono text-xs">
                         <div className="flex items-center gap-2">
                           <Link
@@ -1513,7 +1511,7 @@ export default function Home() {
                           </button>
                         </div>
 
-                        {/* THANH CÔNG CỤ DEMO CHO GIÁO VIÊN / KHẢO SÁT CHẤM ĐIỂM */}
+                        
                         <div className="flex items-center gap-2 text-[10px]">
                           <span className="text-slate-500">🧪 Thử nghiệm:</span>
                           <button
@@ -1541,7 +1539,7 @@ export default function Home() {
             </div>
           )}
 
-          {/* CHÍNH SÁCH TÍCH LŨY */}
+          
           <div className="p-4 md:p-6 rounded-2xl bg-gradient-to-r from-emerald-950/60 to-slate-900 border border-emerald-500/30 flex flex-col md:flex-row justify-between items-center gap-4">
             <div className="flex items-center gap-4">
               <div className="w-10 h-10 rounded-xl bg-emerald-500/20 text-emerald-400 flex items-center justify-center text-xl shrink-0">
