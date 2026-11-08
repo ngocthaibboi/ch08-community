@@ -288,12 +288,43 @@ export default function GlobalNavBar() {
               )}
             </div>
 
-            <Link
-              href="/#bang-gia"
-              className="hover:text-emerald-400 transition"
-            >
-              GÓI HỘI VIÊN
-            </Link>
+            <div className="relative group">
+              <Link
+                href="/#bang-gia"
+                className="flex items-center gap-1 hover:text-emerald-400 transition py-2"
+              >
+                <span>GÓI HỘI VIÊN</span>
+                <span className="material-symbols-outlined text-[15px] group-hover:rotate-180 transition duration-300">
+                  expand_more
+                </span>
+              </Link>
+
+              <div className="absolute left-0 top-full hidden group-hover:block w-72 pt-2 z-50">
+                <div className="p-3 bg-slate-900/98 border border-white/10 rounded-2xl shadow-2xl backdrop-blur-xl space-y-1.5 font-mono text-xs">
+                  <Link
+                    href="/#bang-gia"
+                    className="flex items-center gap-3 p-2.5 rounded-xl hover:bg-white/5 text-slate-300 hover:text-emerald-400 transition"
+                  >
+                    <span className="material-symbols-outlined text-emerald-400 text-xl">card_membership</span>
+                    <div>
+                      <div className="font-bold text-white normal-case">1. Các Gói Hội Viên Tháng</div>
+                      <div className="text-[10px] text-slate-400 normal-case">Silver 99k • Gold 249k • Diamond 599k</div>
+                    </div>
+                  </Link>
+
+                  <Link
+                    href="/auth"
+                    className="flex items-center gap-3 p-2.5 rounded-xl hover:bg-white/5 text-slate-300 hover:text-cyan-400 transition border-t border-white/5 pt-2.5"
+                  >
+                    <span className="material-symbols-outlined text-cyan-400 text-xl">wallet</span>
+                    <div>
+                      <div className="font-bold text-white normal-case">2. Cổng Ví & Gamer Pass</div>
+                      <div className="text-[10px] text-slate-400 normal-case">Nạp tiền, kiểm tra hạn dùng & thăng hạng</div>
+                    </div>
+                  </Link>
+                </div>
+              </div>
+            </div>
 
             <Link
               href="/#community"
@@ -373,7 +404,7 @@ export default function GlobalNavBar() {
                       </span>
                     </div>
                     <span className="text-emerald-400 font-bold block">
-                      {wallet.balance.toLocaleString('vi-VN')}đ
+                      {(typeof currentUser.balance === 'number' ? currentUser.balance : wallet.balance).toLocaleString('vi-VN')}đ
                     </span>
                   </div>
                   <div className="w-8 h-8 rounded-lg bg-emerald-500/20 text-emerald-400 flex items-center justify-center font-bold">

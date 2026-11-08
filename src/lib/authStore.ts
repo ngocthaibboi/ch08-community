@@ -9,6 +9,7 @@ export interface AuthUser {
   phone: string;
   email?: string;
   userTier: string;
+  tierExpiresAt?: number; // Thời điểm hết hạn gói hội viên (timestamp ms)
   balance: number;
 }
 
@@ -20,6 +21,7 @@ export interface RegisteredAccount {
   phone: string;
   email?: string;
   userTier: string;
+  tierExpiresAt?: number;
   balance: number;
   createdAt: string;
 }
@@ -44,6 +46,7 @@ export function isValidVietnamesePhone(phone: string): boolean {
 }
 
 // Danh sách tài khoản mặc định khởi tạo ban đầu cho hệ thống (admin1, admin2, gamer01)
+// Mỗi gói có thời hạn 30 ngày (Date.now() + 30 ngày)
 export const DEFAULT_ACCOUNTS: RegisteredAccount[] = [
   {
     id: 'usr-admin1',
@@ -53,6 +56,7 @@ export const DEFAULT_ACCOUNTS: RegisteredAccount[] = [
     phone: '0988888888',
     email: 'admin1@cyberzone.vn',
     userTier: 'HỘI VIÊN BẠC 🥈',
+    tierExpiresAt: Date.now() + 30 * 24 * 3600 * 1000,
     balance: 200000,
     createdAt: '2026-10-01T00:00:00.000Z',
   },
@@ -64,6 +68,7 @@ export const DEFAULT_ACCOUNTS: RegisteredAccount[] = [
     phone: '0912888999',
     email: 'admin2@cyberzone.vn',
     userTier: 'HỘI VIÊN KIM CƯƠNG 💎',
+    tierExpiresAt: Date.now() + 30 * 24 * 3600 * 1000,
     balance: 500000,
     createdAt: '2026-10-01T00:00:00.000Z',
   },
@@ -262,13 +267,31 @@ export function authenticateUser(
     };
   }
 
+  // Kiểm tra nếu tài khoản đã hết hạn gói hội viên -> tự động tụt hạng về Tân thủ
+  let currentTierName = account.userTier;
+  let currentExpiry = account.tierExpiresAt;
+  if (currentExpiry && Date.now() > currentExpiry) {
+    currentTierName = 'TÂN THỦ (ROOKIE)';
+    currentExpiry = undefined;
+    account.userTier = currentTierName;
+    delete account.tierExpiresAt;
+    const accounts = getRegisteredAccounts();
+    const idx = accounts.findIndex((a) => a.username.toLowerCase() === account.username.toLowerCase());
+    if (idx !== -1) {
+      accounts[idx].userTier = currentTierName;
+      delete accounts[idx].tierExpiresAt;
+      saveRegisteredAccounts(accounts);
+    }
+  }
+
   const authUser: AuthUser = {
     id: account.id,
     username: account.username,
     fullName: account.fullName,
     phone: account.phone,
     email: account.email,
-    userTier: account.userTier,
+    userTier: currentTierName,
+    tierExpiresAt: currentExpiry,
     balance: account.balance,
   };
 
@@ -293,13 +316,21 @@ export function getLoggedInUser(): AuthUser | null {
       localStorage.setItem(AUTH_STORAGE_KEY, JSON.stringify(user));
     }
 
-    if (user && typeof user.balance === 'number') {
-      const matchedTier = determineTierByAmount(user.balance);
-      const currentTier = getTierByName(user.userTier);
-      if (matchedTier.minAmount > currentTier.minAmount) {
-        user.userTier = matchedTier.name;
+    // KIỂM TRA THỜI HẠN GÓI: Nếu đã hết hạn thời gian riêng của hạng -> tự động tụt hạng về Tân Thủ!
+    if (user.tierExpiresAt && Date.now() > user.tierExpiresAt) {
+      user.userTier = 'TÂN THỦ (ROOKIE)';
+      delete user.tierExpiresAt;
+      localStorage.setItem(AUTH_STORAGE_KEY, JSON.stringify(user));
+
+      const accounts = getRegisteredAccounts();
+      const idx = accounts.findIndex((a) => a.username.toLowerCase() === user.username.toLowerCase());
+      if (idx !== -1) {
+        accounts[idx].userTier = 'TÂN THỦ (ROOKIE)';
+        delete accounts[idx].tierExpiresAt;
+        saveRegisteredAccounts(accounts);
       }
     }
+
     return user;
   } catch {
     return null;
@@ -309,22 +340,20 @@ export function getLoggedInUser(): AuthUser | null {
 export function loginUser(userData: AuthUser) {
   if (typeof window === 'undefined') return;
   try {
-    if (typeof userData.balance === 'number') {
-      const matchedTier = determineTierByAmount(userData.balance);
-      const currentTier = getTierByName(userData.userTier);
-      if (matchedTier.minAmount > currentTier.minAmount) {
-        userData.userTier = matchedTier.name;
-      }
-    }
     localStorage.setItem(AUTH_STORAGE_KEY, JSON.stringify(userData));
     window.dispatchEvent(new CustomEvent(AUTH_EVENT_NAME, { detail: userData }));
 
-    // Cập nhật số dư & hạng vào cơ sở dữ liệu Registered Accounts để ghi nhớ vĩnh viễn
+    // Cập nhật số dư & hạng & thời hạn vào cơ sở dữ liệu Registered Accounts để ghi nhớ vĩnh viễn
     const accounts = getRegisteredAccounts();
     const idx = accounts.findIndex((a) => a.username.toLowerCase() === userData.username.toLowerCase());
     if (idx !== -1) {
       accounts[idx].balance = userData.balance;
       accounts[idx].userTier = userData.userTier;
+      if (userData.tierExpiresAt) {
+        accounts[idx].tierExpiresAt = userData.tierExpiresAt;
+      } else {
+        delete accounts[idx].tierExpiresAt;
+      }
       if (userData.fullName) accounts[idx].fullName = userData.fullName;
       if (userData.phone) accounts[idx].phone = userData.phone;
       saveRegisteredAccounts(accounts);
@@ -336,6 +365,11 @@ export function loginUser(userData: AuthUser) {
         const w = JSON.parse(walletRaw);
         w.userName = userData.fullName || userData.username;
         if (userData.userTier) w.userTier = userData.userTier;
+        if (userData.tierExpiresAt) {
+          w.tierExpiresAt = userData.tierExpiresAt;
+        } else {
+          delete w.tierExpiresAt;
+        }
         if (typeof userData.balance === 'number') w.balance = userData.balance;
         localStorage.setItem('cyber_user_wallet', JSON.stringify(w));
         window.dispatchEvent(new CustomEvent('cyber_wallet_updated', { detail: w }));
@@ -344,6 +378,83 @@ export function loginUser(userData: AuthUser) {
   } catch (err) {
     console.error('Failed to save auth state:', err);
   }
+}
+
+// Hàm giả lập hết hạn gói hội viên để kiểm thử việc tụt hạng về Tân thủ
+export function simulateTierExpiration(): AuthUser | null {
+  const current = getLoggedInUser();
+  if (!current) return null;
+  const expiredUser: AuthUser = {
+    ...current,
+    userTier: 'TÂN THỦ (ROOKIE)',
+    tierExpiresAt: undefined,
+  };
+  loginUser(expiredUser);
+
+  if (typeof window !== 'undefined') {
+    try {
+      const rawAccs = localStorage.getItem(REGISTERED_ACCOUNTS_STORAGE_KEY);
+      if (rawAccs) {
+        const accs = JSON.parse(rawAccs);
+        const idx = accs.findIndex((a: any) => a.username.toLowerCase() === current.username.toLowerCase());
+        if (idx !== -1) {
+          accs[idx].userTier = 'TÂN THỦ (ROOKIE)';
+          delete accs[idx].tierExpiresAt;
+          localStorage.setItem(REGISTERED_ACCOUNTS_STORAGE_KEY, JSON.stringify(accs));
+        }
+      }
+
+      const walletRaw = localStorage.getItem('cyber_user_wallet');
+      if (walletRaw) {
+        const w = JSON.parse(walletRaw);
+        w.userTier = 'TÂN THỦ (ROOKIE)';
+        delete w.tierExpiresAt;
+        localStorage.setItem('cyber_user_wallet', JSON.stringify(w));
+        window.dispatchEvent(new CustomEvent('cyber_wallet_updated', { detail: w }));
+      }
+    } catch {}
+  }
+
+  return expiredUser;
+}
+
+// Hàm gia hạn hoặc phục hồi gói hội viên 30 ngày (phục vụ kiểm thử / demo)
+export function restoreTier30Days(tierName: string = 'HỘI VIÊN BẠC 🥈'): AuthUser | null {
+  const current = getLoggedInUser();
+  if (!current) return null;
+  const expiresAt = Date.now() + 30 * 24 * 3600 * 1000;
+  const renewedUser: AuthUser = {
+    ...current,
+    userTier: tierName,
+    tierExpiresAt: expiresAt,
+  };
+  loginUser(renewedUser);
+
+  if (typeof window !== 'undefined') {
+    try {
+      const rawAccs = localStorage.getItem(REGISTERED_ACCOUNTS_STORAGE_KEY);
+      if (rawAccs) {
+        const accs = JSON.parse(rawAccs);
+        const idx = accs.findIndex((a: any) => a.username.toLowerCase() === current.username.toLowerCase());
+        if (idx !== -1) {
+          accs[idx].userTier = tierName;
+          accs[idx].tierExpiresAt = expiresAt;
+          localStorage.setItem(REGISTERED_ACCOUNTS_STORAGE_KEY, JSON.stringify(accs));
+        }
+      }
+
+      const walletRaw = localStorage.getItem('cyber_user_wallet');
+      if (walletRaw) {
+        const w = JSON.parse(walletRaw);
+        w.userTier = tierName;
+        w.tierExpiresAt = expiresAt;
+        localStorage.setItem('cyber_user_wallet', JSON.stringify(w));
+        window.dispatchEvent(new CustomEvent('cyber_wallet_updated', { detail: w }));
+      }
+    } catch {}
+  }
+
+  return renewedUser;
 }
 
 export function updateCurrentUserBalanceAndTier(newBalance: number): AuthUser | null {
@@ -370,6 +481,7 @@ export function logoutUser() {
       try {
         const w = JSON.parse(walletRaw);
         w.userName = 'Tài khoản Hội viên';
+        delete w.tierExpiresAt;
         localStorage.setItem('cyber_user_wallet', JSON.stringify(w));
         window.dispatchEvent(new CustomEvent('cyber_wallet_updated', { detail: w }));
       } catch {}

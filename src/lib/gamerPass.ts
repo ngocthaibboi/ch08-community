@@ -53,7 +53,7 @@ export const GAMER_PASS_TIERS: Record<TierCode, TierInfo> = {
     borderColor: 'border-slate-400',
     accentBg: 'bg-slate-400/10',
     icon: 'military_tech',
-    tagline: 'Mức nạp tích lũy từ 200.000đ',
+    tagline: 'Mức nạp tích lũy từ 200.000đ (Thời hạn gói 30 ngày)',
     playDiscountPercent: 10,
     fnbDiscountPercent: 5,
     reserveDurationMinutes: 20,
@@ -63,7 +63,7 @@ export const GAMER_PASS_TIERS: Record<TierCode, TierInfo> = {
       'Tặng ngay 3 Giờ chơi VIP miễn phí khi lên hạng',
       'Giảm 5% toàn bộ menu thực đơn Bếp F&B',
       'Ưu tiên giữ chỗ máy trước tối đa 20 phút',
-      'Hỗ trợ đổi phòng máy tự động chuyển đổi số dư',
+      'Thời hạn sử dụng: 30 ngày (hết hạn tự động về Tân thủ)',
     ],
   },
   GOLD: {
@@ -76,7 +76,7 @@ export const GAMER_PASS_TIERS: Record<TierCode, TierInfo> = {
     borderColor: 'border-amber-500',
     accentBg: 'bg-amber-500/10',
     icon: 'star',
-    tagline: 'Mức nạp tích lũy từ 500.000đ',
+    tagline: 'Mức nạp tích lũy từ 500.000đ (Thời hạn gói 30 ngày)',
     playDiscountPercent: 20,
     fnbDiscountPercent: 10,
     reserveDurationMinutes: 45,
@@ -87,8 +87,7 @@ export const GAMER_PASS_TIERS: Record<TierCode, TierInfo> = {
       'Tặng 1 Combo Đêm (Mì cay + Sting dâu) mỗi tuần',
       'Giảm 10% toàn bộ thực đơn Bếp F&B',
       'Ưu tiên giữ chỗ máy trước tối đa 45 phút',
-      'Miễn phí vé tham dự giải đấu Clan Cyber Zone',
-      'Ưu tiên phục vụ món ăn & hỗ trợ kỹ thuật < 5 phút',
+      'Thời hạn sử dụng: 30 ngày (hết hạn tự động về Tân thủ)',
     ],
   },
   DIAMOND: {
@@ -101,7 +100,7 @@ export const GAMER_PASS_TIERS: Record<TierCode, TierInfo> = {
     borderColor: 'border-purple-500',
     accentBg: 'bg-purple-500/10',
     icon: 'diamond',
-    tagline: 'Mức nạp tích lũy từ 1.500.000đ - ĐẲNG CẤP VIP ELITE',
+    tagline: 'Mức nạp tích lũy từ 1.500.000đ - ĐẲNG CẤP VIP ELITE (Thời hạn 30 ngày)',
     playDiscountPercent: 35,
     fnbDiscountPercent: 15,
     reserveDurationMinutes: 999,
@@ -112,13 +111,79 @@ export const GAMER_PASS_TIERS: Record<TierCode, TierInfo> = {
       'Free Refill nước ngọt có ga không giới hạn suốt ca chơi',
       'Tặng Áo thi đấu Gaming Jersey Cyber Zone in tên độc quyền',
       'Sở hữu Tủ Locker riêng bảo quản bàn phím, chuột cá nhân tại quán',
-      'Giảm 15% toàn bộ thực đơn Bếp F&B',
-      'Phục vụ VIP chuyên biệt, bưng đồ & hỗ trợ kỹ thuật < 3 phút',
+      'Thời hạn sử dụng: 30 ngày (hết hạn tự động về Tân thủ)',
     ],
   },
 };
 
 export const TIERS_ORDER: TierCode[] = ['ROOKIE', 'SILVER', 'GOLD', 'DIAMOND'];
+
+// ══════════ ĐỊNH NGHĨA 3 GÓI THẺ HỘI VIÊN THÁNG CHÍNH THỨC ══════════
+export interface MembershipPlan {
+  id: string;
+  code: TierCode;
+  name: string;
+  badgeName: string;
+  price: number;
+  durationDays: number;
+  description: string;
+  perks: string[];
+  popular?: boolean;
+}
+
+export const MEMBERSHIP_PLANS: MembershipPlan[] = [
+  {
+    id: 'plan-silver',
+    code: 'SILVER',
+    name: 'SILVER MEMBER (Hội Viên Bạc)',
+    badgeName: 'HỘI VIÊN BẠC 🥈',
+    price: 99000,
+    durationDays: 30,
+    description: 'Gói khởi đầu tối ưu dành cho game thủ thường xuyên ghé quán.',
+    perks: [
+      'Giảm 10% tiền giờ chơi toàn bộ hệ thống máy',
+      'Tặng ngay 3 giờ chơi VIP miễn phí khi kích hoạt',
+      'Giảm 5% đồ ăn nước uống thực đơn Bếp F&B',
+      'Free nâng cấp tài khoản game bản quyền tại sảnh',
+      'Tích lũy 1 điểm thưởng mỗi 1.000đ chi tiêu đổi quà Gear',
+    ],
+  },
+  {
+    id: 'plan-gold',
+    code: 'GOLD',
+    name: 'GOLD GAMER PASS (Hội Viên Vàng)',
+    badgeName: 'HỘI VIÊN VÀNG ⭐',
+    price: 249000,
+    durationDays: 30,
+    popular: true,
+    description: 'Dành cho Rank cao thủ, game thủ try-hard và đội nhóm thi đấu.',
+    perks: [
+      'Giảm 20% tiền giờ chơi (Phòng VIP, Pro 540Hz, Standard)',
+      'Tặng ngay 8 giờ chơi Ultra VIP Suite (trị giá 176k)',
+      'Tặng 01 Combo Ăn Uống Free mỗi tuần (Mì trộn + Sting)',
+      'Giảm 10% menu Bếp & Dịch vụ Mod phím / Lube switch',
+      'Ưu tiên giữ máy trước giờ cao điểm 45 phút không lo hết chỗ',
+      'Miễn phí vé tham dự toàn bộ Giải đấu Clan hàng tuần',
+    ],
+  },
+  {
+    id: 'plan-diamond',
+    code: 'DIAMOND',
+    name: 'DIAMOND ELITE VIP (Kim Cương)',
+    badgeName: 'HỘI VIÊN KIM CƯƠNG 💎',
+    price: 599000,
+    durationDays: 30,
+    description: 'Đẳng cấp thượng lưu: Full đặc quyền, tủ locker và đồ uống free.',
+    perks: [
+      'Giảm 35% tiền giờ chơi (Cả Arena, Couple, Console & Bida)',
+      'Tặng ngay 20 giờ chơi VIP miễn phí trong tháng (trị giá 440k)',
+      'Free Refill nước ngọt, cà phê, trà giải khát không giới hạn',
+      'Tặng 01 Áo Jersey Thi Đấu Cyber Zone 2026 in Nickname',
+      'Ngăn tủ Locker cá nhân cất giữ bàn phím & gear riêng biệt an toàn',
+      'Chăm sóc VIP riêng, order món ăn ưu tiên giao trong 3 phút',
+    ],
+  },
+];
 
 export function determineTierByAmount(amount: number): TierInfo {
   if (amount >= GAMER_PASS_TIERS.DIAMOND.minAmount) {
@@ -148,6 +213,31 @@ export function getTierByName(nameOrCode?: string): TierInfo {
   return GAMER_PASS_TIERS.ROOKIE;
 }
 
+// Tính toán thời gian hết hạn của gói và số ngày còn lại
+export function getTierRemainingDays(expiresAt?: number): {
+  isExpired: boolean;
+  daysRemaining: number;
+  formattedExpiry: string;
+} {
+  if (!expiresAt) {
+    return { isExpired: false, daysRemaining: 0, formattedExpiry: '' };
+  }
+  const diff = expiresAt - Date.now();
+  if (diff <= 0) {
+    return {
+      isExpired: true,
+      daysRemaining: 0,
+      formattedExpiry: new Date(expiresAt).toLocaleDateString('vi-VN'),
+    };
+  }
+  const days = Math.ceil(diff / (24 * 60 * 60 * 1000));
+  return {
+    isExpired: false,
+    daysRemaining: days,
+    formattedExpiry: new Date(expiresAt).toLocaleDateString('vi-VN'),
+  };
+}
+
 export function calculateTierProgression(effectiveAmount: number) {
   const currentTier = determineTierByAmount(effectiveAmount);
 
@@ -172,7 +262,6 @@ export function calculateTierProgression(effectiveAmount: number) {
     neededAmount = Math.max(0, nextTier.minAmount - effectiveAmount);
     progressPercent = Math.min(100, Math.round((currentProgress / range) * 100));
   } else {
-
     nextTier = null;
     neededAmount = 0;
     progressPercent = 100;

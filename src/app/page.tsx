@@ -10,8 +10,27 @@ import {
   SeatBooking,
   BaseSeat,
 } from '@/lib/bookingStore';
-import { getLoggedInUser, loginUser, AUTH_EVENT_NAME, AuthUser } from '@/lib/authStore';
+import {
+  getLoggedInUser,
+  loginUser,
+  AUTH_EVENT_NAME,
+  AuthUser,
+  simulateTierExpiration,
+  restoreTier30Days,
+} from '@/lib/authStore';
 import AuthModal from '@/components/auth/AuthModal';
+import {
+  subscribeMembershipPlan,
+  getStoredWallet,
+  WALLET_EVENT_NAME,
+  UserWallet,
+  INITIAL_WALLET,
+} from '@/lib/walletStore';
+import {
+  MEMBERSHIP_PLANS,
+  getTierRemainingDays,
+  getTierByName,
+} from '@/lib/gamerPass';
 
 const GEAR_PRODUCTS = [
   {
@@ -231,6 +250,12 @@ export default function Home() {
   } | null>(null);
 
   const [membershipToast, setMembershipToast] = useState<string | null>(null);
+  const [membershipTab, setMembershipTab] = useState<'plans' | 'portal'>('plans');
+  const [membershipErrorToast, setMembershipErrorToast] = useState<{
+    message: string;
+    neededAmount?: number;
+  } | null>(null);
+  const [wallet, setWallet] = useState<UserWallet>(INITIAL_WALLET);
 
   const [isGearModalOpen, setIsGearModalOpen] = useState(false);
   const [selectedGearTab, setSelectedGearTab] = useState<'all' | 'mouse' | 'keyboard' | 'services'>('all');
@@ -368,10 +393,18 @@ export default function Home() {
   useEffect(() => {
     const user = getLoggedInUser();
     setCurrentUser(user);
+    const initialWallet = getStoredWallet();
+    setWallet(initialWallet);
     if (user) {
       setCustomerName(user.fullName);
       setPhone(user.phone);
     }
+
+    const handleWalletSync = () => {
+      setWallet(getStoredWallet());
+      const u = getLoggedInUser();
+      if (u) setCurrentUser(u);
+    };
 
     const handleAuthChange = () => {
       const updatedUser = getLoggedInUser();
@@ -401,14 +434,18 @@ export default function Home() {
     };
 
     window.addEventListener(AUTH_EVENT_NAME, handleAuthChange);
+    window.addEventListener(WALLET_EVENT_NAME, handleWalletSync);
     window.addEventListener('storage', handleAuthChange);
+    window.addEventListener('storage', handleWalletSync);
     window.addEventListener(BOOKING_STORAGE_EVENT, handleBookingSync);
     window.addEventListener('storage', handleBookingSync);
     window.addEventListener('storage', handleCustomRatesSync);
 
     return () => {
       window.removeEventListener(AUTH_EVENT_NAME, handleAuthChange);
+      window.removeEventListener(WALLET_EVENT_NAME, handleWalletSync);
       window.removeEventListener('storage', handleAuthChange);
+      window.removeEventListener('storage', handleWalletSync);
       window.removeEventListener(BOOKING_STORAGE_EVENT, handleBookingSync);
       window.removeEventListener('storage', handleBookingSync);
       window.removeEventListener('storage', handleCustomRatesSync);
@@ -459,20 +496,59 @@ export default function Home() {
     });
   };
 
-  const handleSubscribePlan = (planName: string, tierBadge: string) => {
+  const handleSubscribePlan = (planId: string) => {
+    setMembershipErrorToast(null);
+    setMembershipToast(null);
+
     if (!currentUser) {
-      setAuthModalMessage(`Vui lòng đăng nhập để đăng ký kích hoạt gói ${planName}!`);
+      const plan = MEMBERSHIP_PLANS.find((p) => p.id === planId);
+      setAuthModalMessage(`Vui lòng đăng nhập tài khoản CyberZone để đăng ký ${plan?.name || 'gói hội viên'}!`);
       setIsAuthModalOpen(true);
       return;
     }
-    const updatedUser: AuthUser = {
-      ...currentUser,
-      userTier: tierBadge,
-    };
-    loginUser(updatedUser);
-    setCurrentUser(updatedUser);
-    setMembershipToast(`🎉 Chúc mừng bạn đã đăng ký thành công gói ${planName} (${tierBadge})! Quyền lợi chiết khấu và giờ VIP đã được kích hoạt.`);
-    setTimeout(() => setMembershipToast(null), 6000);
+
+    const res = subscribeMembershipPlan(planId);
+    if (!res.success) {
+      setMembershipErrorToast({
+        message: res.error || 'Số dư ví không đủ để đăng ký gói!',
+        neededAmount: res.neededAmount,
+      });
+      return;
+    }
+
+    const updatedUser = getLoggedInUser();
+    if (updatedUser) setCurrentUser(updatedUser);
+    const updatedWallet = getStoredWallet();
+    setWallet(updatedWallet);
+
+    const plan = res.plan!;
+    const expiryDateStr = res.expiresAt ? new Date(res.expiresAt).toLocaleDateString('vi-VN') : '30 ngày';
+    setMembershipToast(
+      `🎉 Chúc mừng bạn đã đăng ký thành công ${plan.name} (${plan.badgeName})! ` +
+      `Đã trừ ${plan.price.toLocaleString('vi-VN')}đ vào ví. Số dư còn lại: ${res.newBalance?.toLocaleString('vi-VN')}đ. ` +
+      `Thời hạn sử dụng: 30 ngày (Hết hạn ngày ${expiryDateStr}).`
+    );
+    setTimeout(() => setMembershipToast(null), 8000);
+  };
+
+  const handleSimulateExpireHome = () => {
+    const expired = simulateTierExpiration();
+    if (expired) {
+      setCurrentUser(expired);
+      setWallet(getStoredWallet());
+      setMembershipToast('⚠️ [KIỂM THỬ] Đã giả lập hết hạn gói hội viên! Hạng đã tự động tụt về TÂN THỦ (ROOKIE).');
+      setTimeout(() => setMembershipToast(null), 7000);
+    }
+  };
+
+  const handleRestoreTierHome = (tier: string = 'HỘI VIÊN BẠC 🥈') => {
+    const renewed = restoreTier30Days(tier);
+    if (renewed) {
+      setCurrentUser(renewed);
+      setWallet(getStoredWallet());
+      setMembershipToast(`✅ [KIỂM THỬ] Đã gia hạn thành công ${tier} thêm 30 ngày!`);
+      setTimeout(() => setMembershipToast(null), 7000);
+    }
   };
 
   const handlePostLfg = (e: React.FormEvent) => {
@@ -965,169 +1041,487 @@ export default function Home() {
           </div>
         </div>
 
-        <div id="bang-gia" className="space-y-8">
+        <div id="bang-gia" className="space-y-8 scroll-mt-24">
           <div className="text-center space-y-2 max-w-2xl mx-auto">
             <span className="text-xs font-mono text-emerald-400 font-bold uppercase tracking-wider">
               ĐẶC QUYỀN GAMER PASS • HỘI VIÊN CHÍNH THỨC
             </span>
             <h2 className="text-3xl md:text-5xl font-black text-white font-gaming">
-              Các Gói Thẻ Hội Viên &amp; Quyền Lợi
+              Gói Hội Viên &amp; Cổng Gamer Pass
             </h2>
             <p className="text-xs text-slate-400">
-              Đăng ký gói hội viên theo tháng để nhận chiết khấu tiền giờ lên đến 35%, đồ uống miễn phí mỗi ngày và đặc quyền giữ chỗ trước giờ cao điểm.
+              Đăng ký gói hội viên theo tháng để nhận chiết khấu tiền giờ lên đến 35%, đồ uống miễn phí mỗi ngày và quản lý ví tài khoản cá nhân.
             </p>
           </div>
 
+          {/* TAB CHUYỂN ĐỔI: 1. CÁC GÓI THẺ HỘI VIÊN | 2. CỔNG VÍ & GAMER PASS */}
+          <div className="flex justify-center">
+            <div className="inline-flex p-1.5 bg-slate-900/90 border border-slate-800 rounded-2xl max-w-lg w-full font-mono text-xs shadow-2xl">
+              <button
+                type="button"
+                onClick={() => {
+                  setMembershipTab('plans');
+                  setMembershipErrorToast(null);
+                }}
+                className={`flex-1 py-3 px-3 rounded-xl font-bold transition flex items-center justify-center gap-2 cursor-pointer ${
+                  membershipTab === 'plans'
+                    ? 'bg-gradient-to-r from-emerald-400 to-teal-400 text-black shadow-lg shadow-emerald-500/20 font-extrabold'
+                    : 'text-slate-400 hover:text-white'
+                }`}
+              >
+                <span className="material-symbols-outlined text-[18px]">card_membership</span>
+                <span>1. Gói Hội Viên Tháng</span>
+              </button>
+
+              <button
+                type="button"
+                onClick={() => {
+                  setMembershipTab('portal');
+                  setMembershipErrorToast(null);
+                }}
+                className={`flex-1 py-3 px-3 rounded-xl font-bold transition flex items-center justify-center gap-2 cursor-pointer ${
+                  membershipTab === 'portal'
+                    ? 'bg-gradient-to-r from-cyan-400 to-blue-500 text-black shadow-lg shadow-cyan-500/20 font-extrabold'
+                    : 'text-slate-400 hover:text-white'
+                }`}
+              >
+                <span className="material-symbols-outlined text-[18px]">wallet</span>
+                <span>2. Cổng Ví &amp; Gamer Pass</span>
+              </button>
+            </div>
+          </div>
+
+          {/* CẢNH BÁO LỖI KHÔNG ĐỦ TIỀN */}
+          {membershipErrorToast && (
+            <div className="p-4 sm:p-5 rounded-2xl bg-rose-950/90 border-2 border-rose-500 text-rose-200 font-mono text-xs flex flex-col sm:flex-row items-center justify-between gap-4 shadow-2xl animate-shake">
+              <div className="flex items-center gap-3">
+                <span className="material-symbols-outlined text-rose-400 text-3xl shrink-0">error</span>
+                <div>
+                  <div className="font-bold text-white text-sm">KHÔNG ĐỦ TIỀN ĐĂNG KÝ GÓI!</div>
+                  <div className="text-rose-300 mt-0.5 leading-relaxed">{membershipErrorToast.message}</div>
+                </div>
+              </div>
+              <div className="flex items-center gap-2 shrink-0">
+                <Link
+                  href="/auth"
+                  className="px-4 py-2.5 rounded-xl bg-gradient-to-r from-rose-500 to-amber-500 text-white font-extrabold text-xs uppercase tracking-wider hover:brightness-110 shadow-lg shadow-rose-500/30 font-gaming"
+                >
+                  💳 NẠP TIỀN VÍ NGAY &rarr;
+                </Link>
+                <button
+                  type="button"
+                  onClick={() => setMembershipErrorToast(null)}
+                  className="px-3 py-2.5 rounded-xl bg-slate-800 text-slate-300 hover:text-white"
+                >
+                  ✕
+                </button>
+              </div>
+            </div>
+          )}
+
+          {/* THÔNG BÁO THÀNH CÔNG */}
           {membershipToast && (
             <div className="p-4 rounded-2xl bg-emerald-500/20 border border-emerald-400 text-emerald-300 font-mono text-xs flex items-center justify-between shadow-2xl animate-bounce">
               <span className="flex items-center gap-2">
                 <span className="material-symbols-outlined text-emerald-400 text-[20px]">verified</span>
-                {membershipToast}
+                <span>{membershipToast}</span>
               </span>
-              <span className="text-[10px] text-slate-400">Đã cập nhật vào tài khoản</span>
+              <button
+                type="button"
+                onClick={() => setMembershipToast(null)}
+                className="text-emerald-400 hover:text-white"
+              >
+                ✕
+              </button>
             </div>
           )}
 
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-6 items-stretch">
+          {/* TAB 1: DANH SÁCH 3 GÓI THẺ HỘI VIÊN THÁNG */}
+          {membershipTab === 'plans' && (
+            <div className="space-y-6">
+              <div className="grid grid-cols-1 md:grid-cols-3 gap-6 items-stretch">
+                {/* 1. GÓI BẠC */}
+                {(() => {
+                  const isCurrentActive =
+                    currentUser &&
+                    (currentUser.userTier.includes('BẠC') || currentUser.userTier.includes('SILVER')) &&
+                    currentUser.tierExpiresAt &&
+                    Date.now() < currentUser.tierExpiresAt;
+                  const expiryInfo = currentUser?.tierExpiresAt ? getTierRemainingDays(currentUser.tierExpiresAt) : null;
 
-            <div className="rounded-3xl bg-slate-900/60 border border-white/10 p-8 flex flex-col justify-between space-y-6 hover:border-slate-500/50 transition">
-              <div>
-                <div className="flex justify-between items-center text-xs font-mono text-slate-400">
-                  <span className="font-bold text-slate-300">SILVER MEMBER</span>
-                  <span className="px-2 py-0.5 rounded bg-white/5 border border-white/10">Hội Viên Bạc</span>
-                </div>
-                <div className="text-3xl sm:text-4xl font-black text-white font-gaming my-4">
-                  99.000đ <span className="text-xs text-slate-400 font-normal font-sans">/ tháng</span>
-                </div>
-                <p className="text-xs text-slate-400">Gói khởi đầu tối ưu dành cho game thủ thường xuyên ghé quán.</p>
-                <ul className="text-xs space-y-3 text-slate-300 mt-6 border-t border-white/10 pt-6">
-                  <li className="flex items-center gap-2">
-                    <span className="material-symbols-outlined text-emerald-400 text-sm">check_circle</span>
-                    <span><strong>Giảm 10%</strong> tiền giờ chơi toàn bộ hệ thống máy</span>
-                  </li>
-                  <li className="flex items-center gap-2">
-                    <span className="material-symbols-outlined text-emerald-400 text-sm">check_circle</span>
-                    <span>Tặng ngay <strong>3 giờ chơi VIP</strong> miễn phí khi kích hoạt</span>
-                  </li>
-                  <li className="flex items-center gap-2">
-                    <span className="material-symbols-outlined text-emerald-400 text-sm">check_circle</span>
-                    <span>Giảm <strong>5%</strong> đồ ăn nước uống thực đơn Bếp F&amp;B</span>
-                  </li>
-                  <li className="flex items-center gap-2">
-                    <span className="material-symbols-outlined text-emerald-400 text-sm">check_circle</span>
-                    <span>Free nâng cấp tài khoản game bản quyền tại sảnh</span>
-                  </li>
-                  <li className="flex items-center gap-2">
-                    <span className="material-symbols-outlined text-emerald-400 text-sm">check_circle</span>
-                    <span>Tích lũy 1 điểm thưởng mỗi 1.000đ chi tiêu đổi quà Gear</span>
-                  </li>
-                </ul>
+                  return (
+                    <div className={`rounded-3xl bg-slate-900/80 border p-8 flex flex-col justify-between space-y-6 transition ${
+                      isCurrentActive ? 'border-emerald-400 shadow-[0_0_25px_rgba(16,185,129,0.25)] ring-1 ring-emerald-400' : 'border-white/10 hover:border-slate-500/50'
+                    }`}>
+                      <div>
+                        <div className="flex justify-between items-center text-xs font-mono text-slate-400">
+                          <span className="font-bold text-slate-200">SILVER MEMBER</span>
+                          <span className="px-2 py-0.5 rounded bg-white/5 border border-white/10 text-slate-300">Hội Viên Bạc 🥈</span>
+                        </div>
+                        <div className="text-3xl sm:text-4xl font-black text-white font-gaming my-4">
+                          99.000đ <span className="text-xs text-slate-400 font-normal font-sans">/ 30 ngày</span>
+                        </div>
+                        <p className="text-xs text-slate-400">Gói khởi đầu tối ưu dành cho game thủ thường xuyên ghé quán.</p>
+
+                        {isCurrentActive && expiryInfo && (
+                          <div className="mt-3 p-2.5 rounded-xl bg-emerald-500/15 border border-emerald-500/40 text-emerald-300 text-xs font-mono flex items-center gap-1.5">
+                            <span className="material-symbols-outlined text-sm text-emerald-400">schedule</span>
+                            <span>Đang dùng: Còn {expiryInfo.daysRemaining} ngày (Hết hạn: {expiryInfo.formattedExpiry})</span>
+                          </div>
+                        )}
+
+                        <ul className="text-xs space-y-3 text-slate-300 mt-6 border-t border-white/10 pt-6">
+                          <li className="flex items-center gap-2">
+                            <span className="material-symbols-outlined text-emerald-400 text-sm">check_circle</span>
+                            <span><strong>Giảm 10%</strong> tiền giờ chơi toàn bộ hệ thống máy</span>
+                          </li>
+                          <li className="flex items-center gap-2">
+                            <span className="material-symbols-outlined text-emerald-400 text-sm">check_circle</span>
+                            <span>Tặng ngay <strong>3 giờ chơi VIP</strong> miễn phí khi kích hoạt</span>
+                          </li>
+                          <li className="flex items-center gap-2">
+                            <span className="material-symbols-outlined text-emerald-400 text-sm">check_circle</span>
+                            <span>Giảm <strong>5%</strong> đồ ăn nước uống thực đơn Bếp F&amp;B</span>
+                          </li>
+                          <li className="flex items-center gap-2">
+                            <span className="material-symbols-outlined text-emerald-400 text-sm">check_circle</span>
+                            <span>Thời hạn sử dụng: <strong>30 ngày</strong> (hết hạn tự về Tân thủ)</span>
+                          </li>
+                          <li className="flex items-center gap-2">
+                            <span className="material-symbols-outlined text-emerald-400 text-sm">check_circle</span>
+                            <span>Tích lũy 1 điểm thưởng mỗi 1.000đ chi tiêu đổi quà Gear</span>
+                          </li>
+                        </ul>
+                      </div>
+
+                      <button
+                        type="button"
+                        onClick={() => handleSubscribePlan('plan-silver')}
+                        className="w-full py-3.5 text-center bg-white/10 hover:bg-emerald-500 hover:text-black text-white font-bold text-xs rounded-xl transition cursor-pointer font-mono uppercase tracking-wider shadow-md"
+                      >
+                        {isCurrentActive ? 'GIA HẠN GÓI BẠC (99K/30 NGÀY) →' : 'ĐĂNG KÝ GÓI BẠC (99K) →'}
+                      </button>
+                    </div>
+                  );
+                })()}
+
+                {/* 2. GÓI VÀNG */}
+                {(() => {
+                  const isCurrentActive =
+                    currentUser &&
+                    (currentUser.userTier.includes('VÀNG') || currentUser.userTier.includes('GOLD')) &&
+                    currentUser.tierExpiresAt &&
+                    Date.now() < currentUser.tierExpiresAt;
+                  const expiryInfo = currentUser?.tierExpiresAt ? getTierRemainingDays(currentUser.tierExpiresAt) : null;
+
+                  return (
+                    <div className="rounded-3xl bg-gradient-to-b from-[#091f1b] via-slate-900 to-slate-900 border-2 border-emerald-400 p-8 flex flex-col justify-between space-y-6 shadow-2xl relative">
+                      <span className="absolute -top-3.5 left-1/2 -translate-x-1/2 px-4 py-1 rounded-full bg-gradient-to-r from-emerald-400 to-cyan-400 text-black text-[10px] font-black font-mono uppercase tracking-wider shadow-lg">
+                        LỰA CHỌN PHỔ BIẾN NHẤT ⭐
+                      </span>
+                      <div>
+                        <div className="flex justify-between items-center text-xs font-mono text-emerald-400 font-bold">
+                          <span>GOLD GAMER PASS</span>
+                          <span className="px-2 py-0.5 rounded bg-emerald-400/20 text-emerald-300">Hội Viên Vàng ⭐</span>
+                        </div>
+                        <div className="text-3xl sm:text-4xl font-black text-white font-gaming my-4">
+                          249.000đ <span className="text-xs text-slate-400 font-normal font-sans">/ 30 ngày</span>
+                        </div>
+                        <p className="text-xs text-slate-400">Dành cho Rank cao thủ, game thủ try-hard và đội nhóm thi đấu.</p>
+
+                        {isCurrentActive && expiryInfo && (
+                          <div className="mt-3 p-2.5 rounded-xl bg-amber-500/15 border border-amber-500/40 text-amber-300 text-xs font-mono flex items-center gap-1.5">
+                            <span className="material-symbols-outlined text-sm text-amber-400">schedule</span>
+                            <span>Đang dùng: Còn {expiryInfo.daysRemaining} ngày (Hết hạn: {expiryInfo.formattedExpiry})</span>
+                          </div>
+                        )}
+
+                        <ul className="text-xs space-y-3 text-slate-300 mt-6 border-t border-white/10 pt-6">
+                          <li className="flex items-center gap-2">
+                            <span className="material-symbols-outlined text-emerald-400 text-sm">check_circle</span>
+                            <span><strong>Giảm 20%</strong> tiền giờ chơi (Phòng VIP, Pro 540Hz, Standard)</span>
+                          </li>
+                          <li className="flex items-center gap-2">
+                            <span className="material-symbols-outlined text-emerald-400 text-sm">check_circle</span>
+                            <span>Tặng ngay <strong>8 giờ chơi Ultra VIP Suite</strong> (trị giá 176k)</span>
+                          </li>
+                          <li className="flex items-center gap-2">
+                            <span className="material-symbols-outlined text-emerald-400 text-sm">check_circle</span>
+                            <span>Tặng <strong>01 Combo Ăn Uống Free</strong> mỗi tuần (Mì trộn + Sting)</span>
+                          </li>
+                          <li className="flex items-center gap-2">
+                            <span className="material-symbols-outlined text-emerald-400 text-sm">check_circle</span>
+                            <span>Giảm <strong>10%</strong> menu Bếp &amp; Dịch vụ Mod phím / Lube switch</span>
+                          </li>
+                          <li className="flex items-center gap-2">
+                            <span className="material-symbols-outlined text-emerald-400 text-sm">check_circle</span>
+                            <span>Thời hạn sử dụng: <strong>30 ngày</strong> (hết hạn tự về Tân thủ)</span>
+                          </li>
+                          <li className="flex items-center gap-2">
+                            <span className="material-symbols-outlined text-emerald-400 text-sm">check_circle</span>
+                            <span>Miễn phí vé tham dự toàn bộ Giải đấu Clan hàng tuần</span>
+                          </li>
+                        </ul>
+                      </div>
+
+                      <button
+                        type="button"
+                        onClick={() => handleSubscribePlan('plan-gold')}
+                        className="w-full py-3.5 text-center bg-gradient-to-r from-emerald-400 to-cyan-400 hover:brightness-110 text-black font-extrabold text-xs rounded-xl shadow-lg shadow-emerald-500/30 transition cursor-pointer font-mono uppercase tracking-wider"
+                      >
+                        {isCurrentActive ? 'GIA HẠN GÓI VÀNG (249K/30 NGÀY) →' : 'ĐĂNG KÝ GÓI VÀNG (249K) →'}
+                      </button>
+                    </div>
+                  );
+                })()}
+
+                {/* 3. GÓI KIM CƯƠNG */}
+                {(() => {
+                  const isCurrentActive =
+                    currentUser &&
+                    (currentUser.userTier.includes('KIM CƯƠNG') || currentUser.userTier.includes('DIAMOND')) &&
+                    currentUser.tierExpiresAt &&
+                    Date.now() < currentUser.tierExpiresAt;
+                  const expiryInfo = currentUser?.tierExpiresAt ? getTierRemainingDays(currentUser.tierExpiresAt) : null;
+
+                  return (
+                    <div className={`rounded-3xl bg-slate-900/80 border p-8 flex flex-col justify-between space-y-6 transition ${
+                      isCurrentActive ? 'border-purple-400 shadow-[0_0_25px_rgba(168,85,247,0.3)] ring-1 ring-purple-400' : 'border-purple-500/40 hover:border-purple-400'
+                    }`}>
+                      <div>
+                        <div className="flex justify-between items-center text-xs font-mono text-purple-400 font-bold">
+                          <span>DIAMOND ELITE VIP</span>
+                          <span className="px-2 py-0.5 rounded bg-purple-500/20 text-purple-300">Kim Cương 💎</span>
+                        </div>
+                        <div className="text-3xl sm:text-4xl font-black text-white font-gaming my-4">
+                          599.000đ <span className="text-xs text-slate-400 font-normal font-sans">/ 30 ngày</span>
+                        </div>
+                        <p className="text-xs text-slate-400">Đẳng cấp thượng lưu: Full đặc quyền, tủ locker và đồ uống free.</p>
+
+                        {isCurrentActive && expiryInfo && (
+                          <div className="mt-3 p-2.5 rounded-xl bg-purple-500/15 border border-purple-500/40 text-purple-300 text-xs font-mono flex items-center gap-1.5">
+                            <span className="material-symbols-outlined text-sm text-purple-400">schedule</span>
+                            <span>Đang dùng: Còn {expiryInfo.daysRemaining} ngày (Hết hạn: {expiryInfo.formattedExpiry})</span>
+                          </div>
+                        )}
+
+                        <ul className="text-xs space-y-3 text-slate-300 mt-6 border-t border-white/10 pt-6">
+                          <li className="flex items-center gap-2">
+                            <span className="material-symbols-outlined text-purple-400 text-sm">check_circle</span>
+                            <span><strong>Giảm 35%</strong> tiền giờ chơi (Cả Arena, Couple, Console &amp; Bida)</span>
+                          </li>
+                          <li className="flex items-center gap-2">
+                            <span className="material-symbols-outlined text-purple-400 text-sm">check_circle</span>
+                            <span>Tặng ngay <strong>20 giờ chơi VIP</strong> miễn phí trong tháng (trị giá 440k)</span>
+                          </li>
+                          <li className="flex items-center gap-2">
+                            <span className="material-symbols-outlined text-purple-400 text-sm">check_circle</span>
+                            <span><strong>Free Refill</strong> nước ngọt, cà phê, trà giải khát không giới hạn</span>
+                          </li>
+                          <li className="flex items-center gap-2">
+                            <span className="material-symbols-outlined text-purple-400 text-sm">check_circle</span>
+                            <span>Tặng <strong>01 Áo Jersey Thi Đấu Cyber Zone 2026</strong> in Nickname</span>
+                          </li>
+                          <li className="flex items-center gap-2">
+                            <span className="material-symbols-outlined text-purple-400 text-sm">check_circle</span>
+                            <span>Thời hạn sử dụng: <strong>30 ngày</strong> (hết hạn tự về Tân thủ)</span>
+                          </li>
+                          <li className="flex items-center gap-2">
+                            <span className="material-symbols-outlined text-purple-400 text-sm">check_circle</span>
+                            <span>Chăm sóc VIP riêng, order món ăn ưu tiên giao trong 3 phút</span>
+                          </li>
+                        </ul>
+                      </div>
+
+                      <button
+                        type="button"
+                        onClick={() => handleSubscribePlan('plan-diamond')}
+                        className="w-full py-3.5 text-center bg-purple-500 hover:bg-purple-400 text-white font-extrabold text-xs rounded-xl shadow-lg shadow-purple-500/30 transition cursor-pointer font-mono uppercase tracking-wider"
+                      >
+                        {isCurrentActive ? 'GIA HẠN KIM CƯƠNG (599K/30 NGÀY) →' : 'ĐĂNG KÝ KIM CƯƠNG (599K) →'}
+                      </button>
+                    </div>
+                  );
+                })()}
               </div>
-              <button
-                type="button"
-                onClick={() => handleSubscribePlan('Hội Viên Bạc', 'HỘI VIÊN BẠC 🥈')}
-                className="w-full py-3.5 text-center bg-white/10 hover:bg-white/20 text-white font-bold text-xs rounded-xl transition cursor-pointer font-mono uppercase tracking-wider"
-              >
-                ĐĂNG KÝ GÓI BẠC (99K) &rarr;
-              </button>
-            </div>
 
-            <div className="rounded-3xl bg-gradient-to-b from-[#091f1b] via-slate-900 to-slate-900 border-2 border-emerald-400 p-8 flex flex-col justify-between space-y-6 shadow-2xl relative">
-              <span className="absolute -top-3.5 left-1/2 -translate-x-1/2 px-4 py-1 rounded-full bg-gradient-to-r from-emerald-400 to-cyan-400 text-black text-[10px] font-black font-mono uppercase tracking-wider shadow-lg">
-                LỰA CHỌN PHỔ BIẾN NHẤT ⭐
-              </span>
-              <div>
-                <div className="flex justify-between items-center text-xs font-mono text-emerald-400 font-bold">
-                  <span>GOLD GAMER PASS</span>
-                  <span className="px-2 py-0.5 rounded bg-emerald-400/20 text-emerald-300">Hội Viên Vàng</span>
+              {/* THÔNG BÁO VỀ THỜI HẠN VÀ TỤT HẠNG */}
+              <div className="p-4 md:p-5 rounded-2xl bg-slate-900 border border-emerald-500/30 flex flex-col sm:flex-row justify-between items-center gap-4 text-xs font-mono">
+                <div className="flex items-center gap-3">
+                  <span className="material-symbols-outlined text-emerald-400 text-2xl shrink-0">timer</span>
+                  <div className="text-slate-300">
+                    <strong className="text-white">QUY ĐỊNH THỜI HẠN GÓI HỘI VIÊN:</strong> Mỗi gói có thời hạn 30 ngày. Khi hết hạn 30 ngày, hệ thống sẽ tự động tụt hạng về <span className="text-emerald-400 font-bold">TÂN THỦ (ROOKIE)</span> nếu chưa được gia hạn.
+                  </div>
                 </div>
-                <div className="text-3xl sm:text-4xl font-black text-white font-gaming my-4">
-                  249.000đ <span className="text-xs text-slate-400 font-normal font-sans">/ tháng</span>
-                </div>
-                <p className="text-xs text-slate-400">Dành cho Rank cao thủ, game thủ try-hard và đội nhóm thi đấu.</p>
-                <ul className="text-xs space-y-3 text-slate-300 mt-6 border-t border-white/10 pt-6">
-                  <li className="flex items-center gap-2">
-                    <span className="material-symbols-outlined text-emerald-400 text-sm">check_circle</span>
-                    <span><strong>Giảm 20%</strong> tiền giờ chơi (Phòng VIP, Pro 540Hz, Standard)</span>
-                  </li>
-                  <li className="flex items-center gap-2">
-                    <span className="material-symbols-outlined text-emerald-400 text-sm">check_circle</span>
-                    <span>Tặng ngay <strong>8 giờ chơi Ultra VIP Suite</strong> (trị giá 176k)</span>
-                  </li>
-                  <li className="flex items-center gap-2">
-                    <span className="material-symbols-outlined text-emerald-400 text-sm">check_circle</span>
-                    <span>Tặng <strong>01 Combo Ăn Uống Free</strong> mỗi tuần (Mì trộn + Sting)</span>
-                  </li>
-                  <li className="flex items-center gap-2">
-                    <span className="material-symbols-outlined text-emerald-400 text-sm">check_circle</span>
-                    <span>Giảm <strong>10%</strong> menu Bếp &amp; Dịch vụ Mod phím / Lube switch</span>
-                  </li>
-                  <li className="flex items-center gap-2">
-                    <span className="material-symbols-outlined text-emerald-400 text-sm">check_circle</span>
-                    <span>Ưu tiên giữ máy trước giờ cao điểm 45 phút không lo hết chỗ</span>
-                  </li>
-                  <li className="flex items-center gap-2">
-                    <span className="material-symbols-outlined text-emerald-400 text-sm">check_circle</span>
-                    <span>Miễn phí vé tham dự toàn bộ Giải đấu Clan hàng tuần</span>
-                  </li>
-                </ul>
+                <button
+                  type="button"
+                  onClick={() => setMembershipTab('portal')}
+                  className="px-4 py-2 bg-emerald-500/20 hover:bg-emerald-400 hover:text-black text-emerald-300 font-bold rounded-xl transition shrink-0"
+                >
+                  Xem Cổng Gamer Pass &rarr;
+                </button>
               </div>
-              <button
-                type="button"
-                onClick={() => handleSubscribePlan('Hội Viên Vàng (Gold Gamer Pass)', 'HỘI VIÊN VÀNG ⭐')}
-                className="w-full py-3.5 text-center bg-gradient-to-r from-emerald-400 to-cyan-400 hover:brightness-110 text-black font-extrabold text-xs rounded-xl shadow-lg shadow-emerald-500/30 transition cursor-pointer font-mono uppercase tracking-wider"
-              >
-                ĐĂNG KÝ GÓI VÀNG (249K) &rarr;
-              </button>
             </div>
+          )}
 
-            <div className="rounded-3xl bg-slate-900/60 border border-purple-500/40 p-8 flex flex-col justify-between space-y-6 hover:border-purple-400 transition">
-              <div>
-                <div className="flex justify-between items-center text-xs font-mono text-purple-400 font-bold">
-                  <span>DIAMOND ELITE VIP</span>
-                  <span className="px-2 py-0.5 rounded bg-purple-500/20 text-purple-300">Kim Cương 💎</span>
+          {/* TAB 2: CỔNG VÍ & GAMER PASS CỦA BẠN */}
+          {membershipTab === 'portal' && (
+            <div className="space-y-6">
+              {!currentUser ? (
+                /* CHƯA ĐĂNG NHẬP: KHÔNG HIỆN THẺ GIẢ, YÊU CẦU ĐĂNG NHẬP */
+                <div className="rounded-3xl bg-slate-900 border border-amber-500/40 p-8 sm:p-12 text-center space-y-4 shadow-2xl">
+                  <div className="w-16 h-16 rounded-2xl bg-amber-500/10 text-amber-400 flex items-center justify-center mx-auto text-3xl border border-amber-500/30">
+                    <span className="material-symbols-outlined text-4xl">lock</span>
+                  </div>
+                  <h3 className="text-2xl font-black text-white font-gaming">BẠN CHƯA ĐĂNG NHẬP TÀI KHOẢN</h3>
+                  <p className="text-xs text-slate-400 max-w-md mx-auto leading-relaxed">
+                    Vui lòng đăng nhập để kiểm tra hạng hội viên, thời gian còn lại của gói, số dư ví khả dụng và nạp tiền trực tuyến vào tài khoản.
+                  </p>
+                  <div className="flex flex-wrap justify-center gap-3 pt-3">
+                    <button
+                      type="button"
+                      onClick={() => {
+                        setAuthModalMessage('Vui lòng đăng nhập để truy cập Cổng Gamer Pass');
+                        setIsAuthModalOpen(true);
+                      }}
+                      className="px-6 py-3 rounded-xl bg-gradient-to-r from-emerald-400 to-teal-400 text-black font-black text-xs uppercase tracking-wider font-gaming shadow-lg shadow-emerald-500/25 hover:brightness-110 cursor-pointer"
+                    >
+                      🔑 ĐĂNG NHẬP TÀI KHOẢN
+                    </button>
+                    <Link
+                      href="/auth"
+                      className="px-6 py-3 rounded-xl bg-slate-800 text-cyan-300 border border-cyan-500/30 font-bold text-xs uppercase tracking-wider font-mono hover:bg-slate-700 cursor-pointer flex items-center gap-1.5"
+                    >
+                      <span>MỞ CỔNG VÍ RIÊNG (/auth) &rarr;</span>
+                    </Link>
+                  </div>
                 </div>
-                <div className="text-3xl sm:text-4xl font-black text-white font-gaming my-4">
-                  599.000đ <span className="text-xs text-slate-400 font-normal font-sans">/ tháng</span>
-                </div>
-                <p className="text-xs text-slate-400">Đẳng cấp thượng lưu: Full đặc quyền, tủ locker và đồ uống free.</p>
-                <ul className="text-xs space-y-3 text-slate-300 mt-6 border-t border-white/10 pt-6">
-                  <li className="flex items-center gap-2">
-                    <span className="material-symbols-outlined text-purple-400 text-sm">check_circle</span>
-                    <span><strong>Giảm 35%</strong> tiền giờ chơi (Cả Arena, Couple, Console &amp; Bida)</span>
-                  </li>
-                  <li className="flex items-center gap-2">
-                    <span className="material-symbols-outlined text-purple-400 text-sm">check_circle</span>
-                    <span>Tặng ngay <strong>20 giờ chơi VIP</strong> miễn phí trong tháng (trị giá 440k)</span>
-                  </li>
-                  <li className="flex items-center gap-2">
-                    <span className="material-symbols-outlined text-purple-400 text-sm">check_circle</span>
-                    <span><strong>Free Refill</strong> nước ngọt, cà phê, trà giải khát không giới hạn</span>
-                  </li>
-                  <li className="flex items-center gap-2">
-                    <span className="material-symbols-outlined text-purple-400 text-sm">check_circle</span>
-                    <span>Tặng <strong>01 Áo Jersey Thi Đấu Cyber Zone 2026</strong> in Nickname</span>
-                  </li>
-                  <li className="flex items-center gap-2">
-                    <span className="material-symbols-outlined text-purple-400 text-sm">check_circle</span>
-                    <span>Ngăn tủ Locker cá nhân cất giữ bàn phím &amp; gear riêng biệt an toàn</span>
-                  </li>
-                  <li className="flex items-center gap-2">
-                    <span className="material-symbols-outlined text-purple-400 text-sm">check_circle</span>
-                    <span>Chăm sóc VIP riêng, order món ăn ưu tiên giao trong 3 phút</span>
-                  </li>
-                </ul>
-              </div>
-              <button
-                type="button"
-                onClick={() => handleSubscribePlan('Hội Viên Kim Cương (Diamond Elite)', 'HỘI VIÊN KIM CƯƠNG 💎')}
-                className="w-full py-3.5 text-center bg-purple-500 hover:bg-purple-400 text-white font-extrabold text-xs rounded-xl shadow-lg shadow-purple-500/30 transition cursor-pointer font-mono uppercase tracking-wider"
-              >
-                ĐĂNG KÝ KIM CƯƠNG (599K) &rarr;
-              </button>
+              ) : (
+                /* ĐÃ ĐĂNG NHẬP: HIỆN THÔNG TIN THẬT CỦA USER */
+                (() => {
+                  const effectiveBalance = typeof currentUser.balance === 'number' ? currentUser.balance : wallet.balance;
+                  const expiryInfo = currentUser.tierExpiresAt ? getTierRemainingDays(currentUser.tierExpiresAt) : null;
+                  const tierData = getTierByName(currentUser.userTier);
+
+                  return (
+                    <div className="rounded-3xl bg-slate-900 border border-slate-800 p-6 sm:p-8 shadow-2xl space-y-6">
+                      <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 pb-6 border-b border-slate-800">
+                        <div className="flex items-center gap-4">
+                          <div className={`w-14 h-14 rounded-2xl ${tierData.accentBg} ${tierData.textColor} border ${tierData.borderColor} flex items-center justify-center text-3xl shadow-xl`}>
+                            <span className="material-symbols-outlined text-3xl">{tierData.icon}</span>
+                          </div>
+                          <div>
+                            <div className="flex items-center gap-2">
+                              <h3 className="text-xl font-black text-white font-gaming">{currentUser.fullName}</h3>
+                              <span className="text-xs text-slate-400 font-mono">(@{currentUser.username})</span>
+                            </div>
+                            <div className="flex items-center gap-2 mt-1">
+                              <span className={`text-xs px-2.5 py-0.5 rounded-lg font-bold font-mono border ${tierData.badgeClass}`}>
+                                {currentUser.userTier}
+                              </span>
+                              <span className="text-xs text-slate-400 font-mono">
+                                📞 {currentUser.phone}
+                              </span>
+                            </div>
+                          </div>
+                        </div>
+
+                        {/* THỜI HẠN GÓI VÀ TỤT HẠNG */}
+                        <div className="font-mono text-right text-xs">
+                          {currentUser.tierExpiresAt && expiryInfo ? (
+                            <div className="p-2.5 rounded-xl bg-emerald-500/10 border border-emerald-500/30 text-emerald-300">
+                              <div className="flex items-center justify-end gap-1.5 font-bold">
+                                <span className="material-symbols-outlined text-sm text-emerald-400">schedule</span>
+                                <span>Còn lại: {expiryInfo.daysRemaining} ngày</span>
+                              </div>
+                              <div className="text-[10px] text-slate-400 mt-0.5">
+                                Hết hạn ngày: {expiryInfo.formattedExpiry}
+                              </div>
+                            </div>
+                          ) : (
+                            <div className="p-2.5 rounded-xl bg-slate-800 border border-slate-700 text-slate-400">
+                              <div className="font-bold text-slate-300">Tân Thủ Vĩnh Viễn</div>
+                              <div className="text-[10px] text-slate-500">Đăng ký gói để thăng hạng VIP</div>
+                            </div>
+                          )}
+                        </div>
+                      </div>
+
+                      {/* SỐ DƯ & QUY ĐỔI GIỜ CHƠI */}
+                      <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 font-mono">
+                        <div className="bg-slate-800/80 p-5 rounded-2xl border border-emerald-500/30 shadow-[inset_0_0_15px_rgba(16,185,129,0.1)]">
+                          <div className="flex justify-between items-center mb-1">
+                            <span className="text-slate-400 text-xs">Số Dư Ví Khả Dụng:</span>
+                            <span className="w-2 h-2 rounded-full bg-emerald-400 inline-block animate-ping"></span>
+                          </div>
+                          <div className="text-3xl font-black text-emerald-400 tracking-tight">
+                            {effectiveBalance.toLocaleString('vi-VN')}đ
+                          </div>
+                          <div className="text-[10px] text-slate-400 mt-1">
+                            Dùng để thanh toán F&amp;B, giờ chơi hoặc mua gói hội viên
+                          </div>
+                        </div>
+
+                        <div className="bg-slate-800/80 p-5 rounded-2xl border border-cyan-500/30 shadow-[inset_0_0_15px_rgba(0,240,255,0.1)] flex flex-col justify-between">
+                          <div>
+                            <span className="text-slate-400 text-xs block mb-1">Đặc Quyền Giảm Giá Đang Hưởng:</span>
+                            <div className="text-xl font-black text-cyan-400">
+                              Giảm {tierData.playDiscountPercent}% tiền giờ • Giảm {tierData.fnbDiscountPercent}% F&amp;B
+                            </div>
+                          </div>
+                          <div className="text-[10px] text-slate-400 mt-2">
+                            {tierData.perks[0]}
+                          </div>
+                        </div>
+                      </div>
+
+                      {/* HÀNH ĐỘNG VÀ CÔNG CỤ KIỂM THỬ TỤT HẠNG */}
+                      <div className="pt-4 border-t border-slate-800 flex flex-col sm:flex-row items-center justify-between gap-4 font-mono text-xs">
+                        <div className="flex items-center gap-2">
+                          <Link
+                            href="/auth"
+                            className="px-4 py-2.5 rounded-xl bg-gradient-to-r from-emerald-400 to-cyan-400 text-black font-extrabold shadow-lg shadow-emerald-500/20 hover:brightness-110"
+                          >
+                            💳 NẠP TIỀN VÍ TRỰC TUYẾN &rarr;
+                          </Link>
+                          <button
+                            type="button"
+                            onClick={() => setMembershipTab('plans')}
+                            className="px-4 py-2.5 rounded-xl bg-slate-800 hover:bg-slate-700 text-white border border-slate-700 font-bold"
+                          >
+                            📦 Đổi Gói Hội Viên
+                          </button>
+                        </div>
+
+                        {/* THANH CÔNG CỤ DEMO CHO GIÁO VIÊN / KHẢO SÁT CHẤM ĐIỂM */}
+                        <div className="flex items-center gap-2 text-[10px]">
+                          <span className="text-slate-500">🧪 Thử nghiệm:</span>
+                          <button
+                            type="button"
+                            onClick={handleSimulateExpireHome}
+                            className="px-2.5 py-1.5 rounded-lg bg-rose-500/20 hover:bg-rose-500/30 text-rose-300 border border-rose-500/40 font-bold cursor-pointer"
+                            title="Giả lập hết hạn 30 ngày để kiểm thử việc tụt hạng về Tân thủ"
+                          >
+                            ⏳ Giả Lập Hết Hạn &amp; Tụt Hạng
+                          </button>
+                          <button
+                            type="button"
+                            onClick={() => handleRestoreTierHome('HỘI VIÊN BẠC 🥈')}
+                            className="px-2.5 py-1.5 rounded-lg bg-emerald-500/20 hover:bg-emerald-500/30 text-emerald-300 border border-emerald-500/40 font-bold cursor-pointer"
+                            title="Gia hạn lại gói Bạc thêm 30 ngày"
+                          >
+                            🔄 Gia Hạn +30 Ngày
+                          </button>
+                        </div>
+                      </div>
+                    </div>
+                  );
+                })()
+              )}
             </div>
-          </div>
+          )}
 
+          {/* CHÍNH SÁCH TÍCH LŨY */}
           <div className="p-4 md:p-6 rounded-2xl bg-gradient-to-r from-emerald-950/60 to-slate-900 border border-emerald-500/30 flex flex-col md:flex-row justify-between items-center gap-4">
             <div className="flex items-center gap-4">
               <div className="w-10 h-10 rounded-xl bg-emerald-500/20 text-emerald-400 flex items-center justify-center text-xl shrink-0">
@@ -1135,10 +1529,10 @@ export default function Home() {
               </div>
               <div>
                 <span className="text-xs font-bold text-white uppercase block">
-                  CHÍNH SÁCH TÍCH LŨY THĂNG HẠNG TỰ ĐỘNG
+                  CHÍNH SÁCH THỜI HẠN &amp; DUY TRÌ HẠNG HỘI VIÊN
                 </span>
                 <span className="text-xs text-slate-400">
-                  Nạp tiền chơi tích lũy đạt 200k tự động lên BẠC • Đạt 500k tự động lên VÀNG ⭐ • Đạt 1.500k thăng hạng KIM CƯƠNG 💎
+                  Mỗi gói hội viên (Bạc 99k, Vàng 249k, Kim Cương 599k) có thời hạn 30 ngày. Khi hết hạn 30 ngày tài khoản sẽ tự động tụt về Tân Thủ.
                 </span>
               </div>
             </div>
@@ -1146,7 +1540,7 @@ export default function Home() {
               href="/auth"
               className="px-5 py-2.5 bg-emerald-400 hover:bg-emerald-300 text-black text-xs font-bold rounded-xl transition shrink-0 font-mono"
             >
-              NẠP THẺ VÍ NGAY &rarr;
+              CỔNG NẠP VÍ &rarr;
             </Link>
           </div>
         </div>
