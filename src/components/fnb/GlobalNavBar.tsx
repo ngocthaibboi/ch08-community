@@ -358,8 +358,8 @@ export default function GlobalNavBar() {
                   >
                     <span className="material-symbols-outlined text-emerald-400 text-xl">card_membership</span>
                     <div>
-                      <div className="font-bold text-white normal-case">1. Các Gói Hội Viên Tháng</div>
-                      <div className="text-[10px] text-slate-400 normal-case">Silver 99k • Gold 249k • Diamond 599k</div>
+                      <div className="font-bold text-white normal-case">1. Hệ Thống Gamer Pass (4 Hạng)</div>
+                      <div className="text-[10px] text-slate-400 normal-case">Tân Thủ • Bạc • Vàng • Kim Cương</div>
                     </div>
                   </Link>
 
@@ -369,8 +369,8 @@ export default function GlobalNavBar() {
                   >
                     <span className="material-symbols-outlined text-cyan-400 text-xl">wallet</span>
                     <div>
-                      <div className="font-bold text-white normal-case">2. Cổng Ví & Gamer Pass</div>
-                      <div className="text-[10px] text-slate-400 normal-case">Nạp tiền, kiểm tra hạn dùng & thăng hạng</div>
+                      <div className="font-bold text-white normal-case">2. Cổng Ví & Nạp Tiền Trực Tuyến</div>
+                      <div className="text-[10px] text-slate-400 normal-case">Nạp tiền, kiểm tra số dư & hồ sơ bảo mật</div>
                     </div>
                   </Link>
                 </div>

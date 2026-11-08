@@ -40,7 +40,7 @@ import {
 } from '@/lib/authStore';
 
 export default function AuthAndWallet() {
-  const [activeTab, setActiveTab] = useState<'topup' | 'plans' | 'gamerpass' | 'login'>('topup');
+  const [activeTab, setActiveTab] = useState<'topup' | 'gamerpass' | 'login'>('topup');
   const [amount, setAmount] = useState('200000');
   const [paymentMethod, setPaymentMethod] = useState<'qr' | 'atm' | 'cash'>('qr');
   const [authTopupMode, setAuthTopupMode] = useState<'BUY_HOURS' | 'DEPOSIT_CASH'>('BUY_HOURS');
@@ -616,55 +616,46 @@ export default function AuthAndWallet() {
         )}
 
         
-        <div className="flex gap-1.5 mb-4 bg-slate-900 border border-slate-800 p-1.5 rounded-xl font-mono text-xs overflow-x-auto">
+        <div className="grid grid-cols-1 sm:grid-cols-3 gap-2 mb-6 bg-slate-900 border border-slate-800 p-1.5 rounded-2xl font-mono text-xs shadow-xl">
           <button
+            type="button"
             onClick={() => setActiveTab('topup')}
-            className={`flex-1 py-2.5 px-2 rounded-lg font-bold transition flex items-center justify-center gap-1.5 cursor-pointer whitespace-nowrap ${
+            className={`w-full py-3 px-3 rounded-xl font-bold transition flex items-center justify-center gap-2 cursor-pointer ${
               activeTab === 'topup'
-                ? 'bg-gradient-to-r from-cyan-500 to-emerald-500 text-black font-extrabold shadow-[0_0_12px_rgba(0,240,255,0.3)]'
-                : 'text-slate-400 hover:text-white'
+                ? 'bg-gradient-to-r from-cyan-500 to-emerald-500 text-black font-extrabold shadow-[0_0_12px_rgba(0,240,255,0.35)]'
+                : 'text-slate-400 hover:text-white hover:bg-slate-800/60'
             }`}
           >
-            <span className="material-symbols-outlined text-[16px]">add_card</span>
+            <span className="material-symbols-outlined text-[18px]">add_card</span>
             <span>Nạp Tiền Trực Tuyến</span>
           </button>
 
           <button
-            onClick={() => setActiveTab('plans')}
-            className={`flex-1 py-2.5 px-2 rounded-lg font-bold transition flex items-center justify-center gap-1.5 cursor-pointer whitespace-nowrap ${
-              activeTab === 'plans'
-                ? 'bg-gradient-to-r from-emerald-400 to-teal-400 text-black font-extrabold shadow-[0_0_12px_rgba(16,185,129,0.3)]'
-                : 'text-slate-400 hover:text-white'
-            }`}
-          >
-            <span className="material-symbols-outlined text-[16px]">card_membership</span>
-            <span>Gói Hội Viên Tháng</span>
-          </button>
-
-          <button
+            type="button"
             onClick={() => setActiveTab('gamerpass')}
-            className={`flex-1 py-2.5 px-2 rounded-lg font-bold transition flex items-center justify-center gap-1.5 cursor-pointer whitespace-nowrap ${
+            className={`w-full py-3 px-3 rounded-xl font-bold transition flex items-center justify-center gap-2 cursor-pointer ${
               activeTab === 'gamerpass'
-                ? 'bg-gradient-to-r from-amber-400 to-yellow-500 text-black font-extrabold shadow-[0_0_12px_rgba(245,158,11,0.3)]'
-                : 'text-slate-400 hover:text-white'
+                ? 'bg-gradient-to-r from-amber-400 to-yellow-500 text-black font-extrabold shadow-[0_0_12px_rgba(245,158,11,0.35)]'
+                : 'text-slate-400 hover:text-white hover:bg-slate-800/60'
             }`}
           >
-            <span className="material-symbols-outlined text-[16px]">military_tech</span>
+            <span className="material-symbols-outlined text-[18px]">military_tech</span>
             <span>Đặc Quyền Hạng</span>
           </button>
 
           <button
+            type="button"
             onClick={() => {
               setActiveTab('login');
               setIsSwitchingAccount(false);
             }}
-            className={`flex-1 py-2.5 px-2 rounded-lg font-bold transition flex items-center justify-center gap-1.5 cursor-pointer whitespace-nowrap ${
+            className={`w-full py-3 px-3 rounded-xl font-bold transition flex items-center justify-center gap-2 cursor-pointer ${
               activeTab === 'login'
-                ? 'bg-gradient-to-r from-purple-500 to-cyan-500 text-white shadow-[0_0_12px_rgba(168,85,247,0.3)]'
-                : 'text-slate-400 hover:text-white'
+                ? 'bg-gradient-to-r from-purple-500 to-cyan-500 text-white font-extrabold shadow-[0_0_12px_rgba(168,85,247,0.35)]'
+                : 'text-slate-400 hover:text-white hover:bg-slate-800/60'
             }`}
           >
-            <span className="material-symbols-outlined text-[16px]">manage_accounts</span>
+            <span className="material-symbols-outlined text-[18px]">manage_accounts</span>
             <span>{currentUser ? 'Hồ Sơ & Bảo Mật' : 'Tài Khoản'}</span>
           </button>
         </div>
@@ -865,78 +856,6 @@ export default function AuthAndWallet() {
           </form>
         )}
 
-        {activeTab === 'plans' && (
-          <div className="bg-slate-900 border border-slate-800 rounded-2xl p-6 shadow-2xl space-y-4">
-            <div className="flex justify-between items-center">
-              <h3 className="text-white font-black text-sm font-gaming">ĐĂNG KÝ GÓI HỘI VIÊN THÁNG</h3>
-              <span className="text-xs text-emerald-400 font-mono">Trừ tiền trực tiếp vào số dư ví</span>
-            </div>
-
-            <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 font-mono">
-              {MEMBERSHIP_PLANS.map((p) => {
-                const isCurrentActive =
-                  currentUser &&
-                  currentUser.userTier === p.badgeName &&
-                  currentUser.tierExpiresAt &&
-                  Date.now() < currentUser.tierExpiresAt;
-                const currentBalance = currentUser ? (typeof currentUser.balance === 'number' ? currentUser.balance : wallet.balance) : 0;
-                const canAfford = currentBalance >= p.price;
-
-                return (
-                  <div
-                    key={p.id}
-                    className={`p-4 rounded-xl border flex flex-col justify-between ${
-                      isCurrentActive
-                        ? 'bg-emerald-500/10 border-emerald-400 ring-1 ring-emerald-400'
-                        : 'bg-slate-800/70 border-slate-700 hover:border-slate-500'
-                    }`}
-                  >
-                    <div>
-                      <div className="text-xs font-bold text-white mb-1">{p.name}</div>
-                      <div className="text-xl font-black text-emerald-400 font-gaming mb-2">
-                        {p.price.toLocaleString('vi-VN')}đ
-                        <span className="text-[10px] text-slate-400 font-normal font-sans"> / 30 ngày</span>
-                      </div>
-                      <ul className="text-[11px] text-slate-300 space-y-1.5 mb-3">
-                        {p.perks.slice(0, 3).map((perk, i) => (
-                          <li key={i} className="flex items-start gap-1">
-                            <span className="text-emerald-400">✓</span>
-                            <span>{perk}</span>
-                          </li>
-                        ))}
-                      </ul>
-                    </div>
-
-                    <div className="pt-2 border-t border-white/10">
-                      <button
-                        type="button"
-                        onClick={() => handleBuyPlanInAuth(p.id)}
-                        className={`w-full py-2.5 rounded-lg font-bold text-xs uppercase font-mono transition cursor-pointer ${
-                          isCurrentActive
-                            ? 'bg-emerald-500 text-black hover:bg-emerald-400'
-                            : canAfford
-                            ? 'bg-white/10 hover:bg-emerald-500 hover:text-black text-white'
-                            : 'bg-slate-800 text-rose-400 border border-rose-500/30 hover:bg-rose-500/10'
-                        }`}
-                      >
-                        {isCurrentActive
-                          ? 'Gia Hạn (+30 Ngày)'
-                          : canAfford
-                          ? `Mua Gói (${p.price / 1000}k)`
-                          : `Thiếu ${(p.price - currentBalance).toLocaleString('vi-VN')}đ`}
-                      </button>
-                    </div>
-                  </div>
-                );
-              })}
-            </div>
-
-            <div className="p-3 rounded-xl bg-slate-950 border border-white/5 text-[11px] text-slate-400 font-mono">
-              ℹ️ <strong>Lưu ý:</strong> Khi mua gói, số dư ví sẽ được trừ tương ứng. Gói có thời hạn 30 ngày. Khi hết hạn 30 ngày, hệ thống sẽ tự động tụt hạng về TÂN THỦ nếu không gia hạn.
-            </div>
-          </div>
-        )}
-
         {activeTab === 'gamerpass' && (
           <div className="bg-slate-900 border border-slate-800 rounded-2xl p-6 shadow-2xl space-y-4">
             <div className="flex justify-between items-center">
@@ -944,7 +863,7 @@ export default function AuthAndWallet() {
               <span className="text-xs text-amber-400 font-mono">Tự động xét hạng vĩnh viễn</span>
             </div>
 
-            <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3">
               {TIERS_ORDER.map((tierKey) => {
                 const tier = GAMER_PASS_TIERS[tierKey];
                 const isCurrent = currentTier.code === tier.code;
