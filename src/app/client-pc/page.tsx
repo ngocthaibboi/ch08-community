@@ -40,7 +40,7 @@ import {
   TierInfo,
 } from '@/lib/gamerPass';
 
-export interface StationTheme {
+interface StationTheme {
   name: string;
   badgeText: string;
   colorName: string;
@@ -55,7 +55,7 @@ export interface StationTheme {
   roomIcon: string;
 }
 
-export interface StationPreset {
+interface StationPreset {
   id: string;
   name: string;
   zone: string;
