@@ -405,17 +405,9 @@ export default function GameMenuPage() {
           </div>
 
           <div className="flex items-center gap-2">
-            <Link
-              href={`/menu?seat=${wallet.pcName || 'VIP-08'}`}
-              className="px-4 py-2 bg-gradient-to-r from-amber-400 to-orange-500 hover:brightness-110 text-slate-950 font-black rounded-xl text-xs flex items-center gap-1.5 shadow-[0_0_15px_rgba(251,191,36,0.5)] transition active:scale-95 uppercase tracking-wide"
-            >
-              <span className="material-symbols-outlined text-[18px]">restaurant</span>
-              <span>ĐẶT MÓN ĂN / NƯỚC CHO TRẬN NÀY &rarr;</span>
-            </Link>
-
             <button
               onClick={handleCloseActiveGame}
-              className="px-3 py-2 bg-slate-800 hover:bg-rose-950/50 hover:text-rose-300 text-slate-300 rounded-xl text-xs font-mono font-bold border border-slate-700 transition"
+              className="px-3 py-2 bg-slate-800 hover:bg-rose-950/50 hover:text-rose-300 text-slate-300 rounded-xl text-xs font-mono font-bold border border-slate-700 transition cursor-pointer"
               title="Thoát phiên game này"
             >
               Thoát Game ✕
@@ -553,19 +545,6 @@ export default function GameMenuPage() {
         )}
       </main>
 
-      <Link
-        href={`/menu?seat=${wallet.pcName || 'VIP-08'}`}
-        className="fixed bottom-6 right-6 z-40 bg-gradient-to-r from-amber-500 via-orange-500 to-amber-500 text-slate-950 font-black px-4 py-3 rounded-2xl shadow-[0_0_25px_rgba(245,158,11,0.6)] flex items-center gap-3 hover:scale-105 transition-transform border border-amber-300 cursor-pointer"
-      >
-        <div className="w-9 h-9 rounded-xl bg-slate-950 text-amber-400 flex items-center justify-center">
-          <span className="material-symbols-outlined text-xl">restaurant_menu</span>
-        </div>
-        <div className="text-left leading-tight">
-          <div className="text-[10px] uppercase font-bold text-slate-900">ĐÓI BỤNG KHI COMBAT?</div>
-          <div className="text-xs font-black">GỌI MÓN MÁY {wallet.pcName || 'VIP-08'} &rarr;</div>
-        </div>
-      </Link>
-
       {launchingGame && (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/80 backdrop-blur-md p-4 animate-fade-in">
           <div className="w-full max-w-md bg-[#0c1220] border-2 border-amber-400/60 p-6 rounded-2xl shadow-[0_0_50px_rgba(245,158,11,0.3)] flex flex-col items-center text-center gap-4 relative overflow-hidden">
@@ -595,28 +574,6 @@ export default function GameMenuPage() {
                 >
                   VÀO TRẬN ĐẤU NGAY
                 </button>
-                <Link
-                  href={`/menu?seat=${wallet.pcName || 'VIP-08'}`}
-                  onClick={() => {
-                    if (launchingGame) {
-                      setActivePlayingGame(launchingGame);
-                      if (typeof window !== 'undefined') {
-                        localStorage.setItem(
-                          'CYBER_ACTIVE_PLAYING_GAME',
-                          JSON.stringify({
-                            gameName: launchingGame,
-                            startTime: Date.now(),
-                            elapsedSeconds: 0,
-                          })
-                        );
-                      }
-                    }
-                  }}
-                  className="w-full py-2.5 bg-amber-500/20 hover:bg-amber-500/30 text-amber-300 border border-amber-400/50 font-bold rounded-xl text-xs uppercase flex items-center justify-center gap-1.5 transition"
-                >
-                  <span className="material-symbols-outlined text-[16px]">restaurant_menu</span>
-                  <span>ĐẶT MÓN ĂN &amp; NƯỚC UỐNG CHO MÁY</span>
-                </Link>
               </div>
             ) : (
               <div className="flex items-center justify-between w-full text-[11px] font-mono text-slate-400">
