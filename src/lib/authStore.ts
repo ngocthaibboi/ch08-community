@@ -100,7 +100,7 @@ export function getRegisteredAccounts(): RegisteredAccount[] {
       return DEFAULT_ACCOUNTS;
     }
 
-    // Tự động di chuyển dữ liệu cũ: Đổi các tài khoản cũ thaibboi -> admin1, tên Nguyễn Văn Thái -> Nguyễn Văn A
+    // Tự động khôi phục nếu trước đó bị đổi nhầm tên "Trần Ngọc Nguyễn Văn A" -> "Trần Ngọc Thái"
     let migrated = false;
     accounts = accounts.map((acc) => {
       let changed = false;
@@ -111,8 +111,8 @@ export function getRegisteredAccounts(): RegisteredAccount[] {
         newUname = 'admin1';
         changed = true;
       }
-      if (acc.fullName && acc.fullName.includes('Thái')) {
-        newName = acc.fullName.replace(/Nguyễn Văn Thái/g, 'Nguyễn Văn A').replace(/Thái/g, 'Nguyễn Văn A');
+      if (acc.fullName && acc.fullName.includes('Trần Ngọc Nguyễn Văn A')) {
+        newName = 'Trần Ngọc Thái';
         changed = true;
       }
       if (changed) {
@@ -306,13 +306,13 @@ export function getLoggedInUser(): AuthUser | null {
     if (!raw) return null;
     const user: AuthUser = JSON.parse(raw);
 
-    // Di chuyển dữ liệu cũ nếu còn lưu thaibboi
+    // Di chuyển dữ liệu cũ nếu còn lưu thaibboi hoặc tên bị đổi nhầm
     if (user.username === 'thaibboi') {
       user.username = 'admin1';
       user.fullName = 'Nguyễn Văn A';
       localStorage.setItem(AUTH_STORAGE_KEY, JSON.stringify(user));
-    } else if (user.fullName && user.fullName.includes('Thái')) {
-      user.fullName = user.fullName.replace(/Nguyễn Văn Thái/g, 'Nguyễn Văn A').replace(/Thái/g, 'Nguyễn Văn A');
+    } else if (user.fullName && user.fullName.includes('Trần Ngọc Nguyễn Văn A')) {
+      user.fullName = 'Trần Ngọc Thái';
       localStorage.setItem(AUTH_STORAGE_KEY, JSON.stringify(user));
     }
 
@@ -526,4 +526,97 @@ export function clearClientPcSession(): void {
   } catch (err) {
     console.error('Failed to clear client pc session:', err);
   }
+}
+
+// ══════════ CHỨC NĂNG CẬP NHẬT TÀI KHOẢN: ĐỔI HỌ TÊN & ĐỔI MẬT KHẨU ══════════
+
+// Cập nhật họ và tên của người dùng (người dùng đặt tên gì thì lưu và lấy đúng tên đó 100%)
+export function updateUserFullName(newFullName: string): { success: boolean; error?: string; user?: AuthUser } {
+  const cleanName = newFullName.trim();
+  if (!cleanName || cleanName.length < 2) {
+    return { success: false, error: 'Họ và tên quá ngắn! Vui lòng nhập tối thiểu 2 ký tự.' };
+  }
+  const current = getLoggedInUser();
+  if (!current) {
+    return { success: false, error: 'Vui lòng đăng nhập để đổi tên!' };
+  }
+
+  current.fullName = cleanName;
+
+  if (typeof window !== 'undefined') {
+    try {
+      localStorage.setItem(AUTH_STORAGE_KEY, JSON.stringify(current));
+
+      // Cập nhật trong cơ sở dữ liệu tài khoản registered accounts
+      const accounts = getRegisteredAccounts();
+      const idx = accounts.findIndex((a) => a.username.toLowerCase() === current.username.toLowerCase());
+      if (idx !== -1) {
+        accounts[idx].fullName = cleanName;
+        saveRegisteredAccounts(accounts);
+      }
+
+      // Cập nhật ví và active station
+      const walletRaw = localStorage.getItem('cyber_user_wallet');
+      if (walletRaw) {
+        const w = JSON.parse(walletRaw);
+        w.userName = cleanName;
+        localStorage.setItem('cyber_user_wallet', JSON.stringify(w));
+        window.dispatchEvent(new CustomEvent('cyber_wallet_updated', { detail: w }));
+      }
+
+      const stnRaw = localStorage.getItem('cyber_active_station');
+      if (stnRaw) {
+        const stn = JSON.parse(stnRaw);
+        stn.occupantName = cleanName;
+        localStorage.setItem('cyber_active_station', JSON.stringify(stn));
+        window.dispatchEvent(new CustomEvent('cyber_active_station_updated', { detail: stn }));
+      }
+
+      window.dispatchEvent(new CustomEvent(AUTH_EVENT_NAME, { detail: current }));
+    } catch (e) {
+      console.error('Error updating full name:', e);
+    }
+  }
+
+  return { success: true, user: current };
+}
+
+// Thay đổi mật khẩu người dùng (có xác nhận mật khẩu 2 lần)
+export function changeUserPassword(currentPassword: string, newPassword: string, confirmPassword: string): { success: boolean; error?: string } {
+  const cleanCurrent = currentPassword.trim();
+  const cleanNew = newPassword.trim();
+  const cleanConfirm = confirmPassword.trim();
+
+  if (!cleanCurrent) {
+    return { success: false, error: 'Vui lòng nhập mật khẩu hiện tại!' };
+  }
+  if (!cleanNew) {
+    return { success: false, error: 'Vui lòng nhập mật khẩu mới!' };
+  }
+  if (cleanNew.length < 3) {
+    return { success: false, error: 'Mật khẩu mới phải có ít nhất 3 ký tự!' };
+  }
+  if (cleanNew !== cleanConfirm) {
+    return { success: false, error: 'Mật khẩu mới và xác nhận mật khẩu không trùng khớp! Vui lòng kiểm tra lại.' };
+  }
+
+  const current = getLoggedInUser();
+  if (!current) {
+    return { success: false, error: 'Vui lòng đăng nhập để đổi mật khẩu!' };
+  }
+
+  const accounts = getRegisteredAccounts();
+  const idx = accounts.findIndex((a) => a.username.toLowerCase() === current.username.toLowerCase());
+  if (idx === -1) {
+    return { success: false, error: 'Không tìm thấy tài khoản của bạn trong hệ thống!' };
+  }
+
+  if (accounts[idx].password !== cleanCurrent) {
+    return { success: false, error: 'Mật khẩu hiện tại không chính xác! Vui lòng thử lại.' };
+  }
+
+  accounts[idx].password = cleanNew;
+  saveRegisteredAccounts(accounts);
+
+  return { success: true };
 }

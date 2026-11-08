@@ -341,7 +341,7 @@ export default function Home() {
         label: 'ĐANG HOẠT ĐỘNG',
         badgeClass: 'bg-cyan-500/20 text-cyan-300 border-cyan-500/40',
         dotClass: 'bg-cyan-400 animate-ping',
-        occupant: activeStn?.occupantName || wallet.userName || 'Trần Ngọc Nguyễn Văn A (Hội Viên)',
+        occupant: activeStn?.occupantName || wallet.userName || 'Trần Ngọc Thái (Hội Viên)',
         timeSlot: 'Đang chơi tại máy trạm',
       };
     }
