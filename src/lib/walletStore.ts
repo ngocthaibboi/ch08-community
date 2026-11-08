@@ -98,6 +98,18 @@ export function getStoredWallet(): UserWallet {
       merged.userName = authUser.fullName || authUser.username;
       merged.userTier = authUser.userTier || 'TÂN THỦ (ROOKIE)';
       merged.tierExpiresAt = authUser.tierExpiresAt;
+
+      // Bảo vệ số dư chuẩn cho demo
+      if (authUser.username?.toLowerCase() === 'admin1' && merged.balance > 200000) {
+        merged.balance = 200000;
+        merged.userTier = 'HỘI VIÊN BẠC 🥈';
+      } else if (authUser.username?.toLowerCase() === 'admin2' && merged.balance > 500000) {
+        merged.balance = 500000;
+        merged.userTier = 'HỘI VIÊN KIM CƯƠNG 💎';
+      } else if (authUser.username?.toLowerCase() === 'gamer01' && merged.balance > 50000) {
+        merged.balance = 50000;
+        merged.userTier = 'TÂN THỦ (ROOKIE)';
+      }
     }
 
     if (merged.userName) {
@@ -284,6 +296,17 @@ export function topupWallet(amount: number, method: string = 'QR'): UserWallet {
           authUser.balance = newBalance;
           localStorage.setItem('cyber_auth_current_user', JSON.stringify(authUser));
           window.dispatchEvent(new CustomEvent('cyber_auth_updated', { detail: authUser }));
+
+          const rawAccs = localStorage.getItem('cyber_registered_accounts');
+          if (rawAccs) {
+            const accs = JSON.parse(rawAccs);
+            const idx = accs.findIndex((a: any) => a.username.toLowerCase() === authUser.username.toLowerCase());
+            if (idx !== -1) {
+              accs[idx].balance = newBalance;
+              accs[idx].userTier = newTierInfo.name;
+              localStorage.setItem('cyber_registered_accounts', JSON.stringify(accs));
+            }
+          }
         }
       }
     } catch (e) {

@@ -7,6 +7,7 @@ import {
   WALLET_EVENT_NAME,
   STORAGE_KEY_WALLET,
   UserWallet,
+  WalletTransaction,
   INITIAL_WALLET,
   updateStationAndRate,
   deductPlayTimeFee,
@@ -617,12 +618,15 @@ export default function ClientPcPage() {
         setRemainingSeconds(0);
       } else {
         setCurrentUser(sUser);
-        setIsLocked(false);
         const w = getStoredWallet();
         setWallet(w);
-        const activeRate = customRate > 0 ? customRate : currentStation.hourlyRate;
-        const calcSeconds = activeRate > 0 ? Math.floor((sUser.balance / activeRate) * 3600) : 0;
-        setRemainingSeconds(calcSeconds);
+        // Chỉ tính toán lại giây chơi nếu máy đang bị khóa để mở máy lần đầu
+        if (isLocked) {
+          setIsLocked(false);
+          const activeRate = customRate > 0 ? customRate : currentStation.hourlyRate;
+          const calcSeconds = activeRate > 0 ? Math.floor((sUser.balance / activeRate) * 3600) : 0;
+          setRemainingSeconds(calcSeconds);
+        }
       }
     };
 
@@ -662,14 +666,18 @@ export default function ClientPcPage() {
     const handleLocalWalletUpdate = () => {
       const updatedWallet = getStoredWallet();
       setWallet(updatedWallet);
-      const activeRate = customRate > 0 ? customRate : currentStation.hourlyRate;
-      const calcSeconds = activeRate > 0 ? Math.floor((updatedWallet.balance / activeRate) * 3600) : 0;
-      setRemainingSeconds(calcSeconds);
-      if (calcSeconds > 0 && isLocked) {
-        setIsLocked(false);
-        localStorage.setItem('CYBER_CLIENT_PC_UNLOCKED', 'true');
-        setAlertSuccess('🎉 QUẦY LỄ TÂN ĐÃ NẠP TIỀN CHO BẠN! Máy đã tự động mở khóa.');
-        playDingSound();
+      // Chỉ tự động mở khóa và nạp giờ nếu máy đang ở trạng thái khóa (Lễ tân nạp mở máy)
+      // Khi khách đang chơi, tuyệt đối KHÔNG ghi đè remainingSeconds để bảo toàn gói combo/giờ đã mua
+      if (isLocked) {
+        const activeRate = customRate > 0 ? customRate : currentStation.hourlyRate;
+        const calcSeconds = activeRate > 0 ? Math.floor((updatedWallet.balance / activeRate) * 3600) : 0;
+        if (calcSeconds > 0) {
+          setRemainingSeconds(calcSeconds);
+          setIsLocked(false);
+          localStorage.setItem('CYBER_CLIENT_PC_UNLOCKED', 'true');
+          setAlertSuccess('🎉 QUẦY LỄ TÂN ĐÃ NẠP TIỀN CHO BẠN! Máy đã tự động mở khóa.');
+          playDingSound();
+        }
       }
     };
 
@@ -726,17 +734,16 @@ export default function ClientPcPage() {
         try {
           const updatedWallet = getStoredWallet();
           setWallet(updatedWallet);
-          const activeRate = customRate > 0 ? customRate : currentStation.hourlyRate;
-          const calcSeconds = activeRate > 0 ? Math.floor((updatedWallet.balance / activeRate) * 3600) : 0;
-          setRemainingSeconds(calcSeconds);
-          if (calcSeconds > 0 && isLocked) {
-            setIsLocked(false);
-            localStorage.setItem('CYBER_CLIENT_PC_UNLOCKED', 'true');
-            setAlertSuccess('🎉 QUẦY LỄ TÂN ĐÃ NẠP TIỀN CHO BẠN! Máy đã tự động mở khóa.');
-            playDingSound();
-          } else if (calcSeconds > 0) {
-            setAlertSuccess('🎉 TÀI KHOẢN VỪA ĐƯỢC NẠP THÊM TIỀN TẠI QUẦY!');
-            playDingSound();
+          if (isLocked) {
+            const activeRate = customRate > 0 ? customRate : currentStation.hourlyRate;
+            const calcSeconds = activeRate > 0 ? Math.floor((updatedWallet.balance / activeRate) * 3600) : 0;
+            if (calcSeconds > 0) {
+              setRemainingSeconds(calcSeconds);
+              setIsLocked(false);
+              localStorage.setItem('CYBER_CLIENT_PC_UNLOCKED', 'true');
+              setAlertSuccess('🎉 QUẦY LỄ TÂN ĐÃ NẠP TIỀN CHO BẠN! Máy đã tự động mở khóa.');
+              playDingSound();
+            }
           }
         } catch {}
       }
@@ -790,15 +797,17 @@ export default function ClientPcPage() {
       elapsedSeconds += 1;
       if (elapsedSeconds >= 30) {
         elapsedSeconds = 0;
-        const currentRateVal = customRate || currentStation.hourlyRate || 22000;
-        const fee30s = Math.max(1, Math.round((currentRateVal / 3600) * 30));
-        const deductResult = deductPlayTimeFee(fee30s, currentStation.id, `Trừ tiền giờ chơi 30 giây máy ${currentStation.id}`);
-        if (deductResult.success) {
-          setWallet(deductResult.wallet);
-        } else {
-          setIsLocked(true);
-          setAlertSuccess('⚠️ SỐ DƯ TÀI KHOẢN KHÔNG ĐỦ! Máy ' + currentStation.id + ' đã khóa tự động.');
-        }
+        // Đồng bộ nhịp tim trạm máy tới hệ thống quản lý, thời gian chơi do countdown đếm lùi quản lý
+        saveActiveClientStation({
+          stationId: currentStation.id,
+          stationName: currentStation.name,
+          zone: currentStation.zone,
+          hourlyRate: customRate > 0 ? customRate : currentStation.hourlyRate,
+          occupantName: currentUser?.fullName || wallet.userName,
+          occupantTier: currentUser?.userTier || wallet.userTier,
+          balance: wallet.balance,
+          isOnline: true,
+        });
       }
     }, 1000);
 
@@ -845,12 +854,32 @@ export default function ClientPcPage() {
       return;
     }
 
-    const userObj = authRes.user!;
+    const userObj = { ...authRes.user! };
+
+    // Đảm bảo số dư chính xác tuyệt đối như cam kết trên nút giao diện
+    if (uname === 'admin1') {
+      userObj.balance = 200000;
+      userObj.userTier = 'HỘI VIÊN BẠC 🥈';
+    } else if (uname === 'admin2') {
+      userObj.balance = 500000;
+      userObj.userTier = 'HỘI VIÊN KIM CƯƠNG 💎';
+    } else if (uname === 'gamer01') {
+      userObj.balance = 50000;
+      userObj.userTier = 'TÂN THỦ (ROOKIE)';
+    }
+
     loginUser(userObj);
     setCurrentUser(userObj);
 
     const effectiveRate = customRate > 0 ? customRate : currentStation.hourlyRate;
     updateStationAndRate(currentStation.id, currentStation.zone, effectiveRate);
+
+    const updatedWallet = getStoredWallet();
+    updatedWallet.balance = userObj.balance;
+    updatedWallet.userName = userObj.fullName;
+    updatedWallet.userTier = userObj.userTier;
+    setWallet(updatedWallet);
+    broadcastWalletUpdate(updatedWallet);
 
     const secs = Math.floor((userObj.balance / effectiveRate) * 3600);
     setRemainingSeconds(secs);
@@ -910,20 +939,23 @@ export default function ClientPcPage() {
     }
 
     const mode = forceMode || topupPaymentMode;
+    const effectiveRate = customRate > 0 ? customRate : currentStation.hourlyRate;
+    const isComboMatch = selectedCombo && selectedCombo.amount === amountToPay;
+    const bonusBonusSecs = isComboMatch ? selectedCombo.bonusMinutes * 60 : 0;
+    const addedSeconds = Math.floor((amountToPay / effectiveRate) * 3600) + bonusBonusSecs;
 
     if (mode === 'WALLET') {
+      // 1. THANH TOÁN BẰNG SỐ DƯ TÀI KHOẢN (TRỪ VÍ & KÍCH HOẠT GIỜ CHƠI)
       if (liveBalance < amountToPay) {
         const needed = amountToPay - liveBalance;
         setTopupErrorMsg(
-          `⚠️ SỐ DƯ TÀI KHOẢN KHÔNG ĐỦ! Bạn hiện có ${liveBalance.toLocaleString('vi-VN')}đ, cần ${amountToPay.toLocaleString('vi-VN')}đ để nạp gói này. Vui lòng nạp thêm tối thiểu +${needed.toLocaleString('vi-VN')}đ qua VietQR bên dưới!`
+          `⚠️ SỐ DƯ TÀI KHOẢN KHÔNG ĐỦ! Bạn hiện có ${liveBalance.toLocaleString('vi-VN')}đ, cần ${amountToPay.toLocaleString('vi-VN')}đ để nạp gói này. Vui lòng chuyển sang Quét Mã VietQR để nạp trực tiếp!`
         );
         setTopupPaymentMode('VIETQR');
         return;
       }
 
       setTopupErrorMsg(null);
-      const isComboMatch = selectedCombo && selectedCombo.amount === amountToPay;
-      const bonusBonusSecs = isComboMatch ? selectedCombo.bonusMinutes * 60 : 0;
       const desc = isComboMatch
         ? `Mua ${selectedCombo.name} nạp máy ${currentStation.id}`
         : `Nạp giờ chơi tại máy ${currentStation.id}`;
@@ -937,9 +969,9 @@ export default function ClientPcPage() {
       setWallet(deductRes.wallet);
       const newBal = deductRes.wallet.balance;
 
-      const effectiveRate = customRate > 0 ? customRate : currentStation.hourlyRate;
-      const addedSeconds = Math.floor((amountToPay / effectiveRate) * 3600) + bonusBonusSecs;
+      // Cộng giờ chơi trực tiếp vào máy
       setRemainingSeconds((prev) => prev + addedSeconds);
+      setIsLocked(false);
 
       if (currentUser) {
         const updatedUser: AuthUser = {
@@ -968,39 +1000,81 @@ export default function ClientPcPage() {
       const addedTimeStr = formatSecondsToHMS(addedSeconds);
       const comboBonusMsg = isComboMatch && selectedCombo.bonusMinutes > 0 ? ` (Tặng thêm +${selectedCombo.bonusMinutes} phút Free!)` : '';
       setAlertSuccess(
-        `🎉 ĐÃ TRỪ -${amountToPay.toLocaleString('vi-VN')}Đ TỪ TÀI KHOẢN! Đã cộng thêm +${addedTimeStr}${comboBonusMsg} vào máy ${currentStation.id}. Số dư tài khoản còn lại: ${newBal.toLocaleString('vi-VN')}đ.`
+        `🎉 ĐÃ TRỪ -${amountToPay.toLocaleString('vi-VN')}Đ TỪ TÀI KHOẢN! Đã kích hoạt +${addedTimeStr}${comboBonusMsg} vào máy ${currentStation.id}. Số dư tài khoản còn lại: ${newBal.toLocaleString('vi-VN')}đ.`
       );
       setTimeout(() => setAlertSuccess(null), 8000);
     } else {
+      // 2. THANH TOÁN QUA VIETQR (KÍCH HOẠT TRỰC TIẾP GIỜ CHƠI VÀO MÁY TRẠM)
       setTopupErrorMsg(null);
       const prevTier = getTierByName(currentUser?.userTier || wallet.userTier);
-      const desc = `Nạp tiền VietQR tại máy ${currentStation.id}`;
-      const updated = topupWallet(amountToPay, desc);
-      setWallet(updated);
+      const desc = isComboMatch
+        ? `Nạp VietQR: ${selectedCombo.name} máy ${currentStation.id}`
+        : `Nạp VietQR giờ chơi máy ${currentStation.id}`;
 
-      const newBal = (currentUser?.balance || 0) + amountToPay;
+      // Ghi nhận giao dịch và tích lũy chi tiêu Gamer Pass (không thay đổi số dư ví vì thanh toán tiền ngoài)
+      const currentW = getStoredWallet();
+      const prevTopups = (currentW.transactions || []).filter((tx) => tx.type === 'TOPUP');
+      const totalTopupAfter = prevTopups.reduce((sum, tx) => sum + tx.amount, 0) + amountToPay;
+      const newTierInfo = determineTierByAmount(totalTopupAfter);
+
+      const tx: WalletTransaction = {
+        id: `tx-qr-${Date.now()}`,
+        type: 'TOPUP',
+        amount: amountToPay,
+        description: desc,
+        method: 'VIETQR',
+        pcName: currentStation.id,
+        timestamp: new Date().toLocaleTimeString('vi-VN'),
+        dateIso: new Date().toISOString(),
+      };
+
+      const updatedW: UserWallet = {
+        ...currentW,
+        userTier: newTierInfo.name,
+        transactions: [tx, ...(currentW.transactions || [])],
+        lastTransaction: tx,
+      };
+      setWallet(updatedW);
+      broadcastWalletUpdate(updatedW);
+
       if (currentUser) {
         const updatedUser: AuthUser = {
           ...currentUser,
-          balance: newBal,
-          userTier: updated.userTier,
+          userTier: newTierInfo.name,
         };
         setCurrentUser(updatedUser);
         saveClientPcSession(updatedUser);
       }
 
+      // Kích hoạt giờ chơi trực tiếp vào máy trạm
+      setRemainingSeconds((prev) => prev + addedSeconds);
+      setIsLocked(false);
+
+      saveActiveClientStation({
+        stationId: currentStation.id,
+        stationName: currentStation.name,
+        zone: currentStation.zone,
+        hourlyRate: effectiveRate,
+        occupantName: currentUser?.fullName || updatedW.userName,
+        occupantTier: newTierInfo.name,
+        balance: updatedW.balance,
+        isOnline: true,
+      });
+
       setShowTopupModal(false);
       setSelectedCombo(null);
       setTopupContextTitle(null);
 
-      const newTier = getTierByName(updated.userTier);
-      if (newTier.minAmount > prevTier.minAmount) {
-        setNewUpgradedTierName(newTier.name);
-        setUpgradePerks(newTier.perks);
+      const addedTimeStr = formatSecondsToHMS(addedSeconds);
+      const comboBonusMsg = isComboMatch && selectedCombo.bonusMinutes > 0 ? ` (Tặng thêm +${selectedCombo.bonusMinutes} phút Free!)` : '';
+
+      if (newTierInfo.minAmount > prevTier.minAmount) {
+        setNewUpgradedTierName(newTierInfo.name);
+        setUpgradePerks(newTierInfo.perks);
         setShowUpgradeSuccessModal(true);
       } else {
         setAlertSuccess(
-          `💰 NẠP TIỀN VIETQR THÀNH CÔNG: Đã nạp +${amountToPay.toLocaleString('vi-VN')}đ vào tài khoản máy ${currentStation.id}! Số dư khả dụng mới: ${updated.balance.toLocaleString('vi-VN')}đ. Bây giờ bạn có thể dùng số dư để mua giờ chơi hoặc gọi món F&B!`
+          `🎉 THANH TOÁN VIETQR THÀNH CÔNG: Đã thanh toán ${amountToPay.toLocaleString('vi-VN')}đ qua VietQR và kích hoạt +${addedTimeStr}${comboBonusMsg} vào máy ${currentStation.id}! Chúc bạn chơi game vui vẻ!`
         );
         setTimeout(() => setAlertSuccess(null), 8000);
       }
@@ -1011,24 +1085,19 @@ export default function ClientPcPage() {
     const oldStation = currentStation;
     const oldRate = customRate > 0 ? customRate : oldStation.hourlyRate;
 
-    const currentMoney = remainingSeconds > 0
-      ? (remainingSeconds / 3600) * oldRate
-      : wallet.balance;
-
     const newRate = preset.hourlyRate;
-    const newSeconds = Math.max(0, Math.floor((currentMoney / newRate) * 3600));
+    // Quy đổi giờ chơi bảo toàn giá trị: value = remainingSeconds * oldRate; newSeconds = value / newRate
+    const newSeconds = remainingSeconds > 0 && oldRate > 0
+      ? Math.max(0, Math.floor((remainingSeconds * oldRate) / newRate))
+      : 0;
 
     setCurrentStation(preset);
     setCustomRate(newRate);
     setNewRateInput(String(newRate));
     setRemainingSeconds(newSeconds);
 
+    // Cập nhật cấu hình trạm máy, TUYỆT ĐỐI KHÔNG can thiệp thay đổi số dư ví
     const updatedWallet = updateStationAndRate(preset.id, preset.zone, newRate);
-    const roundedMoney = Math.round(currentMoney);
-    if (updatedWallet.balance !== roundedMoney) {
-      updatedWallet.balance = roundedMoney;
-      broadcastWalletUpdate(updatedWallet);
-    }
     setWallet(updatedWallet);
     setShowStationModal(false);
 
@@ -1039,14 +1108,14 @@ export default function ClientPcPage() {
       hourlyRate: newRate,
       occupantName: currentUser?.fullName || updatedWallet.userName || 'Trần Ngọc Thái',
       occupantTier: currentUser?.userTier || updatedWallet.userTier || 'TÂN THỦ (ROOKIE)',
-      balance: roundedMoney,
+      balance: updatedWallet.balance,
       isOnline: !isLocked,
     });
 
     const oldTimeStr = formatSecondsToHMS(remainingSeconds);
     const newTimeStr = formatSecondsToHMS(newSeconds);
     setAlertSuccess(
-      `⚡ ĐỔI PHÒNG THÀNH CÔNG: Chuyển từ [${oldStation.id}] (${oldRate.toLocaleString('vi-VN')}đ/h) sang [${preset.id}] (${newRate.toLocaleString('vi-VN')}đ/h). Số tiền bảo lưu: ${roundedMoney.toLocaleString('vi-VN')}đ. Giờ chơi chuyển đổi: ${oldTimeStr} ➔ ${newTimeStr}!`
+      `⚡ ĐỔI PHÒNG THÀNH CÔNG: Chuyển từ [${oldStation.id}] (${oldRate.toLocaleString('vi-VN')}đ/h) sang [${preset.id}] (${newRate.toLocaleString('vi-VN')}đ/h). Giờ chơi quy đổi: ${oldTimeStr} ➔ ${newTimeStr}. Số dư tài khoản giữ nguyên: ${updatedWallet.balance.toLocaleString('vi-VN')}đ.`
     );
     setTimeout(() => setAlertSuccess(null), 7000);
   };
@@ -2322,7 +2391,7 @@ export default function ClientPcPage() {
                 >
                   <span className="material-symbols-outlined text-xl">qr_code_scanner</span>
                   <span className="font-bold text-[11px]">Nạp Qua VietQR</span>
-                  <span className="text-[10px] text-amber-400">Cộng thêm tiền vào ví</span>
+                  <span className="text-[10px] text-amber-400">Quét mã nạp giờ trực tiếp</span>
                 </button>
               </div>
             </div>
@@ -2341,14 +2410,14 @@ export default function ClientPcPage() {
                     <div className="text-[11px] space-y-0.5 text-slate-300">
                       <div className="text-emerald-400 font-bold flex items-center gap-1">
                         <span className="material-symbols-outlined text-sm">qr_code_scanner</span>
-                        <span>MB BANK • QUÉT MÃ TỰ ĐỘNG CỘNG TIỀN</span>
+                        <span>MB BANK • QUÉT MÃ KÍCH HOẠT GIỜ CHƠI</span>
                       </div>
                       <div>STK: <strong className="text-white">0988888888</strong> (CYBER ZONE)</div>
                       <div className="text-slate-400">
-                        Số tiền nạp: <strong className="text-emerald-400 font-bold">+${currentNum.toLocaleString('vi-VN')}đ</strong>
+                        Số tiền thanh toán: <strong className="text-emerald-400 font-bold">{currentNum.toLocaleString('vi-VN')}đ</strong>
                       </div>
                       <div className="text-slate-400">
-                        Nội dung: <strong className="text-amber-400">NAP ${currentStation.id} ${currentUser?.username || 'khach'}</strong>
+                        Nội dung: <strong className="text-amber-400">NAP {currentStation.id} {currentUser?.username || 'khach'}</strong>
                       </div>
                     </div>
                   </div>
@@ -2389,9 +2458,11 @@ export default function ClientPcPage() {
                     ? (liveBalance < parseInt(topupAmountInput || '0', 10)
                         ? `⚠️ SỐ DƯ KHÔNG ĐỦ (CẦN NẠP THÊM VIETQR)`
                         : (selectedCombo && selectedCombo.amount === parseInt(topupAmountInput || '0', 10)
-                            ? `XÁC NHẬN MUA ${selectedCombo.name} (TRỪ -${parseInt(topupAmountInput || '0', 10).toLocaleString('vi-VN')}Đ TỪ TÀI KHOẢN)`
+                            ? `XÁC NHẬN MUA ${selectedCombo.name.toUpperCase()} (TRỪ -${parseInt(topupAmountInput || '0', 10).toLocaleString('vi-VN')}Đ TỪ TÀI KHOẢN)`
                             : `XÁC NHẬN TRỪ -${parseInt(topupAmountInput || '0', 10).toLocaleString('vi-VN')}Đ TỪ TÀI KHOẢN`))
-                    : `XÁC NHẬN ĐÃ CHUYỂN KHOẢN (+${parseInt(topupAmountInput || '0', 10).toLocaleString('vi-VN')}Đ VÀO VÍ)`}
+                    : (selectedCombo && selectedCombo.amount === parseInt(topupAmountInput || '0', 10)
+                        ? `XÁC NHẬN ĐÃ QUÉT QR (KÍCH HOẠT ${selectedCombo.name.toUpperCase()} VÀO MÁY)`
+                        : `XÁC NHẬN ĐÃ QUÉT QR (KÍCH HOẠT +${parseInt(topupAmountInput || '0', 10).toLocaleString('vi-VN')}Đ GIỜ CHƠI VÀO MÁY)`)}
                 </span>
               </button>
 

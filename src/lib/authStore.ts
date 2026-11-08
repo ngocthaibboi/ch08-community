@@ -112,9 +112,28 @@ export function getRegisteredAccounts(): RegisteredAccount[] {
         newName = 'Trần Ngọc Thái';
         changed = true;
       }
+      // Đảm bảo số dư các tài khoản trải nghiệm đúng cam kết trên nút giao diện
+      let newBal = acc.balance;
+      let newTier = acc.userTier;
+      if (newUname.toLowerCase() === 'admin1' && (acc.balance > 200000 || typeof acc.balance !== 'number')) {
+        newBal = 200000;
+        newTier = 'HỘI VIÊN BẠC 🥈';
+        changed = true;
+      }
+      if (newUname.toLowerCase() === 'admin2' && (acc.balance > 500000 || typeof acc.balance !== 'number')) {
+        newBal = 500000;
+        newTier = 'HỘI VIÊN KIM CƯƠNG 💎';
+        changed = true;
+      }
+      if (newUname.toLowerCase() === 'gamer01' && (acc.balance > 50000 || typeof acc.balance !== 'number')) {
+        newBal = 50000;
+        newTier = 'TÂN THỦ (ROOKIE)';
+        changed = true;
+      }
+
       if (changed) {
         migrated = true;
-        return { ...acc, username: newUname, fullName: newName };
+        return { ...acc, username: newUname, fullName: newName, balance: newBal, userTier: newTier };
       }
       return acc;
     });
@@ -299,6 +318,21 @@ export function getLoggedInUser(): AuthUser | null {
     if (user.username === 'thaibboi') {
       user.username = 'admin1';
       user.fullName = 'Nguyễn Văn A';
+      localStorage.setItem(AUTH_STORAGE_KEY, JSON.stringify(user));
+    }
+
+    // Đảm bảo tài khoản trải nghiệm admin1/admin2/gamer01 không bị dính số dư ảo
+    if (user.username.toLowerCase() === 'admin1' && user.balance > 200000) {
+      user.balance = 200000;
+      user.userTier = 'HỘI VIÊN BẠC 🥈';
+      localStorage.setItem(AUTH_STORAGE_KEY, JSON.stringify(user));
+    } else if (user.username.toLowerCase() === 'admin2' && user.balance > 500000) {
+      user.balance = 500000;
+      user.userTier = 'HỘI VIÊN KIM CƯƠNG 💎';
+      localStorage.setItem(AUTH_STORAGE_KEY, JSON.stringify(user));
+    } else if (user.username.toLowerCase() === 'gamer01' && user.balance > 50000) {
+      user.balance = 50000;
+      user.userTier = 'TÂN THỦ (ROOKIE)';
       localStorage.setItem(AUTH_STORAGE_KEY, JSON.stringify(user));
     } else {
       const normUser = (user.fullName || '').replace(/\s+/g, ' ');

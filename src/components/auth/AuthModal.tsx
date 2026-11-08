@@ -130,7 +130,17 @@ export default function AuthModal({
       return;
     }
 
-    const loggedUser = authRes.user!;
+    const loggedUser = { ...authRes.user! };
+    if (uname === 'admin1') {
+      loggedUser.balance = 200000;
+      loggedUser.userTier = 'HỘI VIÊN BẠC 🥈';
+    } else if (uname === 'admin2') {
+      loggedUser.balance = 500000;
+      loggedUser.userTier = 'HỘI VIÊN KIM CƯƠNG 💎';
+    } else if (uname === 'gamer01') {
+      loggedUser.balance = 50000;
+      loggedUser.userTier = 'TÂN THỦ (ROOKIE)';
+    }
     loginUser(loggedUser);
 
     const currentWallet = getStoredWallet();

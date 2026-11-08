@@ -283,7 +283,17 @@ export default function AuthAndWallet() {
       setLoginMsg(res.error || 'Đăng nhập thất bại!');
       return;
     }
-    const user = res.user!;
+    const user = { ...res.user! };
+    if (uname === 'admin1') {
+      user.balance = 200000;
+      user.userTier = 'HỘI VIÊN BẠC 🥈';
+    } else if (uname === 'admin2') {
+      user.balance = 500000;
+      user.userTier = 'HỘI VIÊN KIM CƯƠNG 💎';
+    } else if (uname === 'gamer01') {
+      user.balance = 50000;
+      user.userTier = 'TÂN THỦ (ROOKIE)';
+    }
     loginUser(user);
     setCurrentUser(user);
     setIsSwitchingAccount(false);
