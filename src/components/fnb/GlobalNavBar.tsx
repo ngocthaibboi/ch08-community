@@ -11,11 +11,8 @@ import AuthModal from '@/components/auth/AuthModal';
 
 export default function GlobalNavBar() {
   const pathname = usePathname();
+  const isClientPc = pathname === '/client-pc';
 
-  // THEO YÊU CẦU: Thanh điều hướng website CZ CYBERZONE chỉ hiển thị cho Trang Chủ / Web, ẩn hoàn toàn trên Client PC
-  if (pathname === '/client-pc') {
-    return null;
-  }
   const [pendingOrdersCount, setPendingOrdersCount] = useState(0);
   const [wallet, setWallet] = useState<UserWallet>(INITIAL_WALLET);
   const [currentUser, setCurrentUser] = useState<AuthUser | null>(null);
@@ -88,19 +85,48 @@ export default function GlobalNavBar() {
   };
 
       return (
-    <header className="sticky top-0 z-50 flex flex-col bg-[#070d1e] shadow-2xl">
+    <>
+      {/* NÚT KÉO TRƯỢT GIAO DIỆN HỆ THỐNG TRÊN CLIENT-PC (KHI THANH ĐANG THU GỌN) */}
+      {isClientPc && !isSystemDrawerOpen && !isPinned && (
+        <div className="fixed top-0 left-1/2 -translate-x-1/2 z-[100] pointer-events-auto">
+          <button
+            type="button"
+            onClick={() => setIsSystemDrawerOpen(true)}
+            onMouseEnter={() => setIsSystemDrawerOpen(true)}
+            className="group flex items-center gap-2 px-4 py-1.5 bg-[#020617]/95 border border-emerald-500/50 border-t-0 rounded-b-xl text-emerald-400 font-mono text-[11px] font-bold shadow-[0_4px_20px_rgba(16,185,129,0.35)] hover:bg-emerald-950/90 hover:border-emerald-400 hover:text-white transition-all cursor-pointer backdrop-blur-md"
+            title="Rê chuột hoặc click để trượt xuống thanh chuyển đổi 5 giao diện hệ thống"
+          >
+            <span className="w-1.5 h-1.5 rounded-full bg-emerald-400 animate-pulse"></span>
+            <span className="material-symbols-outlined text-[15px]">desktop_windows</span>
+            <span>GIAO DIỆN HỆ THỐNG</span>
+            <span className="material-symbols-outlined text-[15px] group-hover:translate-y-0.5 transition-transform">
+              keyboard_arrow_down
+            </span>
+          </button>
+        </div>
+      )}
 
-      <div
-        onMouseEnter={() => setIsSystemDrawerOpen(true)}
-        onMouseLeave={() => {
-          if (!isPinned) setIsSystemDrawerOpen(false);
-        }}
-        className={`bg-[#020617] border-b border-emerald-500/30 overflow-hidden transition-all duration-300 ease-in-out ${
-          isSystemDrawerOpen || isPinned
-            ? 'max-h-36 opacity-100 py-2.5 px-3 sm:px-4'
-            : 'max-h-0 opacity-0 py-0 px-3 sm:px-4 pointer-events-none border-b-0'
-        }`}
+      {/* KHUNG THANH ĐIỀU HƯỚNG */}
+      <header
+        className={
+          isClientPc
+            ? `fixed top-0 left-0 right-0 z-[100] transition-all duration-300 ${
+                isSystemDrawerOpen || isPinned ? 'pointer-events-auto shadow-2xl' : 'pointer-events-none'
+              }`
+            : 'sticky top-0 z-50 flex flex-col bg-[#070d1e] shadow-2xl'
+        }
       >
+        <div
+          onMouseEnter={() => setIsSystemDrawerOpen(true)}
+          onMouseLeave={() => {
+            if (!isPinned) setIsSystemDrawerOpen(false);
+          }}
+          className={`bg-[#020617] border-b border-emerald-500/30 overflow-hidden transition-all duration-300 ease-in-out pointer-events-auto ${
+            isSystemDrawerOpen || isPinned
+              ? 'max-h-36 opacity-100 py-2.5 px-3 sm:px-4'
+              : 'max-h-0 opacity-0 py-0 px-3 sm:px-4 pointer-events-none border-b-0'
+          }`}
+        >
         <div className="max-w-7xl mx-auto flex flex-col lg:flex-row items-start lg:items-center justify-between gap-2 font-mono text-[10px] sm:text-[11px]">
           <div className="flex items-center gap-2">
             <span className="w-2 h-2 rounded-full bg-emerald-400 animate-ping"></span>
@@ -167,7 +193,9 @@ export default function GlobalNavBar() {
         </div>
       </div>
 
-      <nav className="border-b border-white/10 bg-[#070d1e] px-4 py-2.5 relative">
+      {/* THANH ĐIỀU HƯỚNG WEBSITE CZ CYBERZONE - CHỈ HIỂN THỊ TRÊN WEB, ẨN HOÀN TOÀN TRÊN CLIENT-PC */}
+      {!isClientPc && (
+        <nav className="border-b border-white/10 bg-[#070d1e] px-4 py-2.5 relative">
         <div className="max-w-7xl mx-auto flex items-center justify-between gap-4">
 
           <Link href="/" className="flex items-center gap-3 group flex-shrink-0">
@@ -459,7 +487,10 @@ export default function GlobalNavBar() {
           </div>
         </div>
       </nav>
+      )}
+    </header>
 
+    {!isClientPc && (
       <AuthModal
         isOpen={isAuthModalOpen}
         defaultTab={authModalTab}
@@ -468,6 +499,7 @@ export default function GlobalNavBar() {
           setCurrentUser(user);
         }}
       />
-    </header>
+    )}
+  </>
   );
 }
