@@ -276,6 +276,65 @@ const STATION_PRESETS: StationPreset[] = [
   },
 ];
 
+export interface ComboHourPack {
+  id: string;
+  name: string;
+  amount: number;
+  bonusMinutes: number;
+  tag: string;
+  tagColor: string;
+  icon: string;
+  desc: string;
+  bonusText: string;
+}
+
+export const COMBO_HOUR_PACKS: ComboHourPack[] = [
+  {
+    id: 'combo-1h',
+    name: 'GÓI 1 GIỜ CHƠI',
+    amount: 20000,
+    bonusMinutes: 0,
+    tag: 'TRẢI NGHIỆM',
+    tagColor: 'text-cyan-400 border-cyan-500/40 bg-cyan-500/10',
+    icon: 'schedule',
+    desc: 'Cộng ~1 giờ chơi theo giá máy trạm • Tích lũy thăng hạng',
+    bonusText: 'Đủ 1 trận Rank nhanh',
+  },
+  {
+    id: 'combo-3h',
+    name: 'COMBO 3 GIỜ CHIẾN',
+    amount: 50000,
+    bonusMinutes: 15,
+    tag: 'TIẾT KIỆM 15%',
+    tagColor: 'text-emerald-400 border-emerald-500/40 bg-emerald-500/10',
+    icon: 'bolt',
+    desc: 'Cộng ~3 giờ chơi + Tặng 15 phút giờ chơi bonus',
+    bonusText: 'Tặng thêm +15 phút chơi Free',
+  },
+  {
+    id: 'combo-6h',
+    name: 'COMBO CÀY RANK 6 GIỜ',
+    amount: 100000,
+    bonusMinutes: 45,
+    tag: 'HOT COMBO',
+    tagColor: 'text-amber-400 border-amber-500/40 bg-amber-500/10',
+    icon: 'stars',
+    desc: 'Cộng ~6 giờ chơi + Tặng 45 phút bonus + Tích lũy Hội Viên Bạc',
+    bonusText: 'Tặng thêm +45 phút chơi Free',
+  },
+  {
+    id: 'combo-12h',
+    name: 'COMBO THÔNG ĐÊM 12 GIỜ',
+    amount: 200000,
+    bonusMinutes: 90,
+    tag: 'SIÊU COMBO ĐÊM',
+    tagColor: 'text-purple-300 border-purple-500/40 bg-purple-500/10',
+    icon: 'nightlife',
+    desc: 'Cộng ~12 giờ chơi + Tặng 90 phút bonus + Đạt mốc Hội Viên Vàng (-20% F&B)',
+    bonusText: 'Tặng thêm +90 phút chơi Free',
+  },
+];
+
 function formatSecondsToHMS(totalSecs: number): string {
   if (totalSecs <= 0) return '00:00:00';
   const h = Math.floor(totalSecs / 3600);
@@ -306,6 +365,8 @@ export default function ClientPcPage() {
   const [showTopupModal, setShowTopupModal] = useState(false);
   const [showSystemSwitcher, setShowSystemSwitcher] = useState(false);
   const [topupAmountInput, setTopupAmountInput] = useState('100000');
+  const [topupContextTitle, setTopupContextTitle] = useState<string | null>(null);
+  const [selectedCombo, setSelectedCombo] = useState<ComboHourPack | null>(null);
 
   const [showCallModal, setShowCallModal] = useState(false);
   const [alertSuccess, setAlertSuccess] = useState<string | null>(null);
@@ -596,17 +657,39 @@ export default function ClientPcPage() {
     }
   };
 
+  const handleSelectComboPack = (pack: ComboHourPack) => {
+    setSelectedCombo(pack);
+    setTopupAmountInput(String(pack.amount));
+    setTopupContextTitle(`ĐẶT MUA ${pack.name.toUpperCase()} (+${pack.amount.toLocaleString('vi-VN')}Đ)`);
+    setShowTopupModal(true);
+  };
+
+  const handleOpenRankTopup = (neededAmount: number, targetTierName: string) => {
+    const depositAmount = neededAmount > 0 ? neededAmount : 50000;
+    setSelectedCombo(null);
+    setTopupAmountInput(String(depositAmount));
+    setTopupContextTitle(`NẠP TIỀN LÊN HẠNG: ${targetTierName.toUpperCase()} (CẦN NẠP THÊM +${depositAmount.toLocaleString('vi-VN')}Đ)`);
+    setShowTopupModal(true);
+  };
+
   const handleConfirmTopupOnClient = (amountToTopup: number) => {
     if (isNaN(amountToTopup) || amountToTopup <= 0) {
       alert('Vui lòng chọn hoặc nhập số tiền nạp hợp lệ!');
       return;
     }
 
-    const updated = topupWallet(amountToTopup, `Nạp tiền tại máy ${currentStation.id}`);
+    const prevTier = getTierByName(currentUser?.userTier || wallet.userTier);
+    const isComboMatch = selectedCombo && selectedCombo.amount === amountToTopup;
+    const bonusBonusSecs = isComboMatch ? selectedCombo.bonusMinutes * 60 : 0;
+    const desc = isComboMatch
+      ? `Nạp ${selectedCombo.name} tại máy ${currentStation.id}`
+      : `Nạp tiền tại máy ${currentStation.id}`;
+
+    const updated = topupWallet(amountToTopup, desc);
     setWallet(updated);
 
     const effectiveRate = customRate > 0 ? customRate : currentStation.hourlyRate;
-    const addedSeconds = Math.floor((amountToTopup / effectiveRate) * 3600);
+    const addedSeconds = Math.floor((amountToTopup / effectiveRate) * 3600) + bonusBonusSecs;
     setRemainingSeconds((prev) => prev + addedSeconds);
 
     const newBal = (currentUser?.balance || 0) + amountToTopup;
@@ -647,12 +730,23 @@ export default function ClientPcPage() {
       isOnline: true,
     });
 
-    const addedTimeStr = formatSecondsToHMS(addedSeconds);
-    setAlertSuccess(
-      `🎉 NẠP TIỀN THÀNH CÔNG: Đã nạp +${amountToTopup.toLocaleString('vi-VN')}đ vào máy ${currentStation.id}! Giờ chơi cộng thêm: +${addedTimeStr}. Số dư ví mới: ${updated.balance.toLocaleString('vi-VN')}đ (Đã đồng bộ sang Trang Chủ và Cổng Ví /auth).`
-    );
+    const newTier = getTierByName(updated.userTier);
     setShowTopupModal(false);
-    setTimeout(() => setAlertSuccess(null), 8000);
+    setSelectedCombo(null);
+    setTopupContextTitle(null);
+
+    if (newTier.minAmount > prevTier.minAmount) {
+      setNewUpgradedTierName(newTier.name);
+      setUpgradePerks(newTier.perks);
+      setShowUpgradeSuccessModal(true);
+    } else {
+      const addedTimeStr = formatSecondsToHMS(addedSeconds);
+      const comboBonusMsg = isComboMatch && selectedCombo.bonusMinutes > 0 ? ` (Đã cộng thêm +${selectedCombo.bonusMinutes} phút Free!)` : '';
+      setAlertSuccess(
+        `🎉 NẠP TIỀN THÀNH CÔNG: Đã nạp +${amountToTopup.toLocaleString('vi-VN')}đ vào máy ${currentStation.id}! Giờ chơi cộng thêm: +${addedTimeStr}${comboBonusMsg}. Số dư ví mới: ${updated.balance.toLocaleString('vi-VN')}đ (Đồng bộ toàn hệ thống).`
+      );
+      setTimeout(() => setAlertSuccess(null), 8000);
+    }
   };
 
   const handleChangeStation = (preset: StationPreset) => {
@@ -752,24 +846,10 @@ export default function ClientPcPage() {
   };
 
   const handleQuickAddMoney = (amount: number) => {
-    const prevTier = getTierByName(wallet.userTier);
-    const updated = topupWallet(amount, 'Nạp Nhanh Diễn Tập');
-    setWallet(updated);
-    const newTier = getTierByName(updated.userTier);
-
-    const addedSeconds = Math.floor((amount / (customRate || currentStation.hourlyRate)) * 3600);
-    setRemainingSeconds((prev) => prev + addedSeconds);
-
-    if (newTier.minAmount > prevTier.minAmount) {
-      setNewUpgradedTierName(newTier.name);
-      setUpgradePerks(newTier.perks);
-      setShowUpgradeSuccessModal(true);
-    } else {
-      setAlertSuccess(
-        `+ ĐÃ NẠP +${amount.toLocaleString('vi-VN')}đ! Số dư mới: ${updated.balance.toLocaleString('vi-VN')}đ (+${formatSecondsToHMS(addedSeconds)} vào đồng hồ).`
-      );
-      setTimeout(() => setAlertSuccess(null), 5000);
-    }
+    setSelectedCombo(null);
+    setTopupAmountInput(String(amount));
+    setTopupContextTitle(`NẠP TIỀN VÀO MÁY TRẠM: +${amount.toLocaleString('vi-VN')}Đ`);
+    setShowTopupModal(true);
   };
 
   const handleCallStaff = (reason: string) => {
@@ -1308,60 +1388,47 @@ export default function ClientPcPage() {
             </div>
           </div>
 
-          <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 pt-4 font-mono text-xs">
-            <button
-              onClick={() => handleQuickAddMoney(20000)}
-              className="p-3.5 rounded-2xl bg-slate-900/90 border border-white/10 hover:border-cyan-400 text-slate-200 hover:text-cyan-300 transition flex flex-col justify-between cursor-pointer group shadow-lg hover:-translate-y-0.5"
-            >
-              <div className="flex items-center justify-between w-full">
-                <span className="text-[10px] text-slate-400 block group-hover:text-cyan-400 font-bold uppercase">GÓI 1 GIỜ CHƠI</span>
-                <span className="material-symbols-outlined text-cyan-400 text-sm">schedule</span>
-              </div>
-              <span className="text-base font-black text-cyan-300 my-1">
-                +20.000đ
-              </span>
-              <span className="text-[9px] text-slate-400">Cộng ~1 giờ chơi ngay &rarr;</span>
-            </button>
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3 pt-4 font-mono text-xs">
+            {COMBO_HOUR_PACKS.map((pack) => {
+              const approxHours = (pack.amount / (customRate || currentStation.hourlyRate)).toFixed(1);
+              return (
+                <button
+                  key={pack.id}
+                  type="button"
+                  onClick={() => handleSelectComboPack(pack)}
+                  className="p-4 rounded-2xl bg-[#091428]/95 border border-white/10 hover:border-amber-400 text-slate-200 hover:text-white transition-all flex flex-col justify-between cursor-pointer group shadow-xl hover:-translate-y-1 relative overflow-hidden text-left"
+                >
+                  <div className="flex items-center justify-between w-full mb-2">
+                    <span className={`text-[10px] px-2 py-0.5 rounded-full border font-bold uppercase tracking-wider ${pack.tagColor}`}>
+                      {pack.tag}
+                    </span>
+                    <span className="material-symbols-outlined text-amber-400 text-lg group-hover:scale-125 transition-transform">
+                      {pack.icon}
+                    </span>
+                  </div>
 
-            <button
-              onClick={() => handleQuickAddMoney(50000)}
-              className="p-3.5 rounded-2xl bg-slate-900/90 border border-white/10 hover:border-emerald-400 text-slate-200 hover:text-emerald-300 transition flex flex-col justify-between cursor-pointer group shadow-lg hover:-translate-y-0.5"
-            >
-              <div className="flex items-center justify-between w-full">
-                <span className="text-[10px] text-slate-400 block group-hover:text-emerald-400 font-bold uppercase">COMBO 3 GIỜ</span>
-                <span className="material-symbols-outlined text-emerald-400 text-sm">bolt</span>
-              </div>
-              <span className="text-base font-black text-emerald-400 my-1">
-                +50.000đ
-              </span>
-              <span className="text-[9px] text-slate-400">Tặng 15p giờ chơi tân thủ &rarr;</span>
-            </button>
+                  <div className="space-y-1">
+                    <h4 className="text-sm font-black text-white font-gaming group-hover:text-amber-300 transition-colors">
+                      {pack.name}
+                    </h4>
+                    <div className="text-xl font-black text-amber-400 font-mono">
+                      +{pack.amount.toLocaleString('vi-VN')}đ
+                    </div>
+                    <div className="text-[11px] text-emerald-400 font-bold">
+                      ~{approxHours}h máy {pack.bonusMinutes > 0 ? `(+${pack.bonusMinutes}p bonus)` : ''}
+                    </div>
+                    <p className="text-[10px] text-slate-400 line-clamp-2 leading-relaxed">
+                      {pack.desc}
+                    </p>
+                  </div>
 
-            <button
-              onClick={() => handleQuickAddMoney(100000)}
-              className="p-3.5 rounded-2xl bg-slate-900/90 border border-white/10 hover:border-amber-400 text-slate-200 hover:text-amber-300 transition flex flex-col justify-between cursor-pointer group shadow-lg hover:-translate-y-0.5"
-            >
-              <div className="flex items-center justify-between w-full">
-                <span className="text-[10px] text-slate-400 block group-hover:text-amber-400 font-bold uppercase">CÀY RANK 6 GIỜ</span>
-                <span className="material-symbols-outlined text-amber-400 text-sm">stars</span>
-              </div>
-              <span className="text-base font-black text-amber-300 my-1">
-                +100.000đ
-              </span>
-              <span className="text-[9px] text-slate-400">Tích lũy Gamer Pass &rarr;</span>
-            </button>
-
-            <button
-              onClick={() => handleQuickAddMoney(200000)}
-              className="p-3.5 rounded-2xl bg-gradient-to-br from-amber-500/20 via-slate-900 to-purple-500/20 border border-amber-400/50 hover:border-amber-300 text-slate-200 hover:text-amber-200 transition flex flex-col justify-between cursor-pointer group shadow-lg hover:-translate-y-0.5"
-            >
-              <div className="flex items-center justify-between w-full">
-                <span className="text-[10px] text-amber-300 font-bold block uppercase">HỘI VIÊN VÀNG</span>
-                <span className="material-symbols-outlined text-amber-400 text-sm">workspace_premium</span>
-              </div>
-              <span className="text-base font-black text-amber-400 my-1">+200.000đ</span>
-              <span className="text-[9px] text-amber-200/80">Giảm 20% menu &amp; giờ chơi &rarr;</span>
-            </button>
+                  <div className="mt-3 pt-2.5 border-t border-white/10 flex items-center justify-between text-[11px] font-bold text-amber-400 group-hover:text-amber-300">
+                    <span>Nạp Qua QR / Quầy</span>
+                    <span className="group-hover:translate-x-1 transition-transform">&rarr;</span>
+                  </div>
+                </button>
+              );
+            })}
           </div>
         </div>
 
@@ -1601,11 +1668,12 @@ export default function ClientPcPage() {
                   </button>
 
                   <button
+                    type="button"
                     onClick={() => {
                       if (progression.isMaxTier) {
                         setShowGamerPassModal(true);
                       } else {
-                        handleQuickAddMoney(progression.neededAmount || 200000);
+                        handleOpenRankTopup(progression.neededAmount, progression.nextTier?.name || 'Hạng Kế Tiếp');
                       }
                     }}
                     className={`py-2.5 px-3 rounded-xl ${
@@ -1759,12 +1827,36 @@ export default function ClientPcPage() {
                 </div>
               </div>
               <button
-                onClick={() => setShowTopupModal(false)}
-                className="text-slate-400 hover:text-white text-lg w-8 h-8 rounded-lg bg-slate-800 flex items-center justify-center"
+                type="button"
+                onClick={() => {
+                  setShowTopupModal(false);
+                  setSelectedCombo(null);
+                  setTopupContextTitle(null);
+                }}
+                className="text-slate-400 hover:text-white text-lg w-8 h-8 rounded-lg bg-slate-800 flex items-center justify-center cursor-pointer"
               >
                 ✕
               </button>
             </div>
+
+            {/* BANNER THÔNG BÁO GÓI COMBO HOẶC NẠP LÊN HẠNG */}
+            {topupContextTitle && (
+              <div className="p-3.5 rounded-2xl bg-amber-500/15 border border-amber-500/40 flex items-start gap-2.5 font-mono text-xs">
+                <span className="material-symbols-outlined text-amber-400 text-xl shrink-0 mt-0.5">verified</span>
+                <div className="space-y-1">
+                  <div className="text-amber-300 font-black uppercase text-[11px] tracking-wide">
+                    {topupContextTitle}
+                  </div>
+                  <div className="text-[10px] text-slate-300 leading-relaxed">
+                    {selectedCombo ? (
+                      <span>{selectedCombo.desc} • <strong className="text-emerald-400">{selectedCombo.bonusText}</strong></span>
+                    ) : (
+                      <span>Nạp tiền tích lũy thực tế vào tài khoản: Tự động cộng giờ chơi vào máy và nâng hạng thẻ Gamer Pass theo hạn mức!</span>
+                    )}
+                  </div>
+                </div>
+              </div>
+            )}
 
             {/* THÔNG TIN SỐ DƯ & QUY ĐỔI GIỜ */}
             <div className="grid grid-cols-2 gap-3 font-mono text-xs">
@@ -1785,11 +1877,11 @@ export default function ClientPcPage() {
             {/* MỨC TIỀN CHỌN NHANH */}
             <div className="space-y-2">
               <div className="flex justify-between items-center text-xs font-mono">
-                <span className="text-white font-bold">Chọn Mức Tiền Cần Nạp:</span>
+                <span className="text-white font-bold">Chọn Mức Tiền / Combo Nạp:</span>
                 <span className="text-emerald-400 text-[10px]">Đơn giá: {(customRate || currentStation.hourlyRate).toLocaleString('vi-VN')}đ/h</span>
               </div>
               <div className="grid grid-cols-3 gap-2 font-mono">
-                {['20000', '50000', '100000', '200000', '500000', '1000000'].map((amt) => {
+                {['20000', '50000', '100000', '200000', '500000', '1500000'].map((amt) => {
                   const num = parseInt(amt, 10);
                   const isSel = topupAmountInput === amt;
                   const addSecs = Math.floor((num / (customRate || currentStation.hourlyRate)) * 3600);
@@ -1797,7 +1889,14 @@ export default function ClientPcPage() {
                     <button
                       key={amt}
                       type="button"
-                      onClick={() => setTopupAmountInput(amt)}
+                      onClick={() => {
+                        setTopupAmountInput(amt);
+                        const matchedCombo = COMBO_HOUR_PACKS.find((p) => p.amount === num);
+                        if (matchedCombo) {
+                          setSelectedCombo(matchedCombo);
+                          setTopupContextTitle(`ĐẶT MUA ${matchedCombo.name.toUpperCase()} (+${num.toLocaleString('vi-VN')}Đ)`);
+                        }
+                      }}
                       className={`p-2.5 rounded-xl border text-center transition cursor-pointer ${
                         isSel
                           ? 'bg-amber-500/20 border-amber-400 text-amber-300 shadow-md ring-1 ring-amber-400'
@@ -1827,27 +1926,46 @@ export default function ClientPcPage() {
             </div>
 
             {/* THẺ VIETQR */}
-            <div className="p-3.5 rounded-2xl bg-slate-950 border border-white/10 flex items-center gap-3 font-mono text-xs">
-              <img
-                src="https://api.vietqr.io/image/970422-0988888888-HjXq5pM.jpg?accountName=CYBER%20ZONE%20GAMING%20LOUNGE&amount=50000"
-                alt="VietQR"
-                className="w-16 h-16 rounded-xl object-contain bg-white p-1 shrink-0"
-              />
-              <div className="text-[11px] space-y-0.5 text-slate-300">
-                <div className="text-emerald-400 font-bold">MB BANK • QUÉT MÃ TỰ ĐỘNG CỘNG TIỀN</div>
-                <div>STK: <strong className="text-white">0988888888</strong></div>
-                <div className="text-slate-400">Nội dung: <strong className="text-amber-400">NAP {currentStation.id} {currentUser?.username || 'khach'}</strong></div>
-              </div>
-            </div>
+            {(() => {
+              const currentNum = Math.max(10000, parseInt(topupAmountInput || '50000', 10) || 50000);
+              const qrUrl = `https://api.vietqr.io/image/970422-0988888888-HjXq5pM.jpg?accountName=CYBER%20ZONE%20GAMING%20LOUNGE&amount=${currentNum}&addInfo=NAP%20${currentStation.id}%20${encodeURIComponent(currentUser?.username || 'khach')}`;
+              return (
+                <div className="p-3.5 rounded-2xl bg-slate-950 border border-white/10 flex items-center gap-3 font-mono text-xs">
+                  <img
+                    src={qrUrl}
+                    alt="VietQR"
+                    className="w-20 h-20 rounded-xl object-contain bg-white p-1 shrink-0"
+                  />
+                  <div className="text-[11px] space-y-0.5 text-slate-300">
+                    <div className="text-emerald-400 font-bold flex items-center gap-1">
+                      <span className="material-symbols-outlined text-sm">qr_code_scanner</span>
+                      <span>MB BANK • QUÉT MÃ TỰ ĐỘNG CỘNG TIỀN</span>
+                    </div>
+                    <div>STK: <strong className="text-white">0988888888</strong> (CYBER ZONE)</div>
+                    <div className="text-slate-400">
+                      Số tiền: <strong className="text-emerald-400 font-bold">+{currentNum.toLocaleString('vi-VN')}đ</strong>
+                    </div>
+                    <div className="text-slate-400">
+                      Nội dung: <strong className="text-amber-400">NAP {currentStation.id} {currentUser?.username || 'khach'}</strong>
+                    </div>
+                  </div>
+                </div>
+              );
+            })()}
 
             {/* NÚT XÁC NHẬN NẠP VÀ LINK SANG TRANG CHỦ */}
             <div className="space-y-2 pt-1 font-mono">
               <button
                 type="button"
                 onClick={() => handleConfirmTopupOnClient(parseInt(topupAmountInput || '0', 10))}
-                className="w-full py-3.5 bg-gradient-to-r from-amber-400 via-yellow-400 to-amber-500 hover:brightness-110 text-black font-extrabold text-xs uppercase tracking-wider rounded-xl shadow-lg shadow-amber-500/25 transition cursor-pointer font-gaming"
+                className="w-full py-3.5 bg-gradient-to-r from-amber-400 via-yellow-400 to-amber-500 hover:brightness-110 text-black font-extrabold text-xs uppercase tracking-wider rounded-xl shadow-lg shadow-amber-500/25 transition cursor-pointer font-gaming flex items-center justify-center gap-2"
               >
-                ⚡ XÁC NHẬN NẠP +{parseInt(topupAmountInput || '0', 10).toLocaleString('vi-VN')}Đ VÀO MÁY
+                <span className="material-symbols-outlined text-sm">payments</span>
+                <span>
+                  {selectedCombo && selectedCombo.amount === parseInt(topupAmountInput || '0', 10)
+                    ? `XÁC NHẬN NẠP ${selectedCombo.name}: +${parseInt(topupAmountInput || '0', 10).toLocaleString('vi-VN')}Đ`
+                    : `XÁC NHẬN NẠP +${parseInt(topupAmountInput || '0', 10).toLocaleString('vi-VN')}Đ VÀO MÁY`}
+                </span>
               </button>
 
               <div className="flex justify-between items-center pt-2 text-[11px] text-slate-400">
@@ -2139,13 +2257,17 @@ export default function ClientPcPage() {
                         </div>
                       ) : (
                         <button
+                          type="button"
                           onClick={() => {
-                            const needed = Math.max(50000, tier.minAmount - wallet.balance);
-                            handleQuickAddMoney(needed);
+                            setShowGamerPassModal(false);
+                            const cumulative = getCumulativeTopupAmount(wallet);
+                            const needed = Math.max(20000, tier.minAmount - cumulative);
+                            handleOpenRankTopup(needed, tier.name);
                           }}
-                          className="w-full py-2 rounded-xl bg-slate-800 hover:bg-slate-700 text-white border border-white/10 font-bold text-xs font-mono transition text-center cursor-pointer"
+                          className="w-full py-2 rounded-xl bg-gradient-to-r from-amber-500/20 to-amber-500/30 hover:from-amber-500/30 hover:to-amber-500/40 text-amber-300 border border-amber-500/50 font-bold text-xs font-mono transition text-center cursor-pointer flex items-center justify-center gap-1.5"
                         >
-                          Nạp +{(tier.minAmount || 50000).toLocaleString('vi-VN')}đ
+                          <span className="material-symbols-outlined text-[15px]">add_card</span>
+                          <span>Nạp Mốc {(tier.minAmount || 50000).toLocaleString('vi-VN')}đ &rarr;</span>
                         </button>
                       )}
                     </div>
@@ -2159,29 +2281,44 @@ export default function ClientPcPage() {
                 <div className="flex items-center gap-2">
                   <span className="material-symbols-outlined text-amber-400">bolt</span>
                   <span className="text-xs font-bold text-white uppercase">
-                    THỬ NGHIỆM THĂNG HẠNG TỨC THÌ (DEMO ĐÁNH GIÁ DỰ ÁN)
+                    CÁC MỐC NẠP TIỀN ĐẠT CHUẨN GAMER PASS (QUÉT MÃ VIETQR)
                   </span>
                 </div>
-                <span className="text-[10px] text-slate-400">Cộng số dư và tự động thăng hạng ngay sau 1 click</span>
+                <span className="text-[10px] text-slate-400">Mở cổng nạp &amp; quét mã VietQR tự động cộng giờ</span>
               </div>
               <div className="grid grid-cols-1 sm:grid-cols-3 gap-2">
                 <button
-                  onClick={() => handleQuickAddMoney(200000)}
+                  type="button"
+                  onClick={() => {
+                    setShowGamerPassModal(false);
+                    handleOpenRankTopup(200000, 'HỘI VIÊN BẠC 🥈');
+                  }}
                   className="py-2.5 px-3 bg-slate-700/70 hover:bg-slate-600 text-slate-200 border border-slate-500 rounded-xl font-bold text-xs flex items-center justify-center gap-1.5 transition cursor-pointer"
                 >
-                  <span>🥈 Thử nạp +200k lên BẠC</span>
+                  <span className="material-symbols-outlined text-sm text-slate-300">military_tech</span>
+                  <span>Nạp Mốc 200k (Lên BẠC)</span>
                 </button>
                 <button
-                  onClick={() => handleQuickAddMoney(500000)}
+                  type="button"
+                  onClick={() => {
+                    setShowGamerPassModal(false);
+                    handleOpenRankTopup(500000, 'HỘI VIÊN VÀNG ⭐');
+                  }}
                   className="py-2.5 px-3 bg-amber-500/20 hover:bg-amber-500/30 text-amber-300 border border-amber-500/50 rounded-xl font-bold text-xs flex items-center justify-center gap-1.5 transition cursor-pointer"
                 >
-                  <span>⭐ Thử nạp +500k lên VÀNG</span>
+                  <span className="material-symbols-outlined text-sm text-amber-400">star</span>
+                  <span>Nạp Mốc 500k (Lên VÀNG)</span>
                 </button>
                 <button
-                  onClick={() => handleQuickAddMoney(1500000)}
+                  type="button"
+                  onClick={() => {
+                    setShowGamerPassModal(false);
+                    handleOpenRankTopup(1500000, 'HỘI VIÊN KIM CƯƠNG 💎');
+                  }}
                   className="py-2.5 px-3 bg-purple-500/20 hover:bg-purple-500/30 text-purple-300 border border-purple-500/50 rounded-xl font-bold text-xs flex items-center justify-center gap-1.5 transition cursor-pointer"
                 >
-                  <span>💎 Thử nạp +1.5M lên KIM CƯƠNG</span>
+                  <span className="material-symbols-outlined text-sm text-purple-400">diamond</span>
+                  <span>Nạp Mốc 1.5M (KIM CƯƠNG)</span>
                 </button>
               </div>
             </div>
