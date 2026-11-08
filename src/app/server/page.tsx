@@ -1312,22 +1312,55 @@ export default function MainServerPage() {
                   .map((r) => (
                     <div
                       key={r.id}
-                      className="p-3.5 rounded-2xl bg-rose-950/20 border border-rose-500/40 space-y-2 font-mono text-xs"
+                      className="p-3.5 rounded-2xl bg-rose-950/30 border border-rose-500/50 space-y-2.5 font-mono text-xs shadow-lg"
                     >
                       <div className="flex justify-between items-start">
-                        <span className="font-bold text-rose-300 font-gaming text-sm">
-                          MÁY: {r.pcName}
-                        </span>
+                        <div className="flex items-center gap-2">
+                          <span className="font-bold text-rose-300 font-gaming text-sm bg-rose-500/20 border border-rose-500/40 px-2.5 py-0.5 rounded-lg shadow-sm">
+                            MÁY: {r.pcName}
+                          </span>
+                          {r.target === 'KITCHEN' ? (
+                            <span className="px-2 py-0.5 rounded bg-amber-500/20 text-amber-300 border border-amber-500/40 text-[9px] font-bold">
+                              🍳 Gửi Bếp F&B
+                            </span>
+                          ) : (
+                            <span className="px-2 py-0.5 rounded bg-cyan-500/20 text-cyan-300 border border-cyan-500/40 text-[9px] font-bold">
+                              🖥️ Gửi Quầy Lễ Tân
+                            </span>
+                          )}
+                        </div>
                         <span className="text-[10px] text-slate-400">
                           {new Date(r.createdAt).toLocaleTimeString('vi-VN', { hour: '2-digit', minute: '2-digit' })}
                         </span>
                       </div>
-                      <p className="text-white text-xs">{r.title}</p>
+
+                      <div className="space-y-1.5">
+                        <div className="font-bold text-amber-300 text-xs flex items-center gap-1.5">
+                          <span className="material-symbols-outlined text-[15px] text-rose-400">priority_high</span>
+                          <span>{r.title}</span>
+                        </div>
+
+                        {/* HIỂN THỊ ĐẦY ĐỦ NỘI DUNG LỜI NHẮN CHI TIẾT CỦA KHÁCH TẠI MÁY */}
+                        {r.details ? (
+                          <div className="p-2.5 rounded-xl bg-black/60 border border-rose-500/30 text-slate-100 text-xs font-mono break-words whitespace-pre-wrap leading-relaxed shadow-inner">
+                            <span className="text-amber-400 text-[10px] font-bold block mb-1 flex items-center gap-1">
+                              <span className="material-symbols-outlined text-[13px]">chat</span>
+                              <span>Nội dung khách nhắn:</span>
+                            </span>
+                            <p className="text-rose-200 font-bold bg-rose-950/40 p-2 rounded-lg border border-rose-500/20">
+                              &quot;{r.details}&quot;
+                            </p>
+                          </div>
+                        ) : null}
+                      </div>
+
                       <button
+                        type="button"
                         onClick={() => handleResolveStaffRequest(r.id)}
-                        className="w-full py-1.5 rounded-xl bg-emerald-500 hover:bg-emerald-400 text-slate-950 font-black text-[11px] transition shadow cursor-pointer"
+                        className="w-full py-2 rounded-xl bg-gradient-to-r from-emerald-500 to-teal-500 hover:brightness-110 text-slate-950 font-black text-xs transition shadow-md flex items-center justify-center gap-1 cursor-pointer"
                       >
-                        ĐÃ XỬ LÝ XONG &rarr;
+                        <span className="material-symbols-outlined text-[16px]">check_circle</span>
+                        <span>ĐÃ XỬ LÝ XONG</span>
                       </button>
                     </div>
                   ))}

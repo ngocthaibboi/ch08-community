@@ -40,6 +40,7 @@ export default function ClientHeader({
   const [callAlertActive, setCallAlertActive] = useState(false);
   const [requestType, setRequestType] = useState<'TOPUP_CASH' | 'HARDWARE_ISSUE' | 'CLEAN_DESK' | 'EXTRA_SERVICE' | 'OTHER'>('TOPUP_CASH');
   const [requestNote, setRequestNote] = useState('');
+  const [destination, setDestination] = useState<'SERVER' | 'KITCHEN'>('SERVER');
   const [displayTime, setDisplayTime] = useState(remainingTime);
 
   useEffect(() => {
@@ -71,9 +72,11 @@ export default function ClientHeader({
       OTHER: 'Yêu cầu hỗ trợ khác',
     };
 
+    const finalTarget: 'SERVER' | 'KITCHEN' = destination || (requestType === 'EXTRA_SERVICE' ? 'KITCHEN' : 'SERVER');
     createStaffRequest({
       pcName,
       type: requestType,
+      target: finalTarget,
       title: typeTitles[requestType] || 'Yêu cầu phục vụ',
       details: requestNote.trim() || `Khách tại máy ${pcName} gọi nhân viên hỗ trợ: ${typeTitles[requestType]}`,
     });
@@ -242,6 +245,29 @@ export default function ClientHeader({
 
             <form onSubmit={handleSubmitStaffRequest} className="space-y-4">
               <div>
+                <label className="block text-xs font-bold text-slate-300 mb-1.5 uppercase tracking-wider">
+                  Nơi Tiếp Nhận Yêu Cầu
+                </label>
+                <div className="grid grid-cols-2 gap-2 font-mono text-xs">
+                  <button
+                    type="button"
+                    onClick={() => setDestination('SERVER')}
+                    className={`p-2.5 rounded-xl border font-bold flex items-center justify-center gap-1.5 transition cursor-pointer ${destination === 'SERVER' ? 'bg-rose-500/20 border-rose-500 text-rose-300 ring-1 ring-rose-400' : 'bg-[#121c2e] border-slate-700/60 text-slate-400 hover:text-white'}`}
+                  >
+                    <span className="material-symbols-outlined text-[16px]">dns</span>
+                    <span>🖥️ Máy Chủ (Lễ Tân)</span>
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => setDestination('KITCHEN')}
+                    className={`p-2.5 rounded-xl border font-bold flex items-center justify-center gap-1.5 transition cursor-pointer ${destination === 'KITCHEN' ? 'bg-amber-500/20 border-amber-500 text-amber-300 ring-1 ring-amber-400' : 'bg-[#121c2e] border-slate-700/60 text-slate-400 hover:text-white'}`}
+                  >
+                    <span className="material-symbols-outlined text-[16px]">soup_kitchen</span>
+                    <span>🍳 Bếp F&B / Bar</span>
+                  </button>
+                </div>
+              </div>
+              <div>
                 <label className="block text-xs font-bold text-slate-300 mb-2 uppercase tracking-wider">
                   Chọn Loại Yêu Cầu Nhanh
                 </label>
@@ -256,7 +282,11 @@ export default function ClientHeader({
                     <button
                       key={item.id}
                       type="button"
-                      onClick={() => setRequestType(item.id as any)}
+                      onClick={() => {
+                        setRequestType(item.id as any);
+                        if (item.id === 'EXTRA_SERVICE') setDestination('KITCHEN');
+                        else setDestination('SERVER');
+                      }}
                       className={`text-left px-3 py-2.5 rounded-xl border text-xs font-bold flex items-center justify-between transition ${
                         requestType === item.id
                           ? 'bg-rose-500/20 border-rose-500 text-rose-300'

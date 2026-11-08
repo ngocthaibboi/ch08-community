@@ -87,7 +87,7 @@ export default function KitchenDisplaySystem() {
   const pendingCount = orders.filter((o) => o.status === 'PENDING').length;
   const cookingCount = orders.filter((o) => o.status === 'COOKING').length;
   const readyCount = orders.filter((o) => o.status === 'READY' || o.status === 'DELIVERED').length;
-  const pendingStaffRequests = staffRequests.filter((r) => r.status === 'PENDING');
+  const pendingStaffRequests = staffRequests.filter((r) => r.status === 'PENDING' && r.target === 'KITCHEN');
 
   const handleUpdateStatus = (orderId: string, nextStatus: OrderStatus) => {
     playSoundEffect(nextStatus === 'READY' || nextStatus === 'DELIVERED' ? 'success' : 'beep');
@@ -198,7 +198,7 @@ export default function KitchenDisplaySystem() {
             {pendingStaffRequests.length > 0 && (
               <span className="bg-red-600/30 border border-red-500 text-rose-300 px-3 py-1.5 rounded-lg text-xs font-black font-mono flex items-center gap-1.5 animate-pulse">
                 <span className="material-symbols-outlined text-[14px]">notifications_active</span>
-                GỌI PHỤC VỤ: {pendingStaffRequests.length}
+                NHẮN BẾP: {pendingStaffRequests.length}
               </span>
             )}
           </div>
@@ -274,7 +274,7 @@ export default function KitchenDisplaySystem() {
               <span className="w-3 h-3 rounded-full bg-rose-500 inline-block"></span>
               <h2 className="font-mono font-black text-rose-300 text-sm md:text-base uppercase tracking-wider flex items-center gap-2">
                 <span className="material-symbols-outlined text-rose-400 text-xl">notifications_active</span>
-                <span>YÊU CẦU PHỤC VỤ TẬN MÁY CẦN XỬ LÝ ({pendingStaffRequests.length})</span>
+                <span>YÊU CẦU NHẮN BẾP TẬN MÁY CẦN XỬ LÝ ({pendingStaffRequests.length})</span>
               </h2>
             </div>
             <span className="text-[11px] font-mono text-rose-400/80">Ưu tiên hỗ trợ ngay cho khách tại máy</span>

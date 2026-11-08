@@ -4,6 +4,7 @@ export interface StaffRequest {
   type: 'TOPUP_CASH' | 'HARDWARE_ISSUE' | 'CLEAN_DESK' | 'EXTRA_SERVICE' | 'OTHER';
   title: string;
   details: string;
+  target?: 'SERVER' | 'KITCHEN';
   status: 'PENDING' | 'RESOLVED';
   createdAt: string;
 }
@@ -43,6 +44,7 @@ export function createStaffRequest(
   const current = getStoredStaffRequests();
   const newReq: StaffRequest = {
     ...data,
+    target: data.target || 'SERVER',
     id: `req-${Date.now()}`,
     status: 'PENDING',
     createdAt: new Date().toISOString(),
