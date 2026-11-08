@@ -1,5 +1,5 @@
 import os
-from flask import Flask, render_template
+from flask import Flask, render_template, request
 from flask_sqlalchemy import SQLAlchemy
 from flask_login import LoginManager
 from dotenv import load_dotenv
@@ -42,7 +42,23 @@ def create_app():
         return render_template('index.html')
 
     from flask_app.blueprints.auth.routes import auth_bp
+    from flask_app.blueprints.api.routes import api_bp
     app.register_blueprint(auth_bp, url_prefix='/auth')
+    app.register_blueprint(api_bp, url_prefix='/api')
+
+    # ══════════ CHAPTER 10: MIDDLEWARE FUNCTIONS ══════════
+    @app.before_request
+    def before_request_middleware():
+        """Middleware tiền xử lý: Bắt đầu phiên request, kiểm tra bảo mật"""
+        pass
+
+    @app.after_request
+    def after_request_middleware(response):
+        """Middleware hậu xử lý: Thêm security headers và log response"""
+        response.headers['X-Content-Type-Options'] = 'nosniff'
+        response.headers['X-Frame-Options'] = 'SAMEORIGIN'
+        response.headers['X-XSS-Protection'] = '1; mode=block'
+        return response
 
     with app.app_context():
         from . import models
