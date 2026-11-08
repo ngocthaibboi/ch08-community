@@ -117,7 +117,6 @@ export default function AuthAndWallet() {
     }
 
     if (authTopupMode === 'BUY_HOURS') {
-      // 1. DEDUCT DIRECTLY FROM ACCOUNT BALANCE
       if (wallet.balance < numAmount) {
         const needed = numAmount - wallet.balance;
         setAuthTopupError(
@@ -161,7 +160,6 @@ export default function AuthAndWallet() {
       }, 500);
 
     } else {
-      // 2. DEPOSIT CASH VIA VIETQR / ATM
       setAuthTopupError(null);
       setIsProcessing(true);
 
@@ -669,7 +667,7 @@ export default function AuthAndWallet() {
               </div>
             )}
 
-            {/* MODE SWITCHER */}
+            
             <div className="space-y-1.5 font-mono text-xs">
               <span className="text-white font-bold block">Phương Thức Thực Hiện:</span>
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">

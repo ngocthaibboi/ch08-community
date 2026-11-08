@@ -348,7 +348,6 @@ export default function Home() {
   const [selectedGearTab, setSelectedGearTab] = useState<'all' | 'mouse' | 'keyboard' | 'services'>('all');
   const [gearSuccessToast, setGearSuccessToast] = useState<string | null>(null);
 
-  // Showroom Gear Borrow & Service Appointment states
   const [borrowModalGear, setBorrowModalGear] = useState<(typeof GEAR_PRODUCTS)[0] | null>(null);
   const [borrowStationId, setBorrowStationId] = useState('VIP-01');
   const [borrowCustomerName, setBorrowCustomerName] = useState('');
@@ -1394,7 +1393,7 @@ export default function Home() {
             </div>
           )}
 
-          {/* Current Member Status Bar */}
+          
           {(() => {
             const currentTier = getTierByName(currentUser?.userTier || wallet.userTier);
             const effectiveBalance = typeof currentUser?.balance === 'number' ? currentUser.balance : wallet.balance;
@@ -1449,7 +1448,7 @@ export default function Home() {
             );
           })()}
 
-          {/* 4 Cards Evenly Aligned */}
+          
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 items-stretch">
             {TIERS_ORDER.map((tierKey) => {
               const tier = GAMER_PASS_TIERS[tierKey];
@@ -1525,7 +1524,7 @@ export default function Home() {
             })}
           </div>
 
-          {/* Footer Policy & Testing Controls */}
+          
           <div className="p-4 md:p-6 rounded-3xl bg-gradient-to-r from-emerald-950/60 to-slate-900 border border-emerald-500/30 flex flex-col md:flex-row justify-between items-center gap-4">
             <div className="flex items-center gap-4">
               <div className="w-11 h-11 rounded-2xl bg-emerald-500/20 text-emerald-400 flex items-center justify-center text-2xl shrink-0">
@@ -2221,7 +2220,7 @@ export default function Home() {
                 </div>
               )}
 
-              {/* HEADER WITH VIẾT ĐÁNH GIÁ BUTTON */}
+              
               <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 p-4 rounded-2xl bg-slate-900/80 border border-white/10 font-mono text-xs">
                 <div className="space-y-1">
                   <div className="flex items-center gap-2">
@@ -2243,7 +2242,7 @@ export default function Home() {
                 </button>
               </div>
 
-              {/* REVIEWS GRID */}
+              
               <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 font-sans">
                 {communityReviews.map((rev) => (
                   <div
@@ -2508,7 +2507,7 @@ export default function Home() {
         </div>
       )}
 
-      {/* MODAL MƯỢN TEST GEAR TẠI MÁY */}
+      
       {borrowModalGear && (
         <div className="fixed inset-0 z-[60] flex items-center justify-center p-4 bg-black/85 backdrop-blur-md animate-fadeIn">
           <div className="relative w-full max-w-xl bg-gradient-to-br from-slate-900 via-[#0c1624] to-slate-950 border border-emerald-500/50 rounded-3xl p-6 sm:p-8 shadow-2xl space-y-6 text-white max-h-[92vh] overflow-y-auto">
@@ -2534,7 +2533,7 @@ export default function Home() {
               </button>
             </div>
 
-            {/* Gear Brief Preview */}
+            
             <div className="p-4 rounded-2xl bg-slate-950 border border-emerald-500/30 flex gap-4 items-center">
               <img
                 src={borrowModalGear.image}
@@ -2691,7 +2690,7 @@ export default function Home() {
         </div>
       )}
 
-      {/* MODAL ĐẶT LỊCH LÀM DỊCH VỤ (MOD PHÍM & TRA KEO TẢN NHIỆT) */}
+      
       {serviceBookingItem && (
         <div className="fixed inset-0 z-[60] flex items-center justify-center p-4 bg-black/85 backdrop-blur-md animate-fadeIn">
           <div className="relative w-full max-w-2xl bg-gradient-to-br from-slate-900 via-[#0c1624] to-slate-950 border border-emerald-500/50 rounded-3xl p-6 sm:p-8 shadow-2xl space-y-6 text-white max-h-[92vh] overflow-y-auto">
@@ -2717,7 +2716,7 @@ export default function Home() {
               </button>
             </div>
 
-            {/* Service Brief Banner */}
+            
             <div className="p-4 rounded-2xl bg-slate-950 border border-cyan-500/30 flex gap-4 items-center">
               <img
                 src={serviceBookingItem.image}
@@ -2742,7 +2741,7 @@ export default function Home() {
             )}
 
             <form onSubmit={handleConfirmServiceBooking} className="space-y-5 font-sans text-xs">
-              {/* Customer Info */}
+              
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                 <div>
                   <label className="block text-[11px] font-mono text-slate-300 mb-1 font-semibold">
@@ -2772,7 +2771,7 @@ export default function Home() {
                 </div>
               </div>
 
-              {/* Date & Time Slot */}
+              
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                 <div>
                   <label className="block text-[11px] font-mono text-slate-300 mb-1 font-semibold">
@@ -2806,7 +2805,7 @@ export default function Home() {
                 </div>
               </div>
 
-              {/* LOCATION SELECTOR: TẠI QUÁN vs Ở NHÀ */}
+              
               <div className="space-y-3">
                 <label className="block text-[11px] font-mono text-slate-300 font-semibold">
                   Địa Điểm Thực Hiện Dịch Vụ <span className="text-rose-400">*</span>
@@ -2865,7 +2864,7 @@ export default function Home() {
                   </div>
                 </div>
 
-                {/* Sub-choice for Store */}
+                
                 {serviceLocationType === 'STORE' && (
                   <div className="p-4 rounded-2xl bg-slate-950 border border-emerald-500/30 space-y-3 animate-fadeIn">
                     <span className="text-[11px] font-mono text-emerald-300 font-bold block">
@@ -2915,7 +2914,7 @@ export default function Home() {
                   </div>
                 )}
 
-                {/* Home Address Input if Home */}
+                
                 {serviceLocationType === 'HOME' && (
                   <div className="p-4 rounded-2xl bg-slate-950 border border-cyan-500/30 space-y-3 animate-fadeIn">
                     <label className="block text-[11px] font-mono text-cyan-300 font-bold">
@@ -2937,7 +2936,7 @@ export default function Home() {
                 )}
               </div>
 
-              {/* Notes */}
+              
               <div>
                 <label className="block text-[11px] font-mono text-slate-300 mb-1 font-semibold">
                   Mô Tả Tình Trạng Thiết Bị &amp; Yêu Cầu Chi Tiết (Tùy Chọn)
@@ -2972,7 +2971,7 @@ export default function Home() {
         </div>
       )}
 
-      {/* MODAL XÁC NHẬN MƯỢN GEAR TEST THÀNH CÔNG */}
+      
       {borrowSuccessModal && (
         <div className="fixed inset-0 z-[70] flex items-center justify-center p-4 bg-black/85 backdrop-blur-md animate-fadeIn">
           <div className="relative w-full max-w-md bg-gradient-to-br from-slate-900 via-[#0a1622] to-slate-950 border border-emerald-500/50 rounded-3xl p-6 sm:p-7 shadow-2xl space-y-5 text-white">
@@ -3026,7 +3025,7 @@ export default function Home() {
         </div>
       )}
 
-      {/* MODAL ĐÁNH GIÁ & CHẤM SAO FEEDBACK */}
+      
       {isReviewModalOpen && (
         <div className="fixed inset-0 z-[80] flex items-center justify-center p-4 bg-black/85 backdrop-blur-md animate-fadeIn">
           <div className="relative w-full max-w-lg bg-gradient-to-br from-slate-900 via-[#0a1424] to-slate-950 border border-amber-500/40 rounded-3xl p-6 sm:p-8 shadow-2xl space-y-5 text-white max-h-[90vh] overflow-y-auto font-sans">
@@ -3053,7 +3052,7 @@ export default function Home() {
             </div>
 
             <form onSubmit={handleSubmitReview} className="space-y-4 text-xs">
-              {/* STAR RATING INTERACTION */}
+              
               <div className="p-4 rounded-2xl bg-slate-950 border border-amber-500/30 text-center space-y-2">
                 <span className="text-[11px] font-mono text-slate-300 font-bold block">
                   Bạn chấm Cyber Zone bao nhiêu sao? (Bấm để chọn):
@@ -3176,7 +3175,7 @@ export default function Home() {
         </div>
       )}
 
-      {/* MODAL XÁC NHẬN ĐẶT LỊCH DỊCH VỤ THÀNH CÔNG */}
+      
       {serviceSuccessModal && (
         <div className="fixed inset-0 z-[70] flex items-center justify-center p-4 bg-black/85 backdrop-blur-md animate-fadeIn">
           <div className="relative w-full max-w-lg bg-gradient-to-br from-slate-900 via-[#0a1622] to-slate-950 border border-cyan-500/50 rounded-3xl p-6 sm:p-7 shadow-2xl space-y-5 text-white">

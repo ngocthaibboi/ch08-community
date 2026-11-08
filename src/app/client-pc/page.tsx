@@ -912,7 +912,6 @@ export default function ClientPcPage() {
     const mode = forceMode || topupPaymentMode;
 
     if (mode === 'WALLET') {
-      // 1. DEDUCT DIRECTLY FROM ACCOUNT BALANCE
       if (liveBalance < amountToPay) {
         const needed = amountToPay - liveBalance;
         setTopupErrorMsg(
@@ -973,7 +972,6 @@ export default function ClientPcPage() {
       );
       setTimeout(() => setAlertSuccess(null), 8000);
     } else {
-      // 2. TOP UP VIA VIETQR (adds new funds from bank into wallet)
       setTopupErrorMsg(null);
       const prevTier = getTierByName(currentUser?.userTier || wallet.userTier);
       const desc = `Nạp tiền VietQR tại máy ${currentStation.id}`;
@@ -2295,7 +2293,7 @@ export default function ClientPcPage() {
               </div>
             )}
 
-            {/* PAYMENT METHOD SELECTOR */}
+            
             <div className="space-y-2">
               <span className="text-white font-bold text-xs font-mono block">Hình Thức Thanh Toán:</span>
               <div className="grid grid-cols-2 gap-2 font-mono text-xs">
