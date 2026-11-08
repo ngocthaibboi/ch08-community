@@ -199,6 +199,7 @@ export default function MainServerPage() {
   const [soundEnabled, setSoundEnabled] = useState(true);
   const prevReqCountRef = useRef(0);
   const prevBookingCountRef = useRef(0);
+  const [isMounted, setIsMounted] = useState(false);
 
   const [showBroadcastModal, setShowBroadcastModal] = useState(false);
   const [broadcastText, setBroadcastText] = useState('');
@@ -275,6 +276,7 @@ export default function MainServerPage() {
   };
 
   useEffect(() => {
+    setIsMounted(true);
     syncAllData();
     window.addEventListener(BOOKING_STORAGE_EVENT, syncAllData);
     window.addEventListener(STAFF_REQUEST_EVENT, syncAllData);
@@ -477,11 +479,11 @@ export default function MainServerPage() {
     return true;
   });
 
-  const activeStnId = activeStation?.stationId || getStoredWallet().pcName || 'ARENA-A1';
-  const activeOccupantName = activeStation?.occupantName || getStoredWallet().userName || 'Trần Ngọc Thái';
-  const isClientOnline = activeStation ? activeStation.isOnline : true;
+  const isClientOnline = isMounted && (activeStation ? activeStation.isOnline : false);
+  const activeStnId = isMounted ? (activeStation?.stationId || getStoredWallet().pcName || 'ARENA-A1') : '';
+  const activeOccupantName = isMounted ? (activeStation?.occupantName || getStoredWallet().userName || 'Trần Ngọc Thái') : 'Trần Ngọc Thái';
 
-  const activeSeatsCount = bookings.length + (isClientOnline ? 1 : 0);
+  const activeSeatsCount = isMounted ? (bookings.length + (isClientOnline ? 1 : 0)) : 0;
   const occupancyPercent = Math.min(100, Math.round((activeSeatsCount / ALL_SEATS_CONFIG.length) * 100));
   const pendingStaffCount = staffRequests.filter((r) => r.status === 'PENDING').length;
   const currentSelectedZoneInfo = SIX_ZONES_CONFIG.find((z) => z.id === selectedZone);
@@ -627,8 +629,8 @@ export default function MainServerPage() {
             <span className="w-2 h-2 rounded-full bg-emerald-400 animate-ping"></span>
           </div>
           <div className="flex items-baseline gap-2">
-            <span className="text-2xl font-black text-white font-gaming">{activeSeatsCount}/42</span>
-            <span className="text-emerald-400 text-xs font-bold">({occupancyPercent}%)</span>
+            <span suppressHydrationWarning className="text-2xl font-black text-white font-gaming">{activeSeatsCount}/42</span>
+            <span suppressHydrationWarning className="text-emerald-400 text-xs font-bold">({occupancyPercent}%)</span>
           </div>
           <div className="w-full h-1.5 rounded-full bg-slate-800 overflow-hidden">
             <div
@@ -637,7 +639,7 @@ export default function MainServerPage() {
             ></div>
           </div>
           <div className="text-[10px] text-slate-400 flex justify-between">
-            <span>{42 - activeSeatsCount} máy trống</span>
+            <span suppressHydrationWarning>{42 - activeSeatsCount} máy trống</span>
             <span className="text-cyan-300 font-bold">2 Bàn Bida Sẵn Sàng</span>
           </div>
         </div>
@@ -647,7 +649,7 @@ export default function MainServerPage() {
             <span>DOANH THU CA TRỰC</span>
             <span className="material-symbols-outlined text-cyan-400 text-sm">payments</span>
           </div>
-          <div className="text-2xl font-black text-cyan-300 font-gaming">
+          <div suppressHydrationWarning className="text-2xl font-black text-cyan-300 font-gaming">
             {revenue.toLocaleString('vi-VN')}đ
           </div>
           <div className="text-[10px] text-slate-400 flex justify-between border-t border-white/5 pt-1.5">
@@ -664,10 +666,10 @@ export default function MainServerPage() {
             </span>
           </div>
           <div className="flex items-baseline gap-2">
-            <span className="text-2xl font-black text-rose-300 font-gaming">
+            <span suppressHydrationWarning className="text-2xl font-black text-rose-300 font-gaming">
               {pendingStaffCount} Khách Gọi
             </span>
-            <span className="text-xs text-amber-300">({bookings.length} Đơn Đặt)</span>
+            <span suppressHydrationWarning className="text-xs text-amber-300">({bookings.length} Đơn Đặt)</span>
           </div>
           <div className="text-[10px] text-slate-400 border-t border-white/5 pt-1.5 flex justify-between">
             <span>Bếp: {ordersCount} đơn</span>
@@ -737,8 +739,8 @@ export default function MainServerPage() {
                 {SIX_ZONES_CONFIG.map((zone) => {
                   const isSelected = selectedZone === zone.id;
                   const zoneSeats = ALL_SEATS_CONFIG.filter((s) => getZoneIdForSeat(s) === zone.id);
-                  const bookedInZone = zoneSeats.filter((s) => bookings.some((b) => b.seatId === s.id)).length;
-                  const onlineInZone = zoneSeats.filter((s) => isClientOnline && s.id === activeStnId).length;
+                  const bookedInZone = isMounted ? zoneSeats.filter((s) => bookings.some((b) => b.seatId === s.id)).length : 0;
+                  const onlineInZone = isMounted && isClientOnline ? zoneSeats.filter((s) => s.id === activeStnId).length : 0;
                   const busyCount = bookedInZone + onlineInZone;
 
                   return (
@@ -763,7 +765,7 @@ export default function MainServerPage() {
                       <div className="font-bold text-white text-xs truncate">{zone.name}</div>
                       <div className="text-[10px] text-slate-400 mt-1 flex justify-between">
                         <span>Giá: <strong className="text-emerald-400">{zone.standardSpec.defaultRate}</strong></span>
-                        <span className={busyCount > 0 ? 'text-amber-400 font-bold' : 'text-slate-500'}>
+                        <span suppressHydrationWarning className={busyCount > 0 ? 'text-amber-400 font-bold' : 'text-slate-500'}>
                           {busyCount > 0 ? `${busyCount} máy bận` : '100% trống'}
                         </span>
                       </div>
@@ -828,9 +830,9 @@ export default function MainServerPage() {
 
             <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-3">
               {filteredSeats.map((seat) => {
-                const booking = bookings.find((b) => b.seatId === seat.id);
+                const booking = isMounted ? bookings.find((b) => b.seatId === seat.id) : null;
                 const isBooked = !!booking;
-                const isCurrent = isClientOnline && seat.id === activeStnId;
+                const isCurrent = isMounted && isClientOnline && seat.id === activeStnId;
                 const isSelected = selectedSeat?.id === seat.id;
                 const currentSeatPrice = customSeatRates[seat.id] || parseDefaultRate(seat.price);
 
