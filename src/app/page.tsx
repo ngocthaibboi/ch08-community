@@ -252,7 +252,7 @@ export default function Home() {
     },
     {
       id: 'lfg-2',
-      author: 'Nguyễn Văn Thái (Trưởng Nhóm)',
+      author: 'Nguyễn Văn A (Trưởng Nhóm)',
       avatar: '⭐',
       station: 'Máy Trạm VIP-08',
       game: 'Liên Minh Huyền Thoại',
@@ -1676,7 +1676,7 @@ export default function Home() {
                       type="text"
                       value={newLfgName}
                       onChange={(e) => setNewLfgName(e.target.value)}
-                      placeholder={currentUser?.fullName || "Ví dụ: thaibboi hoặc Nguyễn Văn A"}
+                      placeholder={currentUser?.fullName || "Ví dụ: admin1 hoặc Nguyễn Văn A"}
                       className="w-full bg-slate-950 border border-slate-700 rounded-xl p-2.5 text-white outline-none focus:border-emerald-400"
                     />
                   </div>

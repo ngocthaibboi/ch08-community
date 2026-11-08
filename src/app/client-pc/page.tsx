@@ -14,7 +14,14 @@ import {
   broadcastWalletUpdate,
   getCumulativeTopupAmount,
 } from '@/lib/walletStore';
-import { getLoggedInUser, loginUser, logoutUser, AUTH_EVENT_NAME, AuthUser, authenticateUser } from '@/lib/authStore';
+import {
+  getClientPcSession,
+  saveClientPcSession,
+  clearClientPcSession,
+  CLIENT_PC_EVENT_NAME,
+  AuthUser,
+  authenticateUser,
+} from '@/lib/authStore';
 import AuthModal from '@/components/auth/AuthModal';
 import { createStaffRequest } from '@/lib/staffRequestStore';
 import {
@@ -395,11 +402,13 @@ export default function ClientPcPage() {
   }, [currentStation.id]);
 
   useEffect(() => {
-    const user = getLoggedInUser();
+    // ══════════ MÔI TRƯỜNG MÁY TRẠM ĐỘC LẬP (TÁCH BIỆT HOÀN TOÀN VỚI WEB TRANG CHỦ) ══════════
+    // Chỉ đọc phiên đăng nhập riêng của máy trạm. Đăng nhập trang chủ sẽ KHÔNG tự động mở máy trạm!
+    const stationUser = getClientPcSession();
     const storedWallet = getStoredWallet();
 
     setWallet(storedWallet);
-    setCurrentUser(user);
+    setCurrentUser(stationUser);
 
     const matched = STATION_PRESETS.find((s) => s.id === storedWallet.pcName) || STATION_PRESETS[0];
     setCurrentStation(matched);
@@ -407,27 +416,26 @@ export default function ClientPcPage() {
     setCustomRate(initialRate);
     setNewRateInput(String(initialRate));
 
-    if (storedWallet.balance > 0 && initialRate > 0) {
-      const secs = Math.floor((storedWallet.balance / initialRate) * 3600);
+    // Bắt buộc phải đăng nhập hợp lệ tài khoản tại máy trạm và có số dư > 0 mới mở khóa máy
+    if (stationUser && stationUser.balance > 0 && initialRate > 0) {
+      const secs = Math.floor((stationUser.balance / initialRate) * 3600);
       setRemainingSeconds(secs);
-    }
-
-    if (user && storedWallet.balance > 0) {
       setIsLocked(false);
     } else {
       setIsLocked(true);
+      setRemainingSeconds(0);
     }
 
-    const handleSync = () => {
-      const u = getLoggedInUser();
-      const w = getStoredWallet();
-      setCurrentUser(u);
-      setWallet(w);
+    const handleStationSync = () => {
+      const sUser = getClientPcSession();
+      setCurrentUser(sUser);
+      if (!sUser) {
+        setIsLocked(true);
+        setRemainingSeconds(0);
+      }
     };
 
-    window.addEventListener(WALLET_EVENT_NAME, handleSync);
-    window.addEventListener(AUTH_EVENT_NAME, handleSync);
-    window.addEventListener('storage', handleSync);
+    window.addEventListener(CLIENT_PC_EVENT_NAME, handleStationSync);
 
     const handleBroadcast = (e: any) => {
       setActiveBroadcast(e.detail || null);
@@ -451,9 +459,7 @@ export default function ClientPcPage() {
     window.addEventListener('cyber_remote_lock_command', handleRemoteLock);
 
     return () => {
-      window.removeEventListener(WALLET_EVENT_NAME, handleSync);
-      window.removeEventListener(AUTH_EVENT_NAME, handleSync);
-      window.removeEventListener('storage', handleSync);
+      window.removeEventListener(CLIENT_PC_EVENT_NAME, handleStationSync);
       window.removeEventListener('cyber_broadcast_alert', handleBroadcast);
       window.removeEventListener('cyber_client_direct_message', handleDirectMessage);
       window.removeEventListener('cyber_remote_lock_command', handleRemoteLock);
@@ -496,21 +502,24 @@ export default function ClientPcPage() {
   const handleClientLogin = (e: React.FormEvent) => {
     e.preventDefault();
     setLoginError(null);
-    if (!loginUsername.trim() || !loginPassword.trim()) {
+    const cleanUname = loginUsername.trim();
+    const cleanPass = loginPassword.trim();
+
+    if (!cleanUname || !cleanPass) {
       setLoginError('Vui lòng nhập đầy đủ tên tài khoản và mật khẩu hội viên!');
       return;
     }
 
-    const authRes = authenticateUser(loginUsername, loginPassword);
+    const authRes = authenticateUser(cleanUname, cleanPass);
     if (!authRes.success) {
       setLoginError(authRes.error || 'Đăng nhập không thành công! Vui lòng kiểm tra lại.');
       return;
     }
 
     const userObj = authRes.user!;
-    loginUser(userObj);
+    // Lưu phiên máy trạm riêng (không ảnh hưởng và không can thiệp phiên Web Trang chủ)
+    saveClientPcSession(userObj);
     setCurrentUser(userObj);
-    setWallet(getStoredWallet());
 
     const effectiveRate = customRate > 0 ? customRate : currentStation.hourlyRate;
     updateStationAndRate(currentStation.id, currentStation.zone, effectiveRate);
@@ -524,7 +533,7 @@ export default function ClientPcPage() {
     setTimeout(() => setAlertSuccess(null), 4000);
   };
 
-  const handleQuickDemoLogin = (uname: string = 'thaibboi', pass: string = '123') => {
+  const handleQuickDemoLogin = (uname: string = 'admin1', pass: string = '123') => {
     setLoginError(null);
     const authRes = authenticateUser(uname, pass);
     if (!authRes.success) {
@@ -533,9 +542,8 @@ export default function ClientPcPage() {
     }
 
     const userObj = authRes.user!;
-    loginUser(userObj);
+    saveClientPcSession(userObj);
     setCurrentUser(userObj);
-    setWallet(getStoredWallet());
 
     const effectiveRate = customRate > 0 ? customRate : currentStation.hourlyRate;
     updateStationAndRate(currentStation.id, currentStation.zone, effectiveRate);
@@ -543,14 +551,16 @@ export default function ClientPcPage() {
     const secs = Math.floor((userObj.balance / effectiveRate) * 3600);
     setRemainingSeconds(secs);
     setIsLocked(false);
-    setAlertSuccess(`Đã mở khóa máy ${currentStation.id} với tài khoản Trưởng nhóm ${userObj.fullName} (${userObj.balance.toLocaleString('vi-VN')}đ • ${formatSecondsToHMS(secs)})!`);
+    setAlertSuccess(`Đã mở khóa máy ${currentStation.id} với tài khoản Hội viên ${userObj.fullName} (${userObj.balance.toLocaleString('vi-VN')}đ • ${formatSecondsToHMS(secs)})!`);
     setTimeout(() => setAlertSuccess(null), 4000);
   };
 
   const handleLockClient = () => {
     if (confirm(`Bạn có chắc muốn đăng xuất và khóa máy trạm ${currentStation.id}?`)) {
+      clearClientPcSession();
+      setCurrentUser(null);
       setIsLocked(true);
-      logoutUser();
+      setRemainingSeconds(0);
     }
   };
 
@@ -751,7 +761,7 @@ export default function ClientPcPage() {
                   required
                   value={loginUsername}
                   onChange={(e) => setLoginUsername(e.target.value)}
-                  placeholder="Ví dụ: thaibboi hoặc nguyenvana"
+                  placeholder="Ví dụ: admin1 hoặc admin2"
                   className="w-full bg-slate-950 border border-slate-700 rounded-xl p-3 text-white focus:border-emerald-400 outline-none"
                 />
               </div>
@@ -788,17 +798,28 @@ export default function ClientPcPage() {
             </div>
 
             <div className="pt-3 border-t border-white/10 space-y-2">
-              <span className="text-[10px] text-slate-400 block text-center uppercase tracking-wider font-mono">
-                TÀI KHOẢN TRẢI NGHIỆM VIP CÓ SẴN (GUEST PASS)
-              </span>
-              <button
-                type="button"
-                onClick={() => handleQuickDemoLogin('thaibboi', '123')}
-                className="w-full py-2.5 bg-slate-800 hover:bg-slate-700 text-emerald-400 border border-emerald-500/40 font-bold rounded-xl transition text-xs font-mono flex items-center justify-center gap-2 cursor-pointer shadow-md"
-              >
-                <span className="material-symbols-outlined text-[16px]">verified</span>
-                <span>Đăng nhập nhanh tài khoản Hội viên VIP (Số dư: 200.000đ)</span>
-              </button>
+              <div className="flex justify-between items-center text-[10px] text-slate-400 uppercase tracking-wider font-mono">
+                <span>TÀI KHOẢN TRẢI NGHIỆM CÓ SẴN:</span>
+                <span className="text-emerald-400">MK: 123</span>
+              </div>
+              <div className="grid grid-cols-2 gap-2">
+                <button
+                  type="button"
+                  onClick={() => handleQuickDemoLogin('admin1', '123')}
+                  className="py-2.5 px-2 bg-slate-800 hover:bg-slate-700 text-cyan-300 border border-cyan-500/40 font-bold rounded-xl transition text-xs font-mono flex items-center justify-center gap-1.5 cursor-pointer shadow-md"
+                >
+                  <span className="material-symbols-outlined text-[15px]">verified</span>
+                  <span>🥈 admin1 (200k)</span>
+                </button>
+                <button
+                  type="button"
+                  onClick={() => handleQuickDemoLogin('admin2', '123')}
+                  className="py-2.5 px-2 bg-slate-800 hover:bg-slate-700 text-purple-300 border border-purple-500/40 font-bold rounded-xl transition text-xs font-mono flex items-center justify-center gap-1.5 cursor-pointer shadow-md"
+                >
+                  <span className="material-symbols-outlined text-[15px]">diamond</span>
+                  <span>💎 admin2 (500k)</span>
+                </button>
+              </div>
             </div>
 
             <div className="p-3 rounded-2xl bg-black/40 border border-white/5 text-[11px] font-mono text-slate-400 space-y-1">

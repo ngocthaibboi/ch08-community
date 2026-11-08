@@ -6,6 +6,7 @@ import {
   AuthUser,
   authenticateUser,
   registerAccount,
+  isValidVietnamesePhone,
 } from '@/lib/authStore';
 import { getStoredWallet, broadcastWalletUpdate } from '@/lib/walletStore';
 
@@ -78,15 +79,20 @@ export default function AuthModal({
     const cleanFullName = fullName.trim();
     const cleanPhone = phone.trim();
 
-    if (!cleanUsername || !cleanPassword || !cleanPhone) {
+    if (!cleanUsername || !cleanPassword || !cleanPhone || !cleanFullName) {
       setError('Vui lòng điền đầy đủ các thông tin bắt buộc (*)!');
+      return;
+    }
+
+    if (!isValidVietnamesePhone(cleanPhone)) {
+      setError('Số điện thoại không hợp lệ! Vui lòng nhập đúng số điện thoại di động Việt Nam gồm 10 chữ số (bắt đầu bằng 03, 05, 07, 08, 09).');
       return;
     }
 
     const regRes = registerAccount({
       username: cleanUsername,
       password: cleanPassword,
-      fullName: cleanFullName || cleanUsername,
+      fullName: cleanFullName,
       phone: cleanPhone,
       initialBalance: 50000,
     });
@@ -223,7 +229,7 @@ export default function AuthModal({
                 required
                 value={username}
                 onChange={(e) => setUsername(e.target.value)}
-                placeholder="Ví dụ: thaibboi hoặc admin"
+                placeholder="Ví dụ: admin1 hoặc admin2"
                 className="w-full bg-slate-900 border border-slate-700 rounded-xl p-3 text-white focus:border-emerald-400 outline-none"
               />
             </div>
@@ -255,19 +261,19 @@ export default function AuthModal({
               <div className="grid grid-cols-2 gap-2">
                 <button
                   type="button"
-                  onClick={() => handleQuickDemoLogin('thaibboi', '123')}
+                  onClick={() => handleQuickDemoLogin('admin1', '123')}
                   className="p-2 bg-slate-800/80 hover:bg-slate-700 text-cyan-300 border border-cyan-500/30 font-bold rounded-lg transition text-[10px] flex items-center justify-center gap-1 cursor-pointer"
-                  title="Tài khoản Trưởng nhóm Thái (200.000đ • Bạc)"
+                  title="Tài khoản Hội viên admin1 (200.000đ • Bạc)"
                 >
-                  <span>🥈 thaibboi (200k)</span>
+                  <span>🥈 admin1 (200k)</span>
                 </button>
                 <button
                   type="button"
-                  onClick={() => handleQuickDemoLogin('admin', '123')}
+                  onClick={() => handleQuickDemoLogin('admin2', '123')}
                   className="p-2 bg-slate-800/80 hover:bg-slate-700 text-purple-300 border border-purple-500/30 font-bold rounded-lg transition text-[10px] flex items-center justify-center gap-1 cursor-pointer"
-                  title="Tài khoản Quản trị viên (500.000đ • Kim Cương)"
+                  title="Tài khoản Quản trị viên admin2 (500.000đ • Kim Cương)"
                 >
-                  <span>💎 admin (500k)</span>
+                  <span>💎 admin2 (500k)</span>
                 </button>
               </div>
               <button
@@ -290,7 +296,7 @@ export default function AuthModal({
                 required
                 value={username}
                 onChange={(e) => setUsername(e.target.value)}
-                placeholder="Ví dụ: ngocthai_gamer (tối thiểu 3 ký tự)"
+                placeholder="Ví dụ: gamer_pro2026 (tối thiểu 3 ký tự)"
                 className="w-full bg-slate-900 border border-slate-700 rounded-xl p-2.5 text-white focus:border-emerald-400 outline-none"
               />
             </div>
@@ -302,7 +308,7 @@ export default function AuthModal({
                 required
                 value={fullName}
                 onChange={(e) => setFullName(e.target.value)}
-                placeholder="Ví dụ: Nguyễn Văn Thái"
+                placeholder="Ví dụ: Nguyễn Văn A"
                 className="w-full bg-slate-900 border border-slate-700 rounded-xl p-2.5 text-white focus:border-emerald-400 outline-none"
               />
             </div>
@@ -314,9 +320,12 @@ export default function AuthModal({
                 required
                 value={phone}
                 onChange={(e) => setPhone(e.target.value)}
-                placeholder="09xx xxx xxx"
+                placeholder="Ví dụ: 0988 888 888 (10 số di động)"
                 className="w-full bg-slate-900 border border-slate-700 rounded-xl p-2.5 text-white focus:border-emerald-400 outline-none"
               />
+              <span className="text-[10px] text-slate-500 block mt-0.5">
+                Chấp nhận số di động 10 chữ số (đầu số 03, 05, 07, 08, 09).
+              </span>
             </div>
 
             <div>

@@ -841,7 +841,7 @@ export default function MainServerPage() {
                       </div>
                     ) : isCurrent ? (
                       <div className="pt-2 border-t border-cyan-500/30 text-[10px] font-mono text-cyan-300 flex justify-between items-center">
-                        <span className="truncate">👤 Nguyễn Văn Thái</span>
+                        <span className="truncate">👤 Nguyễn Văn A</span>
                         <span className="text-[9px] text-emerald-400 font-bold">Đang chơi</span>
                       </div>
                     ) : (

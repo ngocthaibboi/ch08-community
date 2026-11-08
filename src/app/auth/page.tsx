@@ -28,6 +28,7 @@ import {
   AuthUser,
   authenticateUser,
   registerAccount,
+  isValidVietnamesePhone,
 } from '@/lib/authStore';
 
 export default function AuthAndWallet() {
@@ -155,16 +156,26 @@ export default function AuthAndWallet() {
   const handleRegisterOnAuthPage = (e: React.FormEvent) => {
     e.preventDefault();
     setLoginMsg(null);
-    if (!regUsername.trim() || !regPassword.trim() || !regPhone.trim()) {
+    const cleanUname = regUsername.trim();
+    const cleanPass = regPassword.trim();
+    const cleanName = regFullName.trim();
+    const cleanPhone = regPhone.trim();
+
+    if (!cleanUname || !cleanPass || !cleanPhone || !cleanName) {
       setLoginMsg('Vui lòng điền đầy đủ các thông tin bắt buộc (*)!');
       return;
     }
 
+    if (!isValidVietnamesePhone(cleanPhone)) {
+      setLoginMsg('Số điện thoại không hợp lệ! Vui lòng nhập đúng số điện thoại di động Việt Nam gồm 10 chữ số (bắt đầu bằng 03, 05, 07, 08, 09).');
+      return;
+    }
+
     const res = registerAccount({
-      username: regUsername.trim(),
-      password: regPassword.trim(),
-      fullName: regFullName.trim(),
-      phone: regPhone.trim(),
+      username: cleanUname,
+      password: cleanPass,
+      fullName: cleanName,
+      phone: cleanPhone,
       initialBalance: 50000,
     });
 
@@ -676,7 +687,7 @@ export default function AuthAndWallet() {
                     required
                     value={switchUsername}
                     onChange={(e) => setSwitchUsername(e.target.value)}
-                    placeholder="Ví dụ: thaibboi hoặc admin"
+                    placeholder="Ví dụ: admin1 hoặc admin2"
                     className="bg-slate-800 border border-slate-700 text-white rounded-xl px-4 py-2.5 focus:border-cyan-400 focus:outline-none w-full text-sm font-sans"
                   />
                 </div>
@@ -708,17 +719,17 @@ export default function AuthAndWallet() {
                   <div className="grid grid-cols-2 gap-2">
                     <button
                       type="button"
-                      onClick={() => handleQuickDemoLogin('thaibboi', '123')}
+                      onClick={() => handleQuickDemoLogin('admin1', '123')}
                       className="p-2 bg-slate-800/80 hover:bg-slate-700 text-cyan-300 border border-cyan-500/30 rounded-lg font-bold text-[10px] cursor-pointer"
                     >
-                      🥈 thaibboi (200k)
+                      🥈 admin1 (200k)
                     </button>
                     <button
                       type="button"
-                      onClick={() => handleQuickDemoLogin('admin', '123')}
+                      onClick={() => handleQuickDemoLogin('admin2', '123')}
                       className="p-2 bg-slate-800/80 hover:bg-slate-700 text-purple-300 border border-purple-500/30 rounded-lg font-bold text-[10px] cursor-pointer"
                     >
-                      💎 admin (500k)
+                      💎 admin2 (500k)
                     </button>
                   </div>
                 </div>
@@ -732,7 +743,7 @@ export default function AuthAndWallet() {
                     required
                     value={regUsername}
                     onChange={(e) => setRegUsername(e.target.value)}
-                    placeholder="Ví dụ: ngocthai_gamer (tối thiểu 3 ký tự)"
+                    placeholder="Ví dụ: gamer_pro2026 (tối thiểu 3 ký tự)"
                     className="bg-slate-800 border border-slate-700 text-white rounded-xl px-4 py-2.5 focus:border-emerald-400 focus:outline-none w-full text-sm font-sans"
                   />
                 </div>
@@ -744,7 +755,7 @@ export default function AuthAndWallet() {
                     required
                     value={regFullName}
                     onChange={(e) => setRegFullName(e.target.value)}
-                    placeholder="Ví dụ: Nguyễn Văn Thái"
+                    placeholder="Ví dụ: Nguyễn Văn A"
                     className="bg-slate-800 border border-slate-700 text-white rounded-xl px-4 py-2.5 focus:border-emerald-400 focus:outline-none w-full text-sm font-sans"
                   />
                 </div>
@@ -756,7 +767,7 @@ export default function AuthAndWallet() {
                     required
                     value={regPhone}
                     onChange={(e) => setRegPhone(e.target.value)}
-                    placeholder="09xx xxx xxx"
+                    placeholder="Ví dụ: 0988 888 888 (10 số di động)"
                     className="bg-slate-800 border border-slate-700 text-white rounded-xl px-4 py-2.5 focus:border-emerald-400 focus:outline-none w-full text-sm font-sans"
                   />
                 </div>
