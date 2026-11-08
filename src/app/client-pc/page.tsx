@@ -1903,7 +1903,7 @@ export default function ClientPcPage() {
                   <div className="flex items-center gap-3">
                     <span className="material-symbols-outlined text-2xl text-emerald-400">{sys.icon}</span>
                     <div>
-                      <div className="font-bold text-white text-sm">{sys.label}</div>
+                      <div className="font-bold text-white text-sm" suppressHydrationWarning>{sys.label}</div>
                       <div className="text-[10px] text-slate-400">{sys.desc}</div>
                     </div>
                   </div>

@@ -226,6 +226,7 @@ function getZoneForSeat(seat: BaseSeat): 'STANDARD' | 'PRO' | 'VIP' | 'ARENA' | 
 }
 
 export default function Home() {
+  const [isMounted, setIsMounted] = useState(false);
   const [currentUser, setCurrentUser] = useState<AuthUser | null>(null);
 
   const [selectedZone, setSelectedZone] = useState<'ALL' | 'STANDARD' | 'PRO' | 'VIP' | 'ARENA' | 'COUPLE_STREAM' | 'CONSOLE_BIDA'>('STANDARD');
@@ -317,6 +318,16 @@ export default function Home() {
   const [newLfgContent, setNewLfgContent] = useState('');
 
   const getSeatLiveStatus = (seat: BaseSeat) => {
+    if (!isMounted) {
+      return {
+        status: 'AVAILABLE' as const,
+        label: 'MÁY TRỐNG',
+        badgeClass: 'bg-emerald-500/20 text-emerald-300 border-emerald-500/40',
+        dotClass: 'bg-emerald-400',
+        occupant: null,
+        timeSlot: null,
+      };
+    }
     const booking = storedBookings.find(
       (b) => b.seatId === seat.id && (b.status === 'RESERVED' || b.status === 'CONFIRMED')
     );
@@ -397,6 +408,7 @@ export default function Home() {
   };
 
   useEffect(() => {
+    setIsMounted(true);
     const user = getLoggedInUser();
     setCurrentUser(user);
     const initialWallet = getStoredWallet();

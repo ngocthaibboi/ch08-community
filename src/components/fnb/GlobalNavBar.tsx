@@ -18,6 +18,9 @@ export default function GlobalNavBar() {
     pathname === '/kds' ||
     pathname === '/dashboard';
 
+  const [isMounted, setIsMounted] = useState(false);
+  const [stationLabel, setStationLabel] = useState('ARENA-A1');
+
   const [pendingOrdersCount, setPendingOrdersCount] = useState(0);
   const [wallet, setWallet] = useState<UserWallet>(INITIAL_WALLET);
   const [currentUser, setCurrentUser] = useState<AuthUser | null>(null);
@@ -31,8 +34,7 @@ export default function GlobalNavBar() {
   const [isServiceDropdownOpen, setIsServiceDropdownOpen] = useState(false);
   const dropdownRef = useRef<HTMLDivElement>(null);
 
-  const activeStn = getActiveClientStation();
-  const activeStationLabel = activeStn?.stationId || wallet.pcName || 'ARENA-A1';
+  const activeStationLabel = isMounted ? stationLabel : 'ARENA-A1';
 
   const ecosystemModes = [
     { href: '/', label: '1. Cổng Khách Hàng (Trang Chủ)', icon: 'public' },
@@ -43,13 +45,17 @@ export default function GlobalNavBar() {
   ];
 
   useEffect(() => {
+    setIsMounted(true);
     const updateAll = () => {
       try {
         const orders = getStoredOrders();
         const pending = orders.filter((o) => o.status === 'PENDING' || o.status === 'COOKING').length;
         setPendingOrdersCount(pending);
-        setWallet(getStoredWallet());
+        const w = getStoredWallet();
+        setWallet(w);
         setCurrentUser(getLoggedInUser());
+        const stn = getActiveClientStation();
+        setStationLabel(stn?.stationId || w.pcName || 'ARENA-A1');
       } catch {
       }
     };
@@ -159,7 +165,7 @@ export default function GlobalNavBar() {
                   }`}
                 >
                   <span className="material-symbols-outlined text-[14px]">{mode.icon}</span>
-                  <span>{mode.label}</span>
+                  <span suppressHydrationWarning>{mode.label}</span>
                   {mode.countBadge && pendingOrdersCount > 0 && (
                     <span className="bg-amber-400 text-slate-950 text-[9px] font-black px-1.5 py-0.2 rounded-full font-mono animate-pulse">
                       {pendingOrdersCount}
@@ -434,7 +440,7 @@ export default function GlobalNavBar() {
               <span>ĐẶT MÁY TRƯỚC</span>
             </Link>
 
-            {currentUser ? (
+            {isMounted && currentUser ? (
               <div className="flex items-center gap-2">
                 <Link
                   href="/auth"
