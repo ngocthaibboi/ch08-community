@@ -739,3 +739,100 @@ export function confirmBooking(seatId: string): SeatBooking | null {
   }
   return confirmedBooking;
 }
+export interface ServiceAppointment {
+  id: string;
+  code: string;
+  serviceId: string;
+  serviceName: string;
+  price: string;
+  customerName: string;
+  phone: string;
+  date: string;
+  timeSlot: string;
+  locationType: 'STORE' | 'HOME';
+  storeLocationDetail?: string;
+  homeAddress?: string;
+  notes?: string;
+  status: 'PENDING' | 'CONFIRMED' | 'COMPLETED';
+  createdAt: string;
+}
+
+export const SERVICE_APPOINTMENT_STORAGE_KEY = 'CYBER_SERVICE_APPOINTMENTS';
+export const SERVICE_APPOINTMENT_EVENT = 'cyber_service_appointment_sync';
+
+export function getStoredServiceAppointments(): ServiceAppointment[] {
+  if (typeof window === 'undefined') return [];
+  try {
+    const raw = localStorage.getItem(SERVICE_APPOINTMENT_STORAGE_KEY);
+    return raw ? JSON.parse(raw) : [];
+  } catch {
+    return [];
+  }
+}
+
+export function saveServiceAppointment(
+  data: Omit<ServiceAppointment, 'id' | 'code' | 'status' | 'createdAt'>
+): ServiceAppointment {
+  const current = getStoredServiceAppointments();
+  const code = 'SRV-' + Math.floor(100000 + Math.random() * 900000);
+  const newAppointment: ServiceAppointment = {
+    ...data,
+    id: 'srv-' + Date.now(),
+    code,
+    status: 'PENDING',
+    createdAt: new Date().toISOString(),
+  };
+  const updated = [newAppointment, ...current];
+  if (typeof window !== 'undefined') {
+    localStorage.setItem(SERVICE_APPOINTMENT_STORAGE_KEY, JSON.stringify(updated));
+    window.dispatchEvent(new CustomEvent(SERVICE_APPOINTMENT_EVENT, { detail: updated }));
+  }
+  return newAppointment;
+}
+
+export interface GearBorrowRecord {
+  id: string;
+  code: string;
+  gearId: string;
+  gearName: string;
+  customerName: string;
+  phone: string;
+  stationId: string;
+  duration: string;
+  notes?: string;
+  status: 'PENDING' | 'DELIVERED' | 'RETURNED';
+  createdAt: string;
+}
+
+export const GEAR_BORROW_STORAGE_KEY = 'CYBER_GEAR_BORROWS';
+export const GEAR_BORROW_EVENT = 'cyber_gear_borrow_sync';
+
+export function getStoredGearBorrows(): GearBorrowRecord[] {
+  if (typeof window === 'undefined') return [];
+  try {
+    const raw = localStorage.getItem(GEAR_BORROW_STORAGE_KEY);
+    return raw ? JSON.parse(raw) : [];
+  } catch {
+    return [];
+  }
+}
+
+export function saveGearBorrowRecord(
+  data: Omit<GearBorrowRecord, 'id' | 'code' | 'status' | 'createdAt'>
+): GearBorrowRecord {
+  const current = getStoredGearBorrows();
+  const code = 'GEAR-' + Math.floor(10000 + Math.random() * 90000);
+  const newRecord: GearBorrowRecord = {
+    ...data,
+    id: 'gear-borrow-' + Date.now(),
+    code,
+    status: 'PENDING',
+    createdAt: new Date().toISOString(),
+  };
+  const updated = [newRecord, ...current];
+  if (typeof window !== 'undefined') {
+    localStorage.setItem(GEAR_BORROW_STORAGE_KEY, JSON.stringify(updated));
+    window.dispatchEvent(new CustomEvent(GEAR_BORROW_EVENT, { detail: updated }));
+  }
+  return newRecord;
+}

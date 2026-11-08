@@ -9,7 +9,12 @@ import {
   BOOKING_STORAGE_EVENT,
   SeatBooking,
   BaseSeat,
+  saveServiceAppointment,
+  saveGearBorrowRecord,
+  ServiceAppointment,
+  GearBorrowRecord,
 } from '@/lib/bookingStore';
+import { createStaffRequest } from '@/lib/staffRequestStore';
 import {
   getLoggedInUser,
   loginUser,
@@ -264,6 +269,32 @@ export default function Home() {
   const [selectedGearTab, setSelectedGearTab] = useState<'all' | 'mouse' | 'keyboard' | 'services'>('all');
   const [gearSuccessToast, setGearSuccessToast] = useState<string | null>(null);
 
+  // Showroom Gear Borrow & Service Appointment states
+  const [borrowModalGear, setBorrowModalGear] = useState<(typeof GEAR_PRODUCTS)[0] | null>(null);
+  const [borrowStationId, setBorrowStationId] = useState('VIP-01');
+  const [borrowCustomerName, setBorrowCustomerName] = useState('');
+  const [borrowPhone, setBorrowPhone] = useState('');
+  const [borrowDuration, setBorrowDuration] = useState('45 phút');
+  const [borrowNotes, setBorrowNotes] = useState('');
+  const [borrowSuccessModal, setBorrowSuccessModal] = useState<GearBorrowRecord | null>(null);
+
+  const [serviceBookingItem, setServiceBookingItem] = useState<(typeof GEAR_PRODUCTS)[0] | null>(null);
+  const [serviceCustomerName, setServiceCustomerName] = useState('');
+  const [serviceCustomerPhone, setServiceCustomerPhone] = useState('');
+  const [serviceDate, setServiceDate] = useState(() => {
+    const d = new Date();
+    d.setDate(d.getDate() + 1);
+    return d.toISOString().split('T')[0];
+  });
+  const [serviceTimeSlot, setServiceTimeSlot] = useState('09:00 - 10:30');
+  const [serviceLocationType, setServiceLocationType] = useState<'STORE' | 'HOME'>('STORE');
+  const [serviceStoreDetail, setServiceStoreDetail] = useState<'COUNTER' | 'STATION'>('STATION');
+  const [serviceStationId, setServiceStationId] = useState('VIP-01');
+  const [serviceHomeAddress, setServiceHomeAddress] = useState('');
+  const [serviceNotes, setServiceNotes] = useState('');
+  const [serviceError, setServiceError] = useState<string | null>(null);
+  const [serviceSuccessModal, setServiceSuccessModal] = useState<ServiceAppointment | null>(null);
+
   const [activeCommunityTab, setActiveCommunityTab] = useState<'tournaments' | 'lfg' | 'reviews'>('tournaments');
   const [tournamentSuccessToast, setTournamentSuccessToast] = useState<string | null>(null);
   const [lfgPosts, setLfgPosts] = useState([
@@ -433,6 +464,11 @@ export default function Home() {
       }
     };
 
+    const activeStation = getActiveClientStation();
+    if (activeStation?.stationId) {
+      setBorrowStationId(activeStation.stationId);
+      setServiceStationId(activeStation.stationId);
+    }
     setStoredBookings(getStoredBookings());
     try {
       const savedRates = localStorage.getItem('CYBER_CUSTOM_SEAT_RATES');
@@ -601,8 +637,123 @@ export default function Home() {
     setTimeout(() => setTournamentSuccessToast(null), 6000);
   };
 
+  const handleShowroomAction = (product: (typeof GEAR_PRODUCTS)[0]) => {
+    if (!currentUser) {
+      setAuthModalMessage(
+        product.category === 'services'
+          ? `Vui lòng đăng nhập tài khoản Cyber Zone để đặt lịch dịch vụ "${product.name}"!`
+          : `Vui lòng đăng nhập tài khoản Cyber Zone để mượn test sản phẩm "${product.name}" tại máy trạm!`
+      );
+      setIsAuthModalOpen(true);
+      return;
+    }
+
+    if (product.category === 'services') {
+      setServiceBookingItem(product);
+      setServiceCustomerName(currentUser.fullName || currentUser.username || '');
+      setServiceCustomerPhone(currentUser.phone || '');
+      setServiceError(null);
+    } else {
+      setBorrowModalGear(product);
+      setBorrowCustomerName(currentUser.fullName || currentUser.username || '');
+      setBorrowPhone(currentUser.phone || '');
+      setBorrowNotes('');
+      const activeStn = getActiveClientStation();
+      if (activeStn?.stationId) setBorrowStationId(activeStn.stationId);
+    }
+  };
+
+  const handleConfirmBorrowGear = (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!borrowModalGear) return;
+    if (!borrowPhone.trim()) {
+      alert('Vui lòng nhập số điện thoại để nhân viên kỹ thuật liên hệ bàn giao gear!');
+      return;
+    }
+
+    const station = borrowStationId || wallet.pcName || 'VIP-01';
+    const record = saveGearBorrowRecord({
+      gearId: borrowModalGear.id,
+      gearName: borrowModalGear.name,
+      customerName: borrowCustomerName.trim() || currentUser?.fullName || 'Khách Hội Viên',
+      phone: borrowPhone.trim(),
+      stationId: station,
+      duration: borrowDuration,
+      notes: borrowNotes.trim() || undefined,
+    });
+
+    createStaffRequest({
+      pcName: station,
+      type: 'EXTRA_SERVICE',
+      title: `MƯỢN GEAR TEST: ${borrowModalGear.name}`,
+      details: `Khách ${borrowCustomerName || currentUser?.fullName} (${borrowPhone}) mượn test "${borrowModalGear.name}" trong ${borrowDuration}. Giao tại máy ${station}. Ghi chú: ${borrowNotes || 'Không có'}`,
+      target: 'SERVER',
+    });
+
+    setBorrowModalGear(null);
+    setBorrowSuccessModal(record);
+    setGearSuccessToast(`✅ Yêu cầu mượn "${borrowModalGear.name}" tại máy ${station} đã được gửi tới quầy tiếp tân!`);
+    setTimeout(() => setGearSuccessToast(null), 6000);
+  };
+
+  const handleConfirmServiceBooking = (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!serviceBookingItem) return;
+
+    if (!serviceCustomerPhone.trim()) {
+      setServiceError('Vui lòng nhập số điện thoại để kỹ thuật viên liên hệ xác nhận lịch hẹn!');
+      return;
+    }
+
+    if (serviceLocationType === 'HOME' && !serviceHomeAddress.trim()) {
+      setServiceError('Vui lòng nhập đầy đủ địa chỉ nhà riêng (Số nhà, tên đường, phường/xã, quận/huyện...) để kỹ thuật viên đến tận nơi!');
+      return;
+    }
+
+    setServiceError(null);
+
+    const locationDetail =
+      serviceLocationType === 'STORE'
+        ? serviceStoreDetail === 'STATION'
+          ? `Tại máy trạm ${serviceStationId || wallet.pcName || 'VIP-01'}`
+          : 'Tại Trạm Kỹ Thuật Lab (Quầy Sảnh Tầng 1)'
+        : undefined;
+
+    const appointment = saveServiceAppointment({
+      serviceId: serviceBookingItem.id,
+      serviceName: serviceBookingItem.name,
+      price: serviceBookingItem.price,
+      customerName: serviceCustomerName.trim() || currentUser?.fullName || 'Khách Hội Viên',
+      phone: serviceCustomerPhone.trim(),
+      date: serviceDate,
+      timeSlot: serviceTimeSlot,
+      locationType: serviceLocationType,
+      storeLocationDetail: locationDetail,
+      homeAddress: serviceLocationType === 'HOME' ? serviceHomeAddress.trim() : undefined,
+      notes: serviceNotes.trim() || undefined,
+    });
+
+    const pcTarget =
+      serviceLocationType === 'STORE' && serviceStoreDetail === 'STATION'
+        ? (serviceStationId || wallet.pcName || 'VIP-01')
+        : 'TECH-LAB-COUNTER';
+
+    createStaffRequest({
+      pcName: pcTarget,
+      type: 'EXTRA_SERVICE',
+      title: `ĐẶT LỊCH DỊCH VỤ: ${serviceBookingItem.name}`,
+      details: `[${appointment.code}] Khách: ${appointment.customerName} (${appointment.phone}) | Ngày: ${serviceDate} (${serviceTimeSlot}) | Nơi làm: ${serviceLocationType === 'HOME' ? `TẬN NHÀ: ${serviceHomeAddress}` : `TẠI QUÁN: ${locationDetail}`} | Ghi chú: ${serviceNotes || 'Không có'}`,
+      target: 'SERVER',
+    });
+
+    setServiceBookingItem(null);
+    setServiceSuccessModal(appointment);
+    setGearSuccessToast(`🎉 Đặt lịch hẹn dịch vụ "${serviceBookingItem.name}" thành công! Mã hẹn: ${appointment.code}`);
+    setTimeout(() => setGearSuccessToast(null), 7000);
+  };
+
   const handleRequestGear = (gearName: string) => {
-    setGearSuccessToast(`🎉 Đã tiếp nhận yêu cầu trải nghiệm "${gearName}". Kỹ thuật viên sẽ mang gear tới máy của bạn ngay!`);
+    setGearSuccessToast(`🎮 Đã tiếp nhận yêu cầu trải nghiệm "${gearName}". Kỹ thuật viên sẽ mang gear tới máy của bạn ngay!`);
     setTimeout(() => setGearSuccessToast(null), 5000);
   };
 
@@ -2526,7 +2677,7 @@ export default function Home() {
                         <span className="text-base font-black text-emerald-400 font-mono">{product.price}</span>
                         <button
                           type="button"
-                          onClick={() => handleRequestGear(product.name)}
+                          onClick={() => handleShowroomAction(product)}
                           className="px-3 py-1.5 rounded-lg bg-emerald-400 hover:bg-emerald-300 text-black font-extrabold text-[11px] font-mono transition cursor-pointer"
                         >
                           {product.category === 'services' ? 'Đặt Lịch Làm' : 'Mượn Test Tại Máy'}
@@ -2545,6 +2696,590 @@ export default function Home() {
                 className="px-4 py-2 rounded-xl bg-slate-800 hover:bg-slate-700 text-white font-bold text-xs cursor-pointer"
               >
                 Đóng
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* MODAL MƯỢN TEST GEAR TẠI MÁY */}
+      {borrowModalGear && (
+        <div className="fixed inset-0 z-[60] flex items-center justify-center p-4 bg-black/85 backdrop-blur-md animate-fadeIn">
+          <div className="relative w-full max-w-xl bg-gradient-to-br from-slate-900 via-[#0c1624] to-slate-950 border border-emerald-500/50 rounded-3xl p-6 sm:p-8 shadow-2xl space-y-6 text-white max-h-[92vh] overflow-y-auto">
+            <div className="flex items-start justify-between border-b border-white/10 pb-4">
+              <div>
+                <span className="text-[10px] font-mono text-emerald-400 font-bold uppercase tracking-wider flex items-center gap-1.5">
+                  <span className="material-symbols-outlined text-[15px]">devices</span>
+                  CYBER ZONE TECH LAB • GEAR TRY-OUT
+                </span>
+                <h3 className="text-xl sm:text-2xl font-black text-white font-gaming mt-1">
+                  Đăng Ký Mượn Test Gear Tại Máy
+                </h3>
+                <p className="text-xs text-slate-400 mt-1">
+                  Kỹ thuật viên giao tận bàn trong 2-3 phút • Hoàn toàn miễn phí trải nghiệm
+                </p>
+              </div>
+              <button
+                type="button"
+                onClick={() => setBorrowModalGear(null)}
+                className="w-8 h-8 rounded-xl bg-white/5 hover:bg-white/10 text-slate-400 hover:text-white flex items-center justify-center text-sm transition cursor-pointer"
+              >
+                ✕
+              </button>
+            </div>
+
+            {/* Gear Brief Preview */}
+            <div className="p-4 rounded-2xl bg-slate-950 border border-emerald-500/30 flex gap-4 items-center">
+              <img
+                src={borrowModalGear.image}
+                alt={borrowModalGear.name}
+                className="w-20 h-20 rounded-xl object-cover border border-white/10 shrink-0"
+              />
+              <div className="space-y-1">
+                <span className="px-2 py-0.5 rounded bg-emerald-500/20 text-emerald-300 font-mono text-[10px] font-bold border border-emerald-500/40">
+                  {borrowModalGear.tag}
+                </span>
+                <h4 className="font-bold text-white text-sm">{borrowModalGear.name}</h4>
+                <p className="text-[11px] text-slate-400 font-mono">Giá niêm yết: <span className="text-emerald-400 font-bold">{borrowModalGear.price}</span></p>
+                <p className="text-[10px] text-cyan-400 font-mono">⚡ Miễn phí 100% trải nghiệm cho Hội viên Cyber Zone</p>
+              </div>
+            </div>
+
+            <form onSubmit={handleConfirmBorrowGear} className="space-y-4 font-sans text-xs">
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                <div>
+                  <label className="block text-[11px] font-mono text-slate-300 mb-1 font-semibold">
+                    Họ &amp; Tên Người Mượn <span className="text-rose-400">*</span>
+                  </label>
+                  <input
+                    type="text"
+                    required
+                    value={borrowCustomerName}
+                    onChange={(e) => setBorrowCustomerName(e.target.value)}
+                    placeholder="Nguyễn Văn A"
+                    className="w-full px-3.5 py-2.5 rounded-xl bg-slate-800/80 border border-white/10 text-white font-mono text-xs focus:border-emerald-400 focus:outline-none"
+                  />
+                </div>
+                <div>
+                  <label className="block text-[11px] font-mono text-slate-300 mb-1 font-semibold">
+                    Số Điện Thoại Nhận Máy <span className="text-rose-400">*</span>
+                  </label>
+                  <input
+                    type="tel"
+                    required
+                    value={borrowPhone}
+                    onChange={(e) => setBorrowPhone(e.target.value)}
+                    placeholder="0988 888 888"
+                    className="w-full px-3.5 py-2.5 rounded-xl bg-slate-800/80 border border-white/10 text-white font-mono text-xs focus:border-emerald-400 focus:outline-none"
+                  />
+                </div>
+              </div>
+
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                <div>
+                  <label className="block text-[11px] font-mono text-slate-300 mb-1 font-semibold">
+                    Máy Trạm Đang Ngồi (Giao Tận Bàn) <span className="text-rose-400">*</span>
+                  </label>
+                  <select
+                    value={borrowStationId}
+                    onChange={(e) => setBorrowStationId(e.target.value)}
+                    className="w-full px-3.5 py-2.5 rounded-xl bg-slate-800 border border-emerald-500/40 text-emerald-300 font-mono text-xs focus:border-emerald-400 focus:outline-none cursor-pointer"
+                  >
+                    <optgroup label="Ultra VIP Suite (Tầng 2)">
+                      {ALL_SEATS_CONFIG.filter((s) => s.id.startsWith('VIP-')).map((s) => (
+                        <option key={s.id} value={s.id}>
+                          {s.id} • {s.zoneName}
+                        </option>
+                      ))}
+                    </optgroup>
+                    <optgroup label="Sàn Đấu Arena 5vs5 (Tầng 1)">
+                      {ALL_SEATS_CONFIG.filter((s) => s.id.startsWith('ARENA-')).map((s) => (
+                        <option key={s.id} value={s.id}>
+                          {s.id} • {s.zoneName}
+                        </option>
+                      ))}
+                    </optgroup>
+                    <optgroup label="Cyber Pro 540Hz (Tầng 2)">
+                      {ALL_SEATS_CONFIG.filter((s) => s.id.startsWith('PRO-')).map((s) => (
+                        <option key={s.id} value={s.id}>
+                          {s.id} • {s.zoneName}
+                        </option>
+                      ))}
+                    </optgroup>
+                    <optgroup label="Standard Zone Tiêu Chuẩn (Tầng 1)">
+                      {ALL_SEATS_CONFIG.filter((s) => s.id.startsWith('STD-')).map((s) => (
+                        <option key={s.id} value={s.id}>
+                          {s.id} • {s.zoneName}
+                        </option>
+                      ))}
+                    </optgroup>
+                    <optgroup label="Phòng Stream & Couple & Giải Trí">
+                      {ALL_SEATS_CONFIG.filter((s) => !s.id.startsWith('VIP-') && !s.id.startsWith('ARENA-') && !s.id.startsWith('PRO-') && !s.id.startsWith('STD-')).map((s) => (
+                        <option key={s.id} value={s.id}>
+                          {s.id} • {s.zoneName}
+                        </option>
+                      ))}
+                    </optgroup>
+                  </select>
+                </div>
+
+                <div>
+                  <label className="block text-[11px] font-mono text-slate-300 mb-1 font-semibold">
+                    Thời Lượng Mượn Test
+                  </label>
+                  <div className="grid grid-cols-3 gap-2">
+                    {['30 phút', '45 phút', '60 phút'].map((dur) => (
+                      <button
+                        key={dur}
+                        type="button"
+                        onClick={() => setBorrowDuration(dur)}
+                        className={`py-2 rounded-xl font-mono text-xs font-bold transition border cursor-pointer ${
+                          borrowDuration === dur
+                            ? 'bg-emerald-400 text-black border-emerald-400 shadow-md shadow-emerald-500/20'
+                            : 'bg-slate-800 text-slate-300 border-white/10 hover:border-white/20'
+                        }`}
+                      >
+                        {dur}
+                      </button>
+                    ))}
+                  </div>
+                </div>
+              </div>
+
+              <div>
+                <label className="block text-[11px] font-mono text-slate-300 mb-1 font-semibold">
+                  Ghi Chú Kỹ Thuật (Tùy Chọn)
+                </label>
+                <textarea
+                  rows={2}
+                  value={borrowNotes}
+                  onChange={(e) => setBorrowNotes(e.target.value)}
+                  placeholder="Ví dụ: Kèm dây cáp Type-C dài, chỉnh sẵn DPI 800 và Polling Rate 4000Hz, xin thêm pad lót..."
+                  className="w-full px-3.5 py-2.5 rounded-xl bg-slate-800/80 border border-white/10 text-white font-mono text-xs focus:border-emerald-400 focus:outline-none resize-none"
+                />
+              </div>
+
+              <div className="p-3 rounded-xl bg-emerald-500/10 border border-emerald-500/30 text-emerald-300 text-[11px] font-mono flex items-center gap-2">
+                <span className="material-symbols-outlined text-[16px] text-emerald-400">verified_user</span>
+                <span>Gear được khử khuẩn UV và kiểm tra độ trễ 100% trước khi kỹ thuật viên bàn giao tới máy.</span>
+              </div>
+
+              <div className="flex justify-end gap-3 pt-2 border-t border-white/10">
+                <button
+                  type="button"
+                  onClick={() => setBorrowModalGear(null)}
+                  className="px-4 py-2.5 rounded-xl bg-slate-800 hover:bg-slate-700 text-white font-mono font-bold text-xs transition cursor-pointer"
+                >
+                  Hủy Bỏ
+                </button>
+                <button
+                  type="submit"
+                  className="px-6 py-2.5 rounded-xl bg-emerald-400 hover:bg-emerald-300 text-black font-mono font-extrabold text-xs shadow-lg shadow-emerald-500/20 flex items-center gap-2 transition cursor-pointer"
+                >
+                  <span className="material-symbols-outlined text-[16px]">rocket_launch</span>
+                  <span>Xác Nhận Mượn Test Tại Máy</span>
+                </button>
+              </div>
+            </form>
+          </div>
+        </div>
+      )}
+
+      {/* MODAL ĐẶT LỊCH LÀM DỊCH VỤ (MOD PHÍM & TRA KEO TẢN NHIỆT) */}
+      {serviceBookingItem && (
+        <div className="fixed inset-0 z-[60] flex items-center justify-center p-4 bg-black/85 backdrop-blur-md animate-fadeIn">
+          <div className="relative w-full max-w-2xl bg-gradient-to-br from-slate-900 via-[#0c1624] to-slate-950 border border-emerald-500/50 rounded-3xl p-6 sm:p-8 shadow-2xl space-y-6 text-white max-h-[92vh] overflow-y-auto">
+            <div className="flex items-start justify-between border-b border-white/10 pb-4">
+              <div>
+                <span className="text-[10px] font-mono text-cyan-400 font-bold uppercase tracking-wider flex items-center gap-1.5">
+                  <span className="material-symbols-outlined text-[15px]">handyman</span>
+                  CYBER ZONE TECH LAB • CUSTOM MOD &amp; REPAIR
+                </span>
+                <h3 className="text-xl sm:text-2xl font-black text-white font-gaming mt-1">
+                  Đặt Lịch Làm Dịch Vụ Kỹ Thuật
+                </h3>
+                <p className="text-xs text-slate-400 mt-1">
+                  Đội ngũ kỹ thuật viên tay nghề cao • Phục vụ trực tiếp tại quán hoặc đến tận nhà
+                </p>
+              </div>
+              <button
+                type="button"
+                onClick={() => setServiceBookingItem(null)}
+                className="w-8 h-8 rounded-xl bg-white/5 hover:bg-white/10 text-slate-400 hover:text-white flex items-center justify-center text-sm transition cursor-pointer"
+              >
+                ✕
+              </button>
+            </div>
+
+            {/* Service Brief Banner */}
+            <div className="p-4 rounded-2xl bg-slate-950 border border-cyan-500/30 flex gap-4 items-center">
+              <img
+                src={serviceBookingItem.image}
+                alt={serviceBookingItem.name}
+                className="w-20 h-20 rounded-xl object-cover border border-white/10 shrink-0"
+              />
+              <div className="space-y-1">
+                <span className="px-2 py-0.5 rounded bg-cyan-500/20 text-cyan-300 font-mono text-[10px] font-bold border border-cyan-500/40">
+                  {serviceBookingItem.tag}
+                </span>
+                <h4 className="font-bold text-white text-sm">{serviceBookingItem.name}</h4>
+                <p className="text-[11px] text-slate-400 line-clamp-1">{serviceBookingItem.desc}</p>
+                <p className="text-xs font-mono text-emerald-400 font-extrabold">Chi phí dịch vụ: {serviceBookingItem.price}</p>
+              </div>
+            </div>
+
+            {serviceError && (
+              <div className="p-3 rounded-xl bg-rose-500/20 border border-rose-500/50 text-rose-300 text-xs font-mono flex items-center gap-2">
+                <span className="material-symbols-outlined text-[16px]">error</span>
+                <span>{serviceError}</span>
+              </div>
+            )}
+
+            <form onSubmit={handleConfirmServiceBooking} className="space-y-5 font-sans text-xs">
+              {/* Customer Info */}
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                <div>
+                  <label className="block text-[11px] font-mono text-slate-300 mb-1 font-semibold">
+                    Họ &amp; Tên Khách Hàng <span className="text-rose-400">*</span>
+                  </label>
+                  <input
+                    type="text"
+                    required
+                    value={serviceCustomerName}
+                    onChange={(e) => setServiceCustomerName(e.target.value)}
+                    placeholder="Nguyễn Văn A"
+                    className="w-full px-3.5 py-2.5 rounded-xl bg-slate-800/80 border border-white/10 text-white font-mono text-xs focus:border-cyan-400 focus:outline-none"
+                  />
+                </div>
+                <div>
+                  <label className="block text-[11px] font-mono text-slate-300 mb-1 font-semibold">
+                    Số Điện Thoại Liên Hệ <span className="text-rose-400">*</span>
+                  </label>
+                  <input
+                    type="tel"
+                    required
+                    value={serviceCustomerPhone}
+                    onChange={(e) => setServiceCustomerPhone(e.target.value)}
+                    placeholder="0988 888 888"
+                    className="w-full px-3.5 py-2.5 rounded-xl bg-slate-800/80 border border-white/10 text-white font-mono text-xs focus:border-cyan-400 focus:outline-none"
+                  />
+                </div>
+              </div>
+
+              {/* Date & Time Slot */}
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                <div>
+                  <label className="block text-[11px] font-mono text-slate-300 mb-1 font-semibold">
+                    Ngày Hẹn Làm Dịch Vụ <span className="text-rose-400">*</span>
+                  </label>
+                  <input
+                    type="date"
+                    required
+                    min={new Date().toISOString().split('T')[0]}
+                    value={serviceDate}
+                    onChange={(e) => setServiceDate(e.target.value)}
+                    className="w-full px-3.5 py-2.5 rounded-xl bg-slate-800/80 border border-white/10 text-white font-mono text-xs focus:border-cyan-400 focus:outline-none"
+                  />
+                </div>
+                <div>
+                  <label className="block text-[11px] font-mono text-slate-300 mb-1 font-semibold">
+                    Khung Giờ Hẹn Kỹ Thuật <span className="text-rose-400">*</span>
+                  </label>
+                  <select
+                    value={serviceTimeSlot}
+                    onChange={(e) => setServiceTimeSlot(e.target.value)}
+                    className="w-full px-3.5 py-2.5 rounded-xl bg-slate-800 border border-cyan-500/40 text-cyan-300 font-mono text-xs focus:border-cyan-400 focus:outline-none cursor-pointer"
+                  >
+                    <option value="09:00 - 10:30">09:00 - 10:30 (Sáng sớm)</option>
+                    <option value="10:30 - 12:00">10:30 - 12:00 (Buổi trưa)</option>
+                    <option value="14:00 - 15:30">14:00 - 15:30 (Đầu giờ chiều)</option>
+                    <option value="16:00 - 17:30">16:00 - 17:30 (Cuối buổi chiều)</option>
+                    <option value="19:00 - 20:30">19:00 - 20:30 (Tối cao điểm)</option>
+                    <option value="20:30 - 22:00">20:30 - 22:00 (Đêm muộn)</option>
+                  </select>
+                </div>
+              </div>
+
+              {/* LOCATION SELECTOR: TẠI QUÁN vs Ở NHÀ */}
+              <div className="space-y-3">
+                <label className="block text-[11px] font-mono text-slate-300 font-semibold">
+                  Địa Điểm Thực Hiện Dịch Vụ <span className="text-rose-400">*</span>
+                </label>
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                  <div
+                    onClick={() => setServiceLocationType('STORE')}
+                    className={`p-4 rounded-2xl border transition cursor-pointer flex items-start gap-3 ${
+                      serviceLocationType === 'STORE'
+                        ? 'bg-emerald-500/15 border-emerald-400 ring-2 ring-emerald-500/30'
+                        : 'bg-slate-950 border-white/10 hover:border-white/20'
+                    }`}
+                  >
+                    <div className={`w-10 h-10 rounded-xl flex items-center justify-center shrink-0 ${
+                      serviceLocationType === 'STORE' ? 'bg-emerald-400 text-black' : 'bg-slate-800 text-slate-400'
+                    }`}>
+                      <span className="material-symbols-outlined text-[20px]">storefront</span>
+                    </div>
+                    <div className="space-y-1">
+                      <div className="flex items-center gap-1.5 font-bold text-white text-xs">
+                        <span>Làm Tại Cyber Zone</span>
+                        {serviceLocationType === 'STORE' && (
+                          <span className="material-symbols-outlined text-emerald-400 text-[14px]">check_circle</span>
+                        )}
+                      </div>
+                      <p className="text-[11px] text-slate-400 font-sans leading-relaxed">
+                        Khách mang gear qua Trạm Lab tại sảnh hoặc kỹ thuật viên mod trực tiếp tại máy trạm đang ngồi.
+                      </p>
+                    </div>
+                  </div>
+
+                  <div
+                    onClick={() => setServiceLocationType('HOME')}
+                    className={`p-4 rounded-2xl border transition cursor-pointer flex items-start gap-3 ${
+                      serviceLocationType === 'HOME'
+                        ? 'bg-cyan-500/15 border-cyan-400 ring-2 ring-cyan-500/30'
+                        : 'bg-slate-950 border-white/10 hover:border-white/20'
+                    }`}
+                  >
+                    <div className={`w-10 h-10 rounded-xl flex items-center justify-center shrink-0 ${
+                      serviceLocationType === 'HOME' ? 'bg-cyan-400 text-black' : 'bg-slate-800 text-slate-400'
+                    }`}>
+                      <span className="material-symbols-outlined text-[20px]">home</span>
+                    </div>
+                    <div className="space-y-1">
+                      <div className="flex items-center gap-1.5 font-bold text-white text-xs">
+                        <span>Kỹ Thuật Đến Tận Nhà</span>
+                        {serviceLocationType === 'HOME' && (
+                          <span className="material-symbols-outlined text-cyan-400 text-[14px]">check_circle</span>
+                        )}
+                      </div>
+                      <p className="text-[11px] text-slate-400 font-sans leading-relaxed">
+                        Kỹ thuật viên mang bộ tool và linh kiện đến tận nhà bạn, hoặc nhận gear về mod và ship trả trong ngày.
+                      </p>
+                    </div>
+                  </div>
+                </div>
+
+                {/* Sub-choice for Store */}
+                {serviceLocationType === 'STORE' && (
+                  <div className="p-4 rounded-2xl bg-slate-950 border border-emerald-500/30 space-y-3 animate-fadeIn">
+                    <span className="text-[11px] font-mono text-emerald-300 font-bold block">
+                      Vị trí giao nhận tại Cyber Zone:
+                    </span>
+                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                      <label className="flex items-center gap-2 p-2.5 rounded-xl bg-slate-900 border border-white/10 cursor-pointer">
+                        <input
+                          type="radio"
+                          name="storeDetail"
+                          checked={serviceStoreDetail === 'COUNTER'}
+                          onChange={() => setServiceStoreDetail('COUNTER')}
+                          className="accent-emerald-400"
+                        />
+                        <span className="text-xs text-slate-200">Quầy Trạm Kỹ Thuật Lab (Sảnh Tầng 1)</span>
+                      </label>
+                      <label className="flex items-center gap-2 p-2.5 rounded-xl bg-slate-900 border border-white/10 cursor-pointer">
+                        <input
+                          type="radio"
+                          name="storeDetail"
+                          checked={serviceStoreDetail === 'STATION'}
+                          onChange={() => setServiceStoreDetail('STATION')}
+                          className="accent-emerald-400"
+                        />
+                        <span className="text-xs text-slate-200">Kỹ thuật viên qua bàn máy đang chơi</span>
+                      </label>
+                    </div>
+
+                    {serviceStoreDetail === 'STATION' && (
+                      <div className="pt-2">
+                        <label className="block text-[11px] font-mono text-slate-400 mb-1">
+                          Chọn số máy trạm bạn đang ngồi:
+                        </label>
+                        <select
+                          value={serviceStationId}
+                          onChange={(e) => setServiceStationId(e.target.value)}
+                          className="w-full px-3 py-2 rounded-xl bg-slate-800 border border-emerald-500/40 text-emerald-300 font-mono text-xs focus:outline-none"
+                        >
+                          {ALL_SEATS_CONFIG.map((s) => (
+                            <option key={s.id} value={s.id}>
+                              {s.id} • {s.zoneName}
+                            </option>
+                          ))}
+                        </select>
+                      </div>
+                    )}
+                  </div>
+                )}
+
+                {/* Home Address Input if Home */}
+                {serviceLocationType === 'HOME' && (
+                  <div className="p-4 rounded-2xl bg-slate-950 border border-cyan-500/30 space-y-3 animate-fadeIn">
+                    <label className="block text-[11px] font-mono text-cyan-300 font-bold">
+                      Địa Chỉ Nhà Riêng Của Bạn (Bắt buộc) <span className="text-rose-400">*</span>
+                    </label>
+                    <input
+                      type="text"
+                      required
+                      value={serviceHomeAddress}
+                      onChange={(e) => setServiceHomeAddress(e.target.value)}
+                      placeholder="Ví dụ: Số 28, Ngõ 45 Đường Lê Duẩn, Phường Bến Thủy, TP. Vinh, Nghệ An"
+                      className="w-full px-3.5 py-2.5 rounded-xl bg-slate-800 border border-cyan-500/40 text-white font-mono text-xs focus:border-cyan-300 focus:outline-none"
+                    />
+                    <div className="text-[10px] text-slate-400 font-mono flex items-center gap-1.5">
+                      <span className="material-symbols-outlined text-[14px] text-cyan-400">local_shipping</span>
+                      <span>Miễn phí di chuyển &amp; giao nhận nội thành TP. Vinh cho đơn dịch vụ từ 150.000đ. Kỹ thuật viên sẽ gọi xác nhận trước 15 phút.</span>
+                    </div>
+                  </div>
+                )}
+              </div>
+
+              {/* Notes */}
+              <div>
+                <label className="block text-[11px] font-mono text-slate-300 mb-1 font-semibold">
+                  Mô Tả Tình Trạng Thiết Bị &amp; Yêu Cầu Chi Tiết (Tùy Chọn)
+                </label>
+                <textarea
+                  rows={2}
+                  value={serviceNotes}
+                  onChange={(e) => setServiceNotes(e.target.value)}
+                  placeholder="Ví dụ: Bàn phím cơ FL-Esports MK870 bị rít switch, muốn lube Krytox 205g0 âm thocky; hoặc PC Gaming bị nóng 90 độ cần vệ sinh quạt và tra keo Honeywell..."
+                  className="w-full px-3.5 py-2.5 rounded-xl bg-slate-800/80 border border-white/10 text-white font-mono text-xs focus:border-cyan-400 focus:outline-none resize-none"
+                />
+              </div>
+
+              <div className="flex justify-end gap-3 pt-3 border-t border-white/10">
+                <button
+                  type="button"
+                  onClick={() => setServiceBookingItem(null)}
+                  className="px-4 py-2.5 rounded-xl bg-slate-800 hover:bg-slate-700 text-white font-mono font-bold text-xs transition cursor-pointer"
+                >
+                  Đóng
+                </button>
+                <button
+                  type="submit"
+                  className="px-6 py-2.5 rounded-xl bg-cyan-400 hover:bg-cyan-300 text-black font-mono font-extrabold text-xs shadow-lg shadow-cyan-500/20 flex items-center gap-2 transition cursor-pointer"
+                >
+                  <span className="material-symbols-outlined text-[16px]">calendar_month</span>
+                  <span>Xác Nhận Đặt Lịch Dịch Vụ</span>
+                </button>
+              </div>
+            </form>
+          </div>
+        </div>
+      )}
+
+      {/* MODAL XÁC NHẬN MƯỢN GEAR TEST THÀNH CÔNG */}
+      {borrowSuccessModal && (
+        <div className="fixed inset-0 z-[70] flex items-center justify-center p-4 bg-black/85 backdrop-blur-md animate-fadeIn">
+          <div className="relative w-full max-w-md bg-gradient-to-br from-slate-900 via-[#0a1622] to-slate-950 border border-emerald-500/50 rounded-3xl p-6 sm:p-7 shadow-2xl space-y-5 text-white">
+            <div className="text-center space-y-2">
+              <div className="w-14 h-14 rounded-2xl bg-emerald-500/20 border border-emerald-400 flex items-center justify-center mx-auto text-emerald-400">
+                <span className="material-symbols-outlined text-[32px]">check_circle</span>
+              </div>
+              <h3 className="text-xl font-black text-white font-gaming">
+                Đăng Ký Mượn Test Thành Công!
+              </h3>
+              <p className="text-xs text-slate-400 font-mono">
+                Mã phiếu trải nghiệm: <span className="text-emerald-400 font-bold">{borrowSuccessModal.code}</span>
+              </p>
+            </div>
+
+            <div className="p-4 rounded-2xl bg-slate-950/80 border border-white/10 space-y-2.5 text-xs font-mono">
+              <div className="flex justify-between py-1 border-b border-white/5">
+                <span className="text-slate-400">Thiết bị test:</span>
+                <span className="text-white font-bold">{borrowSuccessModal.gearName}</span>
+              </div>
+              <div className="flex justify-between py-1 border-b border-white/5">
+                <span className="text-slate-400">Vị trí giao bàn:</span>
+                <span className="text-emerald-400 font-bold">Máy {borrowSuccessModal.stationId}</span>
+              </div>
+              <div className="flex justify-between py-1 border-b border-white/5">
+                <span className="text-slate-400">Người mượn:</span>
+                <span className="text-white">{borrowSuccessModal.customerName} ({borrowSuccessModal.phone})</span>
+              </div>
+              <div className="flex justify-between py-1 border-b border-white/5">
+                <span className="text-slate-400">Thời lượng test:</span>
+                <span className="text-cyan-400 font-bold">{borrowSuccessModal.duration}</span>
+              </div>
+              <div className="flex justify-between py-1">
+                <span className="text-slate-400">Trạng thái:</span>
+                <span className="px-2 py-0.5 rounded bg-emerald-500/20 text-emerald-300 font-bold text-[10px] border border-emerald-500/30">
+                  KỸ THUẬT ĐANG MANG TỚI
+                </span>
+              </div>
+            </div>
+
+            <div className="text-center">
+              <button
+                type="button"
+                onClick={() => setBorrowSuccessModal(null)}
+                className="w-full py-3 rounded-xl bg-emerald-400 hover:bg-emerald-300 text-black font-mono font-extrabold text-xs shadow-lg shadow-emerald-500/20 transition cursor-pointer"
+              >
+                Đã Hiểu &amp; Đóng
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* MODAL XÁC NHẬN ĐẶT LỊCH DỊCH VỤ THÀNH CÔNG */}
+      {serviceSuccessModal && (
+        <div className="fixed inset-0 z-[70] flex items-center justify-center p-4 bg-black/85 backdrop-blur-md animate-fadeIn">
+          <div className="relative w-full max-w-lg bg-gradient-to-br from-slate-900 via-[#0a1622] to-slate-950 border border-cyan-500/50 rounded-3xl p-6 sm:p-7 shadow-2xl space-y-5 text-white">
+            <div className="text-center space-y-2">
+              <div className="w-14 h-14 rounded-2xl bg-cyan-500/20 border border-cyan-400 flex items-center justify-center mx-auto text-cyan-400">
+                <span className="material-symbols-outlined text-[32px]">verified</span>
+              </div>
+              <h3 className="text-xl font-black text-white font-gaming">
+                Đặt Lịch Dịch Vụ Thành Công!
+              </h3>
+              <p className="text-xs text-slate-400 font-mono">
+                Mã lịch hẹn: <span className="text-cyan-400 font-bold">{serviceSuccessModal.code}</span>
+              </p>
+            </div>
+
+            <div className="p-4 rounded-2xl bg-slate-950/80 border border-white/10 space-y-2.5 text-xs font-mono">
+              <div className="flex justify-between py-1 border-b border-white/5">
+                <span className="text-slate-400">Dịch vụ:</span>
+                <span className="text-white font-bold">{serviceSuccessModal.serviceName}</span>
+              </div>
+              <div className="flex justify-between py-1 border-b border-white/5">
+                <span className="text-slate-400">Chi phí:</span>
+                <span className="text-emerald-400 font-bold">{serviceSuccessModal.price}</span>
+              </div>
+              <div className="flex justify-between py-1 border-b border-white/5">
+                <span className="text-slate-400">Khách hàng:</span>
+                <span className="text-white">{serviceSuccessModal.customerName} ({serviceSuccessModal.phone})</span>
+              </div>
+              <div className="flex justify-between py-1 border-b border-white/5">
+                <span className="text-slate-400">Thời gian hẹn:</span>
+                <span className="text-cyan-300 font-bold">{serviceSuccessModal.date} • {serviceSuccessModal.timeSlot}</span>
+              </div>
+              <div className="flex justify-between py-1 border-b border-white/5">
+                <span className="text-slate-400">Địa điểm:</span>
+                <span className="text-white font-bold text-right max-w-[240px]">
+                  {serviceSuccessModal.locationType === 'HOME'
+                    ? `🏠 TẬN NHÀ: ${serviceSuccessModal.homeAddress}`
+                    : `🏢 TẠI QUÁN: ${serviceSuccessModal.storeLocationDetail}`}
+                </span>
+              </div>
+              <div className="flex justify-between py-1">
+                <span className="text-slate-400">Trạng thái:</span>
+                <span className="px-2 py-0.5 rounded bg-amber-500/20 text-amber-300 font-bold text-[10px] border border-amber-500/30">
+                  CHỜ KỸ THUẬT GỌI XÁC NHẬN
+                </span>
+              </div>
+            </div>
+
+            <p className="text-[11px] text-slate-400 font-mono text-center">
+              Hotline hỗ trợ kỹ thuật 24/7: <strong className="text-white">1900 8888</strong> • CSKH sẽ liên hệ trước buổi hẹn 15 phút.
+            </p>
+
+            <div className="text-center">
+              <button
+                type="button"
+                onClick={() => setServiceSuccessModal(null)}
+                className="w-full py-3 rounded-xl bg-cyan-400 hover:bg-cyan-300 text-black font-mono font-extrabold text-xs shadow-lg shadow-cyan-500/20 transition cursor-pointer"
+              >
+                Hoàn Tất &amp; Đóng
               </button>
             </div>
           </div>
