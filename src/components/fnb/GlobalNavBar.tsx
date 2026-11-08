@@ -428,7 +428,7 @@ export default function GlobalNavBar() {
             </a>
 
             <Link
-              href="/#phan-khu"
+              href="/#dat-cho"
               className="px-3.5 sm:px-4 py-2 bg-emerald-400 hover:bg-emerald-300 text-black font-extrabold text-xs rounded-xl shadow-lg shadow-emerald-500/25 transition uppercase font-sans flex items-center gap-1"
             >
               <span>ĐẶT MÁY TRƯỚC</span>

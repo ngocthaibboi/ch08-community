@@ -318,14 +318,14 @@ export default function Home() {
 
   const getSeatLiveStatus = (seat: BaseSeat) => {
     const booking = storedBookings.find(
-      (b) => b.seatId === seat.id && b.status === 'RESERVED'
+      (b) => b.seatId === seat.id && (b.status === 'RESERVED' || b.status === 'CONFIRMED')
     );
     if (booking) {
       return {
         status: 'RESERVED' as const,
-        label: 'ĐÃ GIỮ CHỖ',
-        badgeClass: 'bg-amber-500/20 text-amber-300 border-amber-500/40',
-        dotClass: 'bg-amber-400',
+        label: booking.status === 'CONFIRMED' ? 'ĐÃ XÁC NHẬN GIỮ MÁY' : 'CHỜ DUYỆT GIỮ CHỖ',
+        badgeClass: booking.status === 'CONFIRMED' ? 'bg-emerald-500/25 text-emerald-300 border-emerald-400 font-bold' : 'bg-amber-500/20 text-amber-300 border-amber-500/40',
+        dotClass: booking.status === 'CONFIRMED' ? 'bg-emerald-400 animate-pulse' : 'bg-amber-400',
         occupant: booking.customerName,
         timeSlot: booking.timeSlot,
       };
@@ -1553,7 +1553,7 @@ export default function Home() {
           </div>
         </div>
 
-        <div id="dat-cho" className="grid grid-cols-1 lg:grid-cols-12 gap-10 items-center p-8 md:p-12 rounded-3xl bg-slate-900/60 border border-white/10">
+        <div id="dat-cho" className="scroll-mt-24 grid grid-cols-1 lg:grid-cols-12 gap-10 items-center p-8 md:p-12 rounded-3xl bg-slate-900/60 border border-white/10">
 
           <div className="lg:col-span-5 space-y-4">
             <span className="text-xs font-mono text-emerald-400 font-bold uppercase tracking-wider">

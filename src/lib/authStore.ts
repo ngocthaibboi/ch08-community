@@ -111,7 +111,12 @@ export function getRegisteredAccounts(): RegisteredAccount[] {
         newUname = 'admin1';
         changed = true;
       }
-      if (acc.fullName && acc.fullName.includes('Trần Ngọc Nguyễn Văn A')) {
+      const normName = (acc.fullName || '').replace(/\s+/g, ' ');
+      if (
+        normName.includes('Trần Ngọc Nguyễn Văn A') ||
+        (acc.fullName && acc.fullName.includes('Trần Ngọc') && acc.fullName.includes('Nguyễn Văn A')) ||
+        (acc.username && acc.username.toLowerCase() === 'thai1' && acc.fullName && acc.fullName.includes('Nguyễn Văn A'))
+      ) {
         newName = 'Trần Ngọc Thái';
         changed = true;
       }
@@ -311,9 +316,16 @@ export function getLoggedInUser(): AuthUser | null {
       user.username = 'admin1';
       user.fullName = 'Nguyễn Văn A';
       localStorage.setItem(AUTH_STORAGE_KEY, JSON.stringify(user));
-    } else if (user.fullName && user.fullName.includes('Trần Ngọc Nguyễn Văn A')) {
-      user.fullName = 'Trần Ngọc Thái';
-      localStorage.setItem(AUTH_STORAGE_KEY, JSON.stringify(user));
+    } else {
+      const normUser = (user.fullName || '').replace(/\s+/g, ' ');
+      if (
+        normUser.includes('Trần Ngọc Nguyễn Văn A') ||
+        (user.fullName && user.fullName.includes('Trần Ngọc') && user.fullName.includes('Nguyễn Văn A')) ||
+        (user.username && user.username.toLowerCase() === 'thai1' && user.fullName && user.fullName.includes('Nguyễn Văn A'))
+      ) {
+        user.fullName = 'Trần Ngọc Thái';
+        localStorage.setItem(AUTH_STORAGE_KEY, JSON.stringify(user));
+      }
     }
 
     // KIỂM TRA THỜI HẠN GÓI: Nếu đã hết hạn thời gian riêng của hạng -> tự động tụt hạng về Tân Thủ!
@@ -501,6 +513,16 @@ export function getClientPcSession(): AuthUser | null {
     if (session.username === 'thaibboi') {
       session.username = 'admin1';
       session.fullName = 'Nguyễn Văn A';
+    } else {
+      const normSess = (session.fullName || '').replace(/\s+/g, ' ');
+      if (
+        normSess.includes('Trần Ngọc Nguyễn Văn A') ||
+        (session.fullName && session.fullName.includes('Trần Ngọc') && session.fullName.includes('Nguyễn Văn A')) ||
+        (session.username && session.username.toLowerCase() === 'thai1' && session.fullName && session.fullName.includes('Nguyễn Văn A'))
+      ) {
+        session.fullName = 'Trần Ngọc Thái';
+        localStorage.setItem(CLIENT_PC_STORAGE_KEY, JSON.stringify(session));
+      }
     }
     return session;
   } catch {

@@ -8,7 +8,7 @@ export interface SeatBooking {
   zone: string;
   branch: string;
   bookingCode: string;
-  status: 'RESERVED' | 'OCCUPIED' | 'AVAILABLE';
+  status: 'RESERVED' | 'CONFIRMED' | 'OCCUPIED' | 'AVAILABLE';
   createdAt: string;
   notes?: string;
 }
@@ -717,4 +717,25 @@ export function clearAllBookings(): void {
     localStorage.setItem(BOOKING_STORAGE_KEY, JSON.stringify([]));
     window.dispatchEvent(new CustomEvent(BOOKING_STORAGE_EVENT, { detail: [] }));
   }
+}
+
+export function confirmBooking(seatId: string): SeatBooking | null {
+  const current = getStoredBookings();
+  let confirmedBooking: SeatBooking | null = null;
+  const updated = current.map((b) => {
+    if (b.seatId === seatId) {
+      confirmedBooking = {
+        ...b,
+        status: 'CONFIRMED' as const,
+      };
+      return confirmedBooking;
+    }
+    return b;
+  });
+
+  if (typeof window !== 'undefined' && confirmedBooking) {
+    localStorage.setItem(BOOKING_STORAGE_KEY, JSON.stringify(updated));
+    window.dispatchEvent(new CustomEvent(BOOKING_STORAGE_EVENT, { detail: updated }));
+  }
+  return confirmedBooking;
 }

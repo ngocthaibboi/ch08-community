@@ -101,6 +101,15 @@ export function getStoredWallet(): UserWallet {
       merged.tierExpiresAt = authUser.tierExpiresAt;
     }
 
+    // Khôi phục tên người dùng nếu từng bị ghi nhầm Trần Ngọc Nguyễn Văn A
+    if (merged.userName) {
+      const normW = merged.userName.replace(/\s+/g, ' ');
+      if (normW.includes('Trần Ngọc Nguyễn Văn A') || (merged.userName.includes('Trần Ngọc') && merged.userName.includes('Nguyễn Văn A'))) {
+        merged.userName = 'Trần Ngọc Thái';
+        localStorage.setItem(STORAGE_KEY_WALLET, JSON.stringify(merged));
+      }
+    }
+
     // KIỂM TRA THỜI HẠN GÓI: Nếu đã quá hạn 30 ngày -> tự động tụt hạng về Tân Thủ
     if (merged.tierExpiresAt && Date.now() > merged.tierExpiresAt) {
       merged.userTier = 'TÂN THỦ (ROOKIE)';

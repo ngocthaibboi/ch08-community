@@ -6,6 +6,7 @@ import {
   ALL_SEATS_CONFIG,
   getStoredBookings,
   cancelBooking,
+  confirmBooking,
   clearAllBookings,
   SeatBooking,
   BOOKING_STORAGE_EVENT,
@@ -307,6 +308,34 @@ export default function MainServerPage() {
     setTimeout(() => setNotificationMsg(null), 4000);
   };
 
+  const handleConfirmBooking = (seatId: string) => {
+    const confirmed = confirmBooking(seatId);
+    if (confirmed) {
+      playServerChime();
+      setNotificationMsg(`🎉 ĐÃ XÁC NHẬN & ADD MÁY ${seatId}! Khách "${confirmed.customerName}" (${confirmed.phone}) đã được xếp vào phòng máy.`);
+      const seatObj = ALL_SEATS_CONFIG.find((s) => s.id === seatId);
+      if (seatObj) {
+        setSelectedSeat(seatObj);
+        const zId = getZoneIdForSeat(seatObj);
+        if (selectedZone !== 'ALL' && selectedZone !== zId) {
+          setSelectedZone('ALL');
+        }
+      }
+      setTimeout(() => setNotificationMsg(null), 6000);
+    }
+  };
+
+  const handleViewBookedSeat = (seatId: string) => {
+    const seatObj = ALL_SEATS_CONFIG.find((s) => s.id === seatId);
+    if (seatObj) {
+      setSelectedSeat(seatObj);
+      const zId = getZoneIdForSeat(seatObj);
+      if (selectedZone !== 'ALL' && selectedZone !== zId) {
+        setSelectedZone('ALL');
+      }
+    }
+  };
+
   const handleResolveStaffRequest = (id: string) => {
     resolveStaffRequest(id);
     setNotificationMsg('✅ Đã hoàn thành hỗ trợ khách hàng!');
@@ -449,7 +478,7 @@ export default function MainServerPage() {
   });
 
   const activeStnId = activeStation?.stationId || getStoredWallet().pcName || 'ARENA-A1';
-  const activeOccupantName = activeStation?.occupantName || getStoredWallet().userName || 'Trần Ngọc Nguyễn Văn A';
+  const activeOccupantName = activeStation?.occupantName || getStoredWallet().userName || 'Trần Ngọc Thái';
   const isClientOnline = activeStation ? activeStation.isOnline : true;
 
   const activeSeatsCount = bookings.length + (isClientOnline ? 1 : 0);
@@ -820,12 +849,24 @@ export default function MainServerPage() {
                     </span>
                   );
                 } else if (isBooked) {
-                  cardStyle = 'border-amber-500 bg-amber-950/40 text-amber-200 shadow-[0_0_15px_rgba(245,158,11,0.2)]';
-                  statusBadge = (
-                    <span className="px-2 py-0.5 rounded bg-amber-400 text-slate-950 font-mono text-[9px] font-black animate-pulse">
-                      ĐÃ ĐẶT TRƯỚC
-                    </span>
-                  );
+                  const isConfirmed = booking?.status === 'CONFIRMED';
+                  if (isConfirmed) {
+                    cardStyle = 'border-emerald-500 bg-emerald-950/40 text-emerald-200 shadow-[0_0_20px_rgba(16,185,129,0.35)] ring-2 ring-emerald-400/80';
+                    statusBadge = (
+                      <span className="px-2 py-0.5 rounded bg-emerald-400 text-slate-950 font-mono text-[9px] font-black flex items-center gap-1">
+                        <span className="material-symbols-outlined text-[12px]">verified</span>
+                        ĐÃ XÁC NHẬN
+                      </span>
+                    );
+                  } else {
+                    cardStyle = 'border-amber-500 bg-amber-950/40 text-amber-200 shadow-[0_0_15px_rgba(245,158,11,0.2)]';
+                    statusBadge = (
+                      <span className="px-2 py-0.5 rounded bg-amber-400 text-slate-950 font-mono text-[9px] font-black animate-pulse flex items-center gap-1">
+                        <span className="material-symbols-outlined text-[12px]">schedule</span>
+                        CHỜ XÁC NHẬN
+                      </span>
+                    );
+                  }
                 }
 
                 if (isSelected) {
@@ -853,9 +894,17 @@ export default function MainServerPage() {
                     </div>
 
                     {isBooked ? (
-                      <div className="pt-2 border-t border-amber-500/30 text-[10px] font-mono text-amber-300">
-                        <div className="font-bold truncate">👤 {booking.customerName}</div>
-                        <div className="text-[9px] text-slate-400">📞 {booking.phone}</div>
+                      <div className="pt-2 border-t border-white/10 text-[10px] font-mono">
+                        <div className={`font-bold truncate flex items-center gap-1 ${booking?.status === 'CONFIRMED' ? 'text-emerald-300' : 'text-amber-300'}`}>
+                          <span>👤</span>
+                          <span>{booking?.customerName}</span>
+                        </div>
+                        <div className="text-[9px] text-slate-400">📞 {booking?.phone} • {booking?.timeSlot}</div>
+                        {booking?.status === 'CONFIRMED' ? (
+                          <div className="text-[9px] text-emerald-400 font-bold">✔ Đã add vào phòng máy</div>
+                        ) : (
+                          <div className="text-[9px] text-amber-400 font-bold animate-pulse">⏳ Chờ lễ tân xác nhận</div>
+                        )}
                       </div>
                     ) : isCurrent ? (
                       <div className="pt-2 border-t border-cyan-500/30 text-[10px] font-mono text-cyan-300 flex justify-between items-center">
@@ -1092,18 +1141,41 @@ export default function MainServerPage() {
               {(() => {
                 const booking = bookings.find((b) => b.seatId === selectedSeat.id);
                 if (booking) {
+                  const isConfirmed = booking.status === 'CONFIRMED';
                   return (
-                    <div className="p-4 rounded-2xl bg-amber-950/40 border border-amber-500/40 flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
+                    <div className={`p-4 rounded-2xl border flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 ${isConfirmed ? 'bg-emerald-950/40 border-emerald-500/50' : 'bg-amber-950/40 border-amber-500/50'}`}>
                       <div>
-                        <div className="text-amber-300 font-bold">Khách đặt trước: {booking.customerName} ({booking.phone})</div>
-                        <div className="text-slate-400 text-[11px]">Khung giờ: {booking.timeSlot} • Mã vé: {booking.bookingCode}</div>
+                        <div className="flex items-center gap-2">
+                          <span className="font-bold text-white text-sm">
+                            Khách đặt trước: <strong className={isConfirmed ? 'text-emerald-300' : 'text-amber-300'}>{booking.customerName}</strong>
+                          </span>
+                          <span className={`px-2 py-0.5 rounded font-mono text-[9px] font-black ${isConfirmed ? 'bg-emerald-400 text-slate-950' : 'bg-amber-400 text-slate-950 animate-pulse'}`}>
+                            {isConfirmed ? '✔ ĐÃ XÁC NHẬN' : '⏳ CHỜ DUYỆT'}
+                          </span>
+                        </div>
+                        <div className="text-slate-300 text-xs mt-1 font-mono">
+                          📞 SĐT: <strong className="text-white">{booking.phone}</strong> • Giờ: <strong className="text-amber-400">{booking.timeSlot}</strong> • Mã vé: <strong className="text-cyan-400">{booking.bookingCode}</strong>
+                        </div>
                       </div>
-                      <button
-                        onClick={() => handleCancelBooking(selectedSeat.id)}
-                        className="px-4 py-2 bg-red-500 hover:bg-red-400 text-white font-bold rounded-xl transition cursor-pointer"
-                      >
-                        HỦY GIỮ CHỖ NÀY
-                      </button>
+                      <div className="flex items-center gap-2 shrink-0">
+                        {!isConfirmed && (
+                          <button
+                            type="button"
+                            onClick={() => handleConfirmBooking(selectedSeat.id)}
+                            className="px-4 py-2 bg-gradient-to-r from-emerald-400 to-teal-400 hover:brightness-110 text-slate-950 font-black text-xs rounded-xl shadow-lg transition cursor-pointer flex items-center gap-1"
+                          >
+                            <span className="material-symbols-outlined text-[15px]">check_circle</span>
+                            <span>XÁC NHẬN & ADD MÁY</span>
+                          </button>
+                        )}
+                        <button
+                          type="button"
+                          onClick={() => handleCancelBooking(selectedSeat.id)}
+                          className="px-3.5 py-2 bg-rose-500/20 hover:bg-rose-500/30 text-rose-300 border border-rose-500/40 font-bold text-xs rounded-xl transition cursor-pointer"
+                        >
+                          HỦY GIỮ CHỖ
+                        </button>
+                      </div>
                     </div>
                   );
                 }
@@ -1136,39 +1208,83 @@ export default function MainServerPage() {
               </div>
             ) : (
               <div className="space-y-3 max-h-[380px] overflow-y-auto pr-1">
-                {bookings.map((b) => (
-                  <div
-                    key={b.id}
-                    className="p-3.5 rounded-2xl bg-amber-950/20 border border-amber-500/30 space-y-2 font-mono text-xs"
-                  >
-                    <div className="flex justify-between items-start">
-                      <span className="font-bold text-white text-sm">
-                        {b.customerName}
-                      </span>
-                      <span className="px-2 py-0.5 rounded bg-amber-400 text-slate-950 text-[9px] font-black">
-                        {b.seatId}
-                      </span>
-                    </div>
+                {bookings.map((b) => {
+                  const isConfirmed = b.status === 'CONFIRMED';
+                  return (
+                    <div
+                      key={b.id}
+                      className={`p-3.5 rounded-2xl border space-y-2 font-mono text-xs transition-all ${isConfirmed ? 'bg-emerald-950/20 border-emerald-500/40' : 'bg-amber-950/20 border-amber-500/30'}`}
+                    >
+                      <div className="flex justify-between items-start">
+                        <div>
+                          <span className="font-bold text-white text-sm block">
+                            {b.customerName}
+                          </span>
+                          <span className="text-[10px] text-slate-400">
+                            {b.phone}
+                          </span>
+                        </div>
+                        <div className="flex items-center gap-1.5">
+                          <span className="px-2 py-0.5 rounded bg-slate-800 text-cyan-300 border border-cyan-500/40 text-[10px] font-black">
+                            {b.seatId}
+                          </span>
+                          {isConfirmed ? (
+                            <span className="px-2 py-0.5 rounded bg-emerald-500/20 text-emerald-300 border border-emerald-500/40 text-[9px] font-bold flex items-center gap-1">
+                              <span className="w-1.5 h-1.5 rounded-full bg-emerald-400"></span>
+                              ĐÃ XÁC NHẬN
+                            </span>
+                          ) : (
+                            <span className="px-2 py-0.5 rounded bg-amber-500/20 text-amber-300 border border-amber-500/40 text-[9px] font-bold animate-pulse flex items-center gap-1">
+                              <span className="w-1.5 h-1.5 rounded-full bg-amber-400 animate-ping"></span>
+                              CHỜ DUYỆT
+                            </span>
+                          )}
+                        </div>
+                      </div>
 
-                    <div className="text-slate-300 text-[11px] space-y-0.5">
-                      <div>📞 SĐT: <strong className="text-white">{b.phone}</strong></div>
-                      <div>🕒 Giờ: <strong className="text-amber-400">{b.timeSlot}</strong></div>
-                      <div>🎫 Mã vé: <strong className="text-cyan-400">{b.bookingCode}</strong></div>
-                    </div>
+                      <div className="text-slate-300 text-[11px] space-y-0.5 bg-black/30 p-2 rounded-xl border border-white/5">
+                        <div>🕒 Giờ: <strong className="text-amber-400">{b.timeSlot}</strong></div>
+                        <div>🎫 Mã vé: <strong className="text-cyan-400">{b.bookingCode}</strong></div>
+                      </div>
 
-                    <div className="pt-2 border-t border-white/10 flex justify-between items-center">
-                      <span className="text-[10px] text-slate-500">
-                        {new Date(b.createdAt).toLocaleTimeString('vi-VN', { hour: '2-digit', minute: '2-digit' })}
-                      </span>
-                      <button
-                        onClick={() => handleCancelBooking(b.seatId)}
-                        className="text-[11px] text-red-400 hover:text-red-300 font-bold transition cursor-pointer"
-                      >
-                        Hủy đặt
-                      </button>
+                      <div className="pt-2 border-t border-white/10 flex justify-between items-center gap-2">
+                        <span className="text-[10px] text-slate-500">
+                          {new Date(b.createdAt).toLocaleTimeString('vi-VN', { hour: '2-digit', minute: '2-digit' })}
+                        </span>
+                        <div className="flex items-center gap-2">
+                          {!isConfirmed ? (
+                            <button
+                              type="button"
+                              onClick={() => handleConfirmBooking(b.seatId)}
+                              className="px-3 py-1 bg-gradient-to-r from-emerald-400 to-teal-400 hover:brightness-110 text-slate-950 font-black rounded-lg transition shadow-md text-[11px] flex items-center gap-1 cursor-pointer"
+                              title="Xác nhận đặt bàn và xếp máy cho khách"
+                            >
+                              <span className="material-symbols-outlined text-[14px]">check_circle</span>
+                              <span>XÁC NHẬN</span>
+                            </button>
+                          ) : (
+                            <button
+                              type="button"
+                              onClick={() => handleViewBookedSeat(b.seatId)}
+                              className="px-2.5 py-1 bg-cyan-500/20 hover:bg-cyan-500/30 text-cyan-300 border border-cyan-500/40 rounded-lg text-[10px] font-bold transition flex items-center gap-1 cursor-pointer"
+                              title="Xem vị trí máy trên sơ đồ phòng máy"
+                            >
+                              <span className="material-symbols-outlined text-[13px]">my_location</span>
+                              <span>Xem máy</span>
+                            </button>
+                          )}
+                          <button
+                            type="button"
+                            onClick={() => handleCancelBooking(b.seatId)}
+                            className="text-[11px] text-rose-400 hover:text-rose-300 transition cursor-pointer"
+                          >
+                            Hủy đặt
+                          </button>
+                        </div>
+                      </div>
                     </div>
-                  </div>
-                ))}
+                  );
+                })}
               </div>
             )}
           </div>

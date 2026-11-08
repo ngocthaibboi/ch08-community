@@ -85,7 +85,7 @@ export default function AuthAndWallet() {
       setCurrentUser(u);
       setWallet(w);
       if (u) {
-        setEditFullName((prev) => prev || u.fullName || '');
+        setEditFullName(u.fullName || '');
       } else {
         setActiveTab('login');
       }
