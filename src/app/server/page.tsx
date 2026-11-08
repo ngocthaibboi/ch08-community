@@ -30,6 +30,9 @@ import {
   topupWallet,
   updateStationAndRate,
   WALLET_EVENT_NAME,
+  getActiveClientStation,
+  ACTIVE_STATION_EVENT,
+  ActiveStationInfo,
 } from '@/lib/walletStore';
 
 interface ZoneCategory {
@@ -199,6 +202,7 @@ export default function MainServerPage() {
   const [showBroadcastModal, setShowBroadcastModal] = useState(false);
   const [broadcastText, setBroadcastText] = useState('');
   const [activeBroadcast, setActiveBroadcast] = useState<string | null>(null);
+  const [activeStation, setActiveStation] = useState<ActiveStationInfo | null>(null);
 
   const [directMessageText, setDirectMessageText] = useState('');
   const [sentMessageToast, setSentMessageToast] = useState<string | null>(null);
@@ -262,6 +266,11 @@ export default function MainServerPage() {
       const bCast = localStorage.getItem('CYBER_ACTIVE_BROADCAST');
       if (bCast) setActiveBroadcast(bCast);
     }
+
+    try {
+      const act = getActiveClientStation();
+      setActiveStation(act);
+    } catch {}
   };
 
   useEffect(() => {
@@ -270,6 +279,7 @@ export default function MainServerPage() {
     window.addEventListener(STAFF_REQUEST_EVENT, syncAllData);
     window.addEventListener(STORAGE_EVENT_NAME, syncAllData);
     window.addEventListener(WALLET_EVENT_NAME, syncAllData);
+    window.addEventListener(ACTIVE_STATION_EVENT, syncAllData);
     window.addEventListener('storage', syncAllData);
 
     return () => {
@@ -277,6 +287,7 @@ export default function MainServerPage() {
       window.removeEventListener(STAFF_REQUEST_EVENT, syncAllData);
       window.removeEventListener(STORAGE_EVENT_NAME, syncAllData);
       window.removeEventListener(WALLET_EVENT_NAME, syncAllData);
+      window.removeEventListener(ACTIVE_STATION_EVENT, syncAllData);
       window.removeEventListener('storage', syncAllData);
     };
   }, [soundEnabled]);
@@ -421,9 +432,12 @@ export default function MainServerPage() {
       if (seatZone !== selectedZone) return false;
     }
 
+    const activeStnId = activeStation?.stationId || getStoredWallet().pcName || 'ARENA-A1';
+    const isOnlineNow = activeStation ? activeStation.isOnline : true;
+
     const booking = bookings.find((b) => b.seatId === seat.id);
     const isBooked = !!booking;
-    const isCurrent = seat.id === 'VIP-08';
+    const isCurrent = isOnlineNow && seat.id === activeStnId;
     const isBida = seat.id.startsWith('BIDA');
 
     if (statusFilter === 'AVAILABLE') return !isBooked && !isCurrent;
@@ -434,7 +448,11 @@ export default function MainServerPage() {
     return true;
   });
 
-  const activeSeatsCount = bookings.length + 1;
+  const activeStnId = activeStation?.stationId || getStoredWallet().pcName || 'ARENA-A1';
+  const activeOccupantName = activeStation?.occupantName || getStoredWallet().userName || 'Trần Ngọc Nguyễn Văn A';
+  const isClientOnline = activeStation ? activeStation.isOnline : true;
+
+  const activeSeatsCount = bookings.length + (isClientOnline ? 1 : 0);
   const occupancyPercent = Math.min(100, Math.round((activeSeatsCount / ALL_SEATS_CONFIG.length) * 100));
   const pendingStaffCount = staffRequests.filter((r) => r.status === 'PENDING').length;
   const currentSelectedZoneInfo = SIX_ZONES_CONFIG.find((z) => z.id === selectedZone);
@@ -691,7 +709,7 @@ export default function MainServerPage() {
                   const isSelected = selectedZone === zone.id;
                   const zoneSeats = ALL_SEATS_CONFIG.filter((s) => getZoneIdForSeat(s) === zone.id);
                   const bookedInZone = zoneSeats.filter((s) => bookings.some((b) => b.seatId === s.id)).length;
-                  const onlineInZone = zoneSeats.filter((s) => s.id === 'VIP-08').length;
+                  const onlineInZone = zoneSeats.filter((s) => isClientOnline && s.id === activeStnId).length;
                   const busyCount = bookedInZone + onlineInZone;
 
                   return (
@@ -783,7 +801,7 @@ export default function MainServerPage() {
               {filteredSeats.map((seat) => {
                 const booking = bookings.find((b) => b.seatId === seat.id);
                 const isBooked = !!booking;
-                const isCurrent = seat.id === 'VIP-08';
+                const isCurrent = isClientOnline && seat.id === activeStnId;
                 const isSelected = selectedSeat?.id === seat.id;
                 const currentSeatPrice = customSeatRates[seat.id] || parseDefaultRate(seat.price);
 
@@ -795,7 +813,7 @@ export default function MainServerPage() {
                 );
 
                 if (isCurrent) {
-                  cardStyle = 'border-cyan-400 bg-cyan-950/40 text-cyan-200 shadow-[0_0_15px_rgba(0,240,255,0.2)] ring-1 ring-cyan-400';
+                  cardStyle = 'border-cyan-400 bg-cyan-950/40 text-cyan-200 shadow-[0_0_20px_rgba(0,240,255,0.4)] ring-2 ring-cyan-400 animate-pulse';
                   statusBadge = (
                     <span className="px-2 py-0.5 rounded bg-cyan-400 text-slate-950 font-mono text-[9px] font-black">
                       MÁY KHÁCH (ONLINE)
@@ -841,8 +859,11 @@ export default function MainServerPage() {
                       </div>
                     ) : isCurrent ? (
                       <div className="pt-2 border-t border-cyan-500/30 text-[10px] font-mono text-cyan-300 flex justify-between items-center">
-                        <span className="truncate">👤 Nguyễn Văn A</span>
-                        <span className="text-[9px] text-emerald-400 font-bold">Đang chơi</span>
+                        <span className="truncate font-bold">👤 {activeOccupantName}</span>
+                        <span className="text-[9px] text-emerald-400 font-bold flex items-center gap-1">
+                          <span className="w-1.5 h-1.5 rounded-full bg-emerald-400 animate-ping"></span>
+                          Đang chơi
+                        </span>
                       </div>
                     ) : (
                       <div className="pt-2 border-t border-white/5 text-[9px] text-slate-500 font-mono flex items-center justify-between">

@@ -13,6 +13,9 @@ import {
   calculateRemainingPlayTime,
   broadcastWalletUpdate,
   getCumulativeTopupAmount,
+  saveActiveClientStation,
+  getActiveClientStation,
+  ACTIVE_STATION_EVENT,
 } from '@/lib/walletStore';
 import {
   getClientPcSession,
@@ -300,6 +303,9 @@ export default function ClientPcPage() {
   const [showStationModal, setShowStationModal] = useState(false);
   const [showRateModal, setShowRateModal] = useState(false);
   const [newRateInput, setNewRateInput] = useState('22000');
+  const [showTopupModal, setShowTopupModal] = useState(false);
+  const [showSystemSwitcher, setShowSystemSwitcher] = useState(false);
+  const [topupAmountInput, setTopupAmountInput] = useState('100000');
 
   const [showCallModal, setShowCallModal] = useState(false);
   const [alertSuccess, setAlertSuccess] = useState<string | null>(null);
@@ -416,8 +422,8 @@ export default function ClientPcPage() {
     setCustomRate(initialRate);
     setNewRateInput(String(initialRate));
 
-    // Bắt buộc phải đăng nhập hợp lệ tài khoản tại máy trạm và có số dư > 0 mới mở khóa máy
-    if (stationUser && stationUser.balance > 0 && initialRate > 0) {
+    const isUnlocked = !!(stationUser && stationUser.balance > 0 && initialRate > 0);
+    if (isUnlocked) {
       const secs = Math.floor((stationUser.balance / initialRate) * 3600);
       setRemainingSeconds(secs);
       setIsLocked(false);
@@ -425,6 +431,18 @@ export default function ClientPcPage() {
       setIsLocked(true);
       setRemainingSeconds(0);
     }
+
+    // ĐỒNG BỘ TRẠM MÁY HOẠT ĐỘNG SANG SERVER VÀ TRANG CHỦ
+    saveActiveClientStation({
+      stationId: matched.id,
+      stationName: matched.name,
+      zone: matched.zone,
+      hourlyRate: initialRate,
+      occupantName: stationUser ? stationUser.fullName : 'Trần Ngọc Nguyễn Văn A',
+      occupantTier: stationUser ? stationUser.userTier : 'TÂN THỦ (ROOKIE)',
+      balance: stationUser ? stationUser.balance : storedWallet.balance,
+      isOnline: isUnlocked,
+    });
 
     const handleStationSync = () => {
       const sUser = getClientPcSession();
@@ -551,6 +569,16 @@ export default function ClientPcPage() {
     const secs = Math.floor((userObj.balance / effectiveRate) * 3600);
     setRemainingSeconds(secs);
     setIsLocked(false);
+    saveActiveClientStation({
+      stationId: currentStation.id,
+      stationName: currentStation.name,
+      zone: currentStation.zone,
+      hourlyRate: effectiveRate,
+      occupantName: userObj.fullName,
+      occupantTier: userObj.userTier,
+      balance: userObj.balance,
+      isOnline: true,
+    });
     setAlertSuccess(`Đã mở khóa máy ${currentStation.id} với tài khoản Hội viên ${userObj.fullName} (${userObj.balance.toLocaleString('vi-VN')}đ • ${formatSecondsToHMS(secs)})!`);
     setTimeout(() => setAlertSuccess(null), 4000);
   };
@@ -561,7 +589,70 @@ export default function ClientPcPage() {
       setCurrentUser(null);
       setIsLocked(true);
       setRemainingSeconds(0);
+      saveActiveClientStation({
+        stationId: currentStation.id,
+        isOnline: false,
+      });
     }
+  };
+
+  const handleConfirmTopupOnClient = (amountToTopup: number) => {
+    if (isNaN(amountToTopup) || amountToTopup <= 0) {
+      alert('Vui lòng chọn hoặc nhập số tiền nạp hợp lệ!');
+      return;
+    }
+
+    const updated = topupWallet(amountToTopup, `Nạp tiền tại máy ${currentStation.id}`);
+    setWallet(updated);
+
+    const effectiveRate = customRate > 0 ? customRate : currentStation.hourlyRate;
+    const addedSeconds = Math.floor((amountToTopup / effectiveRate) * 3600);
+    setRemainingSeconds((prev) => prev + addedSeconds);
+
+    const newBal = (currentUser?.balance || 0) + amountToTopup;
+
+    if (currentUser) {
+      const updatedUser: AuthUser = {
+        ...currentUser,
+        balance: newBal,
+        userTier: updated.userTier,
+      };
+      setCurrentUser(updatedUser);
+      saveClientPcSession(updatedUser);
+
+      if (typeof window !== 'undefined') {
+        try {
+          const rawAccs = localStorage.getItem('cyber_registered_accounts');
+          if (rawAccs) {
+            const accs = JSON.parse(rawAccs);
+            const idx = accs.findIndex((a: any) => a.username.toLowerCase() === currentUser.username.toLowerCase());
+            if (idx !== -1) {
+              accs[idx].balance = newBal;
+              accs[idx].userTier = updated.userTier;
+              localStorage.setItem('cyber_registered_accounts', JSON.stringify(accs));
+            }
+          }
+        } catch {}
+      }
+    }
+
+    saveActiveClientStation({
+      stationId: currentStation.id,
+      stationName: currentStation.name,
+      zone: currentStation.zone,
+      hourlyRate: effectiveRate,
+      occupantName: currentUser?.fullName || updated.userName,
+      occupantTier: updated.userTier,
+      balance: updated.balance,
+      isOnline: true,
+    });
+
+    const addedTimeStr = formatSecondsToHMS(addedSeconds);
+    setAlertSuccess(
+      `🎉 NẠP TIỀN THÀNH CÔNG: Đã nạp +${amountToTopup.toLocaleString('vi-VN')}đ vào máy ${currentStation.id}! Giờ chơi cộng thêm: +${addedTimeStr}. Số dư ví mới: ${updated.balance.toLocaleString('vi-VN')}đ (Đã đồng bộ sang Trang Chủ và Cổng Ví /auth).`
+    );
+    setShowTopupModal(false);
+    setTimeout(() => setAlertSuccess(null), 8000);
   };
 
   const handleChangeStation = (preset: StationPreset) => {
@@ -588,6 +679,18 @@ export default function ClientPcPage() {
     }
     setWallet(updatedWallet);
     setShowStationModal(false);
+
+    // Đồng bộ sang Server và Trang chủ ngay lập tức khi đổi phòng máy
+    saveActiveClientStation({
+      stationId: preset.id,
+      stationName: preset.name,
+      zone: preset.zone,
+      hourlyRate: newRate,
+      occupantName: currentUser?.fullName || updatedWallet.userName || 'Trần Ngọc Nguyễn Văn A',
+      occupantTier: currentUser?.userTier || updatedWallet.userTier || 'TÂN THỦ (ROOKIE)',
+      balance: roundedMoney,
+      isOnline: !isLocked,
+    });
 
     const oldTimeStr = formatSecondsToHMS(remainingSeconds);
     const newTimeStr = formatSecondsToHMS(newSeconds);
@@ -1005,6 +1108,29 @@ export default function ClientPcPage() {
             </div>
           </div>
 
+          {/* ĐIỀU HƯỚNG TRANG CHỦ & CHUYỂN PHÂN HỆ HỆ THỐNG (THAY CHO THANH TRÊN) */}
+          <div className="flex items-center gap-1.5 font-mono">
+            <Link
+              href="/"
+              className="px-3 py-1.5 rounded-xl bg-slate-900 border border-emerald-500/40 hover:border-emerald-400 text-emerald-400 font-bold text-xs transition flex items-center gap-1.5 cursor-pointer shadow-sm hover:scale-105"
+              title="Quay lại Cổng Khách Hàng (Trang Chủ)"
+            >
+              <span className="material-symbols-outlined text-[16px]">home</span>
+              <span className="hidden sm:inline">TRANG CHỦ</span>
+            </Link>
+
+            <button
+              type="button"
+              onClick={() => setShowSystemSwitcher(true)}
+              className="px-3 py-1.5 rounded-xl bg-emerald-500/20 border border-emerald-400/60 hover:bg-emerald-400 hover:text-black text-emerald-300 font-bold text-xs transition flex items-center gap-1.5 cursor-pointer shadow-sm"
+              title="Chuyển đổi giữa 5 giao diện hệ thống CyberZone"
+            >
+              <span className="w-1.5 h-1.5 rounded-full bg-emerald-400 animate-ping"></span>
+              <span className="material-symbols-outlined text-[16px]">dns</span>
+              <span className="hidden sm:inline">HỆ THỐNG</span>
+            </button>
+          </div>
+
           <div className="flex items-center gap-3 bg-black/60 border border-white/10 px-4 py-2 rounded-2xl shadow-inner font-mono">
             <span className="material-symbols-outlined text-amber-400 text-[20px] animate-pulse">timer</span>
             <div className="text-center">
@@ -1016,11 +1142,12 @@ export default function ClientPcPage() {
               </span>
             </div>
             <button
-              onClick={() => handleQuickAddMoney(50000)}
-              className="ml-2 px-3 py-1 bg-amber-400 hover:bg-amber-300 text-black font-black text-[10px] rounded-lg transition uppercase font-sans tracking-wide cursor-pointer"
-              title="Nạp nhanh 50k vào ví"
+              onClick={() => setShowTopupModal(true)}
+              className="ml-2 px-3.5 py-1.5 bg-gradient-to-r from-amber-400 via-yellow-400 to-amber-500 hover:brightness-110 text-black font-black text-[11px] rounded-lg transition uppercase font-sans tracking-wide cursor-pointer flex items-center gap-1 shadow-md transform hover:scale-105"
+              title="Mở cổng nạp tiền trực tuyến tại máy và đồng bộ sang Trang Chủ"
             >
-              + NẠP 50K
+              <span className="material-symbols-outlined text-[15px]">add_card</span>
+              <span>NẠP TIỀN</span>
             </button>
           </div>
 
@@ -1305,9 +1432,9 @@ export default function ClientPcPage() {
             </div>
           </Link>
 
-          <Link
-            href="/auth"
-            className="group p-5 rounded-2xl bg-[#070d1e]/90 border border-white/10 hover:border-amber-500/60 transition-all shadow-xl hover:-translate-y-1 flex flex-col justify-between"
+          <div
+            onClick={() => setShowTopupModal(true)}
+            className="group p-5 rounded-2xl bg-[#070d1e]/90 border border-white/10 hover:border-amber-500/60 transition-all shadow-xl hover:-translate-y-1 flex flex-col justify-between cursor-pointer"
           >
             <div>
               <div className="flex items-center justify-between mb-3">
@@ -1319,17 +1446,17 @@ export default function ClientPcPage() {
                 </span>
               </div>
               <h3 className="font-gaming font-black text-lg text-white group-hover:text-amber-400 transition-colors">
-                Nạp Ví Thẻ Hội Viên
+                Nạp Tiền Trực Tuyến &amp; Ví
               </h3>
               <p className="text-xs text-slate-400 mt-2 leading-relaxed">
-                Quét mã VietQR hoặc chuyển khoản, cộng ngay vào giờ chơi trên máy sau 3 giây. Hưởng chiết khấu thăng hạng VIP.
+                Nạp tiền trực tiếp tại máy qua VietQR MB Bank. Tự động cộng giờ và đồng bộ sang tài khoản Cổng Trang Chủ.
               </p>
             </div>
             <div className="mt-4 pt-3 border-t border-white/10 flex justify-between items-center text-xs font-mono text-amber-400 font-bold">
-              <span>Nạp Tiền Nhanh</span>
-              <span>&rarr;</span>
+              <span>Mở Cổng Nạp Tiền &rarr;</span>
+              <span>💳</span>
             </div>
-          </Link>
+          </div>
 
           <div
             onClick={() => setShowCallModal(true)}
@@ -1611,6 +1738,183 @@ export default function ClientPcPage() {
                 </button>
               </div>
             </form>
+          </div>
+        </div>
+      )}
+
+      {/* MODAL NẠP TIỀN TRỰC TUYẾN TẠI MÁY (ĐỒNG BỘ SANG TRANG CHỦ) */}
+      {showTopupModal && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/85 backdrop-blur-md animate-fadeIn">
+          <div className="w-full max-w-lg bg-slate-900 border border-amber-500/50 rounded-3xl p-6 sm:p-7 shadow-2xl space-y-5 font-sans">
+            <div className="flex justify-between items-center border-b border-white/10 pb-3">
+              <div className="flex items-center gap-2.5">
+                <div className="w-10 h-10 rounded-xl bg-amber-500/20 text-amber-400 flex items-center justify-center text-xl font-black">
+                  <span className="material-symbols-outlined text-2xl">add_card</span>
+                </div>
+                <div>
+                  <h3 className="font-gaming font-black text-lg text-white">NẠP TIỀN &amp; CỘNG GIỜ MÁY TRẠM</h3>
+                  <div className="text-[11px] text-slate-400 font-mono">
+                    Máy: <strong className="text-amber-400">{currentStation.id}</strong> • Khách: <strong className="text-white">{currentUser?.fullName || wallet.userName}</strong>
+                  </div>
+                </div>
+              </div>
+              <button
+                onClick={() => setShowTopupModal(false)}
+                className="text-slate-400 hover:text-white text-lg w-8 h-8 rounded-lg bg-slate-800 flex items-center justify-center"
+              >
+                ✕
+              </button>
+            </div>
+
+            {/* THÔNG TIN SỐ DƯ & QUY ĐỔI GIỜ */}
+            <div className="grid grid-cols-2 gap-3 font-mono text-xs">
+              <div className="p-3 rounded-2xl bg-slate-800/80 border border-emerald-500/30">
+                <span className="text-[10px] text-slate-400 block mb-0.5">Số Dư Hiện Tại:</span>
+                <span className="text-lg font-black text-emerald-400">
+                  {liveBalance.toLocaleString('vi-VN')}đ
+                </span>
+              </div>
+              <div className="p-3 rounded-2xl bg-slate-800/80 border border-cyan-500/30">
+                <span className="text-[10px] text-slate-400 block mb-0.5">Thời Gian Còn Lại:</span>
+                <span className="text-lg font-black text-cyan-400">
+                  {formatSecondsToHMS(remainingSeconds)}
+                </span>
+              </div>
+            </div>
+
+            {/* MỨC TIỀN CHỌN NHANH */}
+            <div className="space-y-2">
+              <div className="flex justify-between items-center text-xs font-mono">
+                <span className="text-white font-bold">Chọn Mức Tiền Cần Nạp:</span>
+                <span className="text-emerald-400 text-[10px]">Đơn giá: {(customRate || currentStation.hourlyRate).toLocaleString('vi-VN')}đ/h</span>
+              </div>
+              <div className="grid grid-cols-3 gap-2 font-mono">
+                {['20000', '50000', '100000', '200000', '500000', '1000000'].map((amt) => {
+                  const num = parseInt(amt, 10);
+                  const isSel = topupAmountInput === amt;
+                  const addSecs = Math.floor((num / (customRate || currentStation.hourlyRate)) * 3600);
+                  return (
+                    <button
+                      key={amt}
+                      type="button"
+                      onClick={() => setTopupAmountInput(amt)}
+                      className={`p-2.5 rounded-xl border text-center transition cursor-pointer ${
+                        isSel
+                          ? 'bg-amber-500/20 border-amber-400 text-amber-300 shadow-md ring-1 ring-amber-400'
+                          : 'bg-slate-800/70 border-slate-700 text-slate-300 hover:border-slate-500'
+                      }`}
+                    >
+                      <div className="font-black text-xs">+{num.toLocaleString('vi-VN')}đ</div>
+                      <div className="text-[9px] text-slate-400 mt-0.5">+{formatSecondsToHMS(addSecs)}</div>
+                    </button>
+                  );
+                })}
+              </div>
+            </div>
+
+            {/* NHẬP TÙY CHỌN */}
+            <div className="space-y-1 font-mono text-xs">
+              <label className="text-slate-400 text-[11px] block">Hoặc nhập số tiền khác (VNĐ):</label>
+              <input
+                type="number"
+                step="10000"
+                min="10000"
+                value={topupAmountInput}
+                onChange={(e) => setTopupAmountInput(e.target.value)}
+                className="w-full bg-slate-800 border border-slate-700 rounded-xl p-2.5 text-white font-mono text-base font-bold focus:border-amber-400 outline-none"
+                placeholder="Nhập số tiền..."
+              />
+            </div>
+
+            {/* THẺ VIETQR */}
+            <div className="p-3.5 rounded-2xl bg-slate-950 border border-white/10 flex items-center gap-3 font-mono text-xs">
+              <img
+                src="https://api.vietqr.io/image/970422-0988888888-HjXq5pM.jpg?accountName=CYBER%20ZONE%20GAMING%20LOUNGE&amount=50000"
+                alt="VietQR"
+                className="w-16 h-16 rounded-xl object-contain bg-white p-1 shrink-0"
+              />
+              <div className="text-[11px] space-y-0.5 text-slate-300">
+                <div className="text-emerald-400 font-bold">MB BANK • QUÉT MÃ TỰ ĐỘNG CỘNG TIỀN</div>
+                <div>STK: <strong className="text-white">0988888888</strong></div>
+                <div className="text-slate-400">Nội dung: <strong className="text-amber-400">NAP {currentStation.id} {currentUser?.username || 'khach'}</strong></div>
+              </div>
+            </div>
+
+            {/* NÚT XÁC NHẬN NẠP VÀ LINK SANG TRANG CHỦ */}
+            <div className="space-y-2 pt-1 font-mono">
+              <button
+                type="button"
+                onClick={() => handleConfirmTopupOnClient(parseInt(topupAmountInput || '0', 10))}
+                className="w-full py-3.5 bg-gradient-to-r from-amber-400 via-yellow-400 to-amber-500 hover:brightness-110 text-black font-extrabold text-xs uppercase tracking-wider rounded-xl shadow-lg shadow-amber-500/25 transition cursor-pointer font-gaming"
+              >
+                ⚡ XÁC NHẬN NẠP +{parseInt(topupAmountInput || '0', 10).toLocaleString('vi-VN')}Đ VÀO MÁY
+              </button>
+
+              <div className="flex justify-between items-center pt-2 text-[11px] text-slate-400">
+                <Link
+                  href="/auth"
+                  className="text-cyan-400 hover:underline flex items-center gap-1 font-bold"
+                >
+                  <span>🌐 Mở Cổng Ví &amp; Gamer Pass (/auth)</span>
+                  <span>&rarr;</span>
+                </Link>
+                <span>Hỗ trợ: 1900 8888</span>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* MODAL CHUYỂN ĐỔI 5 GIAO DIỆN HỆ THỐNG */}
+      {showSystemSwitcher && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/85 backdrop-blur-md animate-fadeIn">
+          <div className="w-full max-w-xl bg-slate-900 border border-emerald-500/50 rounded-3xl p-6 shadow-2xl space-y-4 font-mono text-xs">
+            <div className="flex justify-between items-center border-b border-white/10 pb-3">
+              <div className="flex items-center gap-2">
+                <span className="w-2.5 h-2.5 rounded-full bg-emerald-400 animate-ping"></span>
+                <h3 className="font-gaming font-black text-lg text-white">CHUYỂN ĐỔI 5 PHÂN HỆ HỆ THỐNG</h3>
+              </div>
+              <button
+                onClick={() => setShowSystemSwitcher(false)}
+                className="text-slate-400 hover:text-white text-lg w-7 h-7 rounded-lg bg-slate-800 flex items-center justify-center"
+              >
+                ✕
+              </button>
+            </div>
+
+            <div className="space-y-2">
+              {[
+                { href: '/', label: '1. Cổng Khách Hàng (Trang Chủ)', icon: 'public', desc: 'Đặt chỗ trước, bảng giá gói hội viên, showroom gear' },
+                { href: '/client-pc', label: `2. Khách Ngồi Tại Máy (${currentStation.id})`, icon: 'desktop_windows', desc: 'Giao diện máy trạm đang sử dụng tại phòng game', isCurrent: true },
+                { href: '/server', label: '3. Máy Chủ Phòng Máy (Server Tổng)', icon: 'dns', desc: 'Quản trị 42 máy trạm, đổi giá, khóa máy, nạp tiền' },
+                { href: '/kds', label: '4. Màn Hình Bếp (KDS)', icon: 'soup_kitchen', desc: 'Màn hình chế biến món ăn & đồ uống Bếp F&B' },
+                { href: '/dashboard', label: '5. Quản Lý Doanh Thu', icon: 'monitoring', desc: 'Báo cáo doanh thu tiền giờ & F&B theo thời gian thực' },
+              ].map((sys) => (
+                <Link
+                  key={sys.href}
+                  href={sys.href}
+                  onClick={() => setShowSystemSwitcher(false)}
+                  className={`p-3 rounded-2xl border flex items-center justify-between transition-all ${
+                    sys.isCurrent
+                      ? 'bg-emerald-500/15 border-emerald-400 text-emerald-300 ring-1 ring-emerald-400'
+                      : 'bg-slate-800/80 border-slate-700 text-slate-300 hover:border-emerald-400 hover:text-white'
+                  }`}
+                >
+                  <div className="flex items-center gap-3">
+                    <span className="material-symbols-outlined text-2xl text-emerald-400">{sys.icon}</span>
+                    <div>
+                      <div className="font-bold text-white text-sm">{sys.label}</div>
+                      <div className="text-[10px] text-slate-400">{sys.desc}</div>
+                    </div>
+                  </div>
+                  {sys.isCurrent ? (
+                    <span className="px-2 py-0.5 rounded bg-emerald-400 text-black font-black text-[10px]">ĐANG XEM</span>
+                  ) : (
+                    <span className="text-emerald-400 font-bold">&rarr;</span>
+                  )}
+                </Link>
+              ))}
+            </div>
           </div>
         </div>
       )}

@@ -25,6 +25,8 @@ import {
   WALLET_EVENT_NAME,
   UserWallet,
   INITIAL_WALLET,
+  getActiveClientStation,
+  ACTIVE_STATION_EVENT,
 } from '@/lib/walletStore';
 import {
   MEMBERSHIP_PLANS,
@@ -329,14 +331,18 @@ export default function Home() {
       };
     }
 
-    if (seat.id === 'VIP-08') {
+    const activeStn = getActiveClientStation();
+    const activeStnId = activeStn?.stationId || wallet.pcName || 'ARENA-A1';
+    const isOnlineNow = activeStn ? activeStn.isOnline : true;
+
+    if (isOnlineNow && seat.id === activeStnId) {
       return {
         status: 'OCCUPIED' as const,
         label: 'ĐANG HOẠT ĐỘNG',
-        badgeClass: 'bg-rose-500/20 text-rose-300 border-rose-500/40',
-        dotClass: 'bg-rose-500 animate-ping',
-        occupant: 'Tân Thủ Cyber (Hội Viên)',
-        timeSlot: 'Đang trải nghiệm',
+        badgeClass: 'bg-cyan-500/20 text-cyan-300 border-cyan-500/40',
+        dotClass: 'bg-cyan-400 animate-ping',
+        occupant: activeStn?.occupantName || wallet.userName || 'Trần Ngọc Nguyễn Văn A (Hội Viên)',
+        timeSlot: 'Đang chơi tại máy trạm',
       };
     }
 
@@ -435,6 +441,7 @@ export default function Home() {
 
     window.addEventListener(AUTH_EVENT_NAME, handleAuthChange);
     window.addEventListener(WALLET_EVENT_NAME, handleWalletSync);
+    window.addEventListener(ACTIVE_STATION_EVENT, handleWalletSync);
     window.addEventListener('storage', handleAuthChange);
     window.addEventListener('storage', handleWalletSync);
     window.addEventListener(BOOKING_STORAGE_EVENT, handleBookingSync);
@@ -444,6 +451,7 @@ export default function Home() {
     return () => {
       window.removeEventListener(AUTH_EVENT_NAME, handleAuthChange);
       window.removeEventListener(WALLET_EVENT_NAME, handleWalletSync);
+      window.removeEventListener(ACTIVE_STATION_EVENT, handleWalletSync);
       window.removeEventListener('storage', handleAuthChange);
       window.removeEventListener('storage', handleWalletSync);
       window.removeEventListener(BOOKING_STORAGE_EVENT, handleBookingSync);

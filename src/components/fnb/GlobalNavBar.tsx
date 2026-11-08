@@ -4,13 +4,18 @@ import React, { useRef, useState, useEffect } from 'react';
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
 import { getStoredOrders, STORAGE_EVENT_NAME } from '@/lib/orderStore';
-import { getStoredWallet, WALLET_EVENT_NAME, UserWallet, INITIAL_WALLET } from '@/lib/walletStore';
+import { getStoredWallet, WALLET_EVENT_NAME, UserWallet, INITIAL_WALLET, getActiveClientStation, ACTIVE_STATION_EVENT } from '@/lib/walletStore';
 import { getLoggedInUser, logoutUser, AUTH_EVENT_NAME, AuthUser } from '@/lib/authStore';
 import { getTierByName } from '@/lib/gamerPass';
 import AuthModal from '@/components/auth/AuthModal';
 
 export default function GlobalNavBar() {
   const pathname = usePathname();
+
+  // THEO YÊU CẦU: Thanh điều hướng website CZ CYBERZONE chỉ hiển thị cho Trang Chủ / Web, ẩn hoàn toàn trên Client PC
+  if (pathname === '/client-pc') {
+    return null;
+  }
   const [pendingOrdersCount, setPendingOrdersCount] = useState(0);
   const [wallet, setWallet] = useState<UserWallet>(INITIAL_WALLET);
   const [currentUser, setCurrentUser] = useState<AuthUser | null>(null);
@@ -24,9 +29,12 @@ export default function GlobalNavBar() {
   const [isServiceDropdownOpen, setIsServiceDropdownOpen] = useState(false);
   const dropdownRef = useRef<HTMLDivElement>(null);
 
+  const activeStn = getActiveClientStation();
+  const activeStationLabel = activeStn?.stationId || wallet.pcName || 'ARENA-A1';
+
   const ecosystemModes = [
     { href: '/', label: '1. Cổng Khách Hàng (Trang Chủ)', icon: 'public' },
-    { href: '/client-pc', label: '2. Khách Ngồi Tại Máy (VIP-08)', icon: 'desktop_windows' },
+    { href: '/client-pc', label: `2. Khách Ngồi Tại Máy (${activeStationLabel})`, icon: 'desktop_windows' },
     { href: '/server', label: '3. Máy Chủ Phòng Máy (Server Tổng)', icon: 'dns' },
     { href: '/kds', label: '4. Màn Hình Bếp (KDS)', icon: 'soup_kitchen', countBadge: true },
     { href: '/dashboard', label: '5. Quản Lý Doanh Thu', icon: 'monitoring', liveBadge: true },
@@ -48,6 +56,7 @@ export default function GlobalNavBar() {
     window.addEventListener(STORAGE_EVENT_NAME, updateAll);
     window.addEventListener(WALLET_EVENT_NAME, updateAll);
     window.addEventListener(AUTH_EVENT_NAME, updateAll);
+    window.addEventListener(ACTIVE_STATION_EVENT, updateAll);
     window.addEventListener('storage', updateAll);
 
     const handleClickOutside = (e: MouseEvent) => {
@@ -60,6 +69,7 @@ export default function GlobalNavBar() {
       window.removeEventListener(STORAGE_EVENT_NAME, updateAll);
       window.removeEventListener(WALLET_EVENT_NAME, updateAll);
       window.removeEventListener(AUTH_EVENT_NAME, updateAll);
+      window.removeEventListener(ACTIVE_STATION_EVENT, updateAll);
       window.removeEventListener('storage', updateAll);
       document.removeEventListener('mousedown', handleClickOutside);
     };

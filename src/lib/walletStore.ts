@@ -401,3 +401,68 @@ export function resetWalletToDefault(): UserWallet {
   broadcastWalletUpdate(INITIAL_WALLET);
   return INITIAL_WALLET;
 }
+
+// ══════════ QUẢN LÝ TRẠM MÁY CLIENT PC ĐANG HOẠT ĐỘNG (ĐỒNG BỘ SERVER & WEB) ══════════
+export interface ActiveStationInfo {
+  stationId: string;
+  stationName: string;
+  zone: string;
+  hourlyRate: number;
+  occupantName: string;
+  occupantTier: string;
+  balance: number;
+  isOnline: boolean;
+  updatedAt: number;
+}
+
+export const ACTIVE_STATION_STORAGE_KEY = 'cyber_active_station';
+export const ACTIVE_STATION_EVENT = 'cyber_active_station_updated';
+
+export function getActiveClientStation(): ActiveStationInfo {
+  if (typeof window === 'undefined') {
+    return {
+      stationId: 'ARENA-A1',
+      stationName: 'Đấu Trường ARENA-A1',
+      zone: 'Sàn Đấu 5vs5 Tầng 1',
+      hourlyRate: 25000,
+      occupantName: 'Trần Ngọc Nguyễn Văn A',
+      occupantTier: 'TÂN THỦ (ROOKIE)',
+      balance: 50000,
+      isOnline: true,
+      updatedAt: Date.now(),
+    };
+  }
+  try {
+    const raw = localStorage.getItem(ACTIVE_STATION_STORAGE_KEY);
+    if (raw) return JSON.parse(raw);
+  } catch {}
+
+  const w = getStoredWallet();
+  return {
+    stationId: w.pcName || 'ARENA-A1',
+    stationName: `Máy ${w.pcName || 'ARENA-A1'}`,
+    zone: w.zoneName || 'Sàn Đấu 5vs5 Tầng 1',
+    hourlyRate: w.hourlyRate || 25000,
+    occupantName: w.userName || 'Trần Ngọc Nguyễn Văn A',
+    occupantTier: w.userTier || 'TÂN THỦ (ROOKIE)',
+    balance: w.balance || 50000,
+    isOnline: true,
+    updatedAt: Date.now(),
+  };
+}
+
+export function saveActiveClientStation(info: Partial<ActiveStationInfo>): ActiveStationInfo {
+  const current = getActiveClientStation();
+  const updated: ActiveStationInfo = {
+    ...current,
+    ...info,
+    updatedAt: Date.now(),
+  };
+  if (typeof window !== 'undefined') {
+    try {
+      localStorage.setItem(ACTIVE_STATION_STORAGE_KEY, JSON.stringify(updated));
+      window.dispatchEvent(new CustomEvent(ACTIVE_STATION_EVENT, { detail: updated }));
+    } catch {}
+  }
+  return updated;
+}
