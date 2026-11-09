@@ -613,16 +613,23 @@ export default function Home() {
       return;
     }
 
-    let targetSeatId = selectedSeatForBooking || 'STD-01';
-    if (!selectedSeatForBooking) {
-      if (zoneCategory.includes('Standard')) targetSeatId = 'STD-01';
-      else if (zoneCategory.includes('Billiards') || zoneCategory.includes('Bida')) targetSeatId = 'BIDA-01';
-      else if (zoneCategory.includes('VIP')) targetSeatId = 'VIP-01';
-      else if (zoneCategory.includes('Pro')) targetSeatId = 'PRO-01';
-      else if (zoneCategory.includes('Arena')) targetSeatId = 'ARENA-A1';
-      else if (zoneCategory.includes('Stream')) targetSeatId = 'STREAM-01';
-      else if (zoneCategory.includes('Couple')) targetSeatId = 'COUPLE-01';
-      else if (zoneCategory.includes('Console')) targetSeatId = 'CONSOLE-01';
+    let targetSeatId = selectedSeatForBooking || '';
+    if (!targetSeatId) {
+      let prefix = 'STD-';
+      if (zoneCategory.includes('Standard')) prefix = 'STD-';
+      else if (zoneCategory.includes('Billiards') || zoneCategory.includes('Bida')) prefix = 'BIDA-';
+      else if (zoneCategory.includes('VIP')) prefix = 'VIP-';
+      else if (zoneCategory.includes('Pro')) prefix = 'PRO-';
+      else if (zoneCategory.includes('Arena')) prefix = 'ARENA-';
+      else if (zoneCategory.includes('Stream')) prefix = 'STREAM-';
+      else if (zoneCategory.includes('Couple')) prefix = 'COUPLE-';
+      else if (zoneCategory.includes('Console')) prefix = 'CONSOLE-';
+
+      const matchingSeats = ALL_SEATS_CONFIG.filter((s) => s.id.startsWith(prefix));
+      const availableSeat = matchingSeats.find(
+        (s) => !storedBookings.some((b) => b.seatId === s.id && (b.status === 'RESERVED' || b.status === 'CONFIRMED'))
+      );
+      targetSeatId = availableSeat ? availableSeat.id : (matchingSeats[0]?.id || 'STD-01');
     }
 
     const seat = ALL_SEATS_CONFIG.find((s) => s.id === targetSeatId) || ALL_SEATS_CONFIG[0];

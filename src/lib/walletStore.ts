@@ -29,24 +29,89 @@ export interface UserWallet {
   tierExpiresAt?: number;
   balance: number;
   hourlyRate: number;
+  remainingSeconds?: number;
   transactions: WalletTransaction[];
   lastTransaction?: WalletTransaction;
 }
 
 export const STORAGE_KEY_WALLET = 'cyber_user_wallet';
+export const STORAGE_KEY_REMAINING_SECONDS = 'cyber_client_remaining_seconds';
+export const STORAGE_KEY_REMAINING_OWNER = 'cyber_client_remaining_owner';
 export const WALLET_EVENT_NAME = 'cyber_wallet_updated';
 export const BASELINE_TOPUP_REVENUE = 0;
 export const INITIAL_TRANSACTIONS: WalletTransaction[] = [];
 
 export const INITIAL_WALLET: UserWallet = {
-  userName: 'Tài khoản Hội viên',
+  userName: 'Nguyễn Văn A',
   pcName: 'VIP-08',
   zoneName: 'PHÒNG RIÊNG VIP TẦNG 2',
-  userTier: 'TÂN THỦ (ROOKIE)',
-  balance: 0,
+  userTier: 'HỘI VIÊN BẠC 🥈',
+  balance: 200000,
   hourlyRate: 22000,
+  remainingSeconds: Math.floor((200000 / 22000) * 3600),
   transactions: [],
 };
+
+export function getStoredRemainingSeconds(
+  ownerUsername?: string,
+  fallbackBalance?: number,
+  hourlyRate: number = 22000
+): number {
+  if (typeof window === 'undefined') return 0;
+  try {
+    const savedOwner = localStorage.getItem(STORAGE_KEY_REMAINING_OWNER);
+    const rawSecs = localStorage.getItem(STORAGE_KEY_REMAINING_SECONDS);
+    if (rawSecs !== null) {
+      const parsed = parseInt(rawSecs, 10);
+      if (!isNaN(parsed) && parsed > 0) {
+        if (!ownerUsername || !savedOwner || savedOwner.toLowerCase() === ownerUsername.toLowerCase()) {
+          return parsed;
+        }
+      }
+    }
+    if (ownerUsername) {
+      const userSaved = localStorage.getItem(`cyber_saved_time_${ownerUsername.toLowerCase()}`);
+      if (userSaved !== null) {
+        const parsedUser = parseInt(userSaved, 10);
+        if (!isNaN(parsedUser) && parsedUser > 0) {
+          return parsedUser;
+        }
+      }
+    }
+  } catch {}
+  const bal = typeof fallbackBalance === 'number' ? fallbackBalance : 200000;
+  const rate = hourlyRate > 0 ? hourlyRate : 22000;
+  return bal > 0 ? Math.floor((bal / rate) * 3600) : 0;
+}
+
+export function saveStoredRemainingSeconds(seconds: number, ownerUsername?: string): void {
+  if (typeof window === 'undefined') return;
+  try {
+    const cleanSecs = Math.max(0, Math.floor(seconds));
+    localStorage.setItem(STORAGE_KEY_REMAINING_SECONDS, String(cleanSecs));
+    let uname = ownerUsername;
+    if (!uname) {
+      try {
+        const u = JSON.parse(localStorage.getItem('cyber_auth_current_user') || 'null');
+        uname = u?.username;
+      } catch {}
+    }
+    if (uname) {
+      localStorage.setItem(STORAGE_KEY_REMAINING_OWNER, uname.toLowerCase());
+      localStorage.setItem(`cyber_saved_time_${uname.toLowerCase()}`, String(cleanSecs));
+    }
+  } catch {}
+}
+
+export function addRemainingPlaySeconds(addedSeconds: number, ownerUsername?: string): number {
+  const w = getStoredWallet();
+  const current = getStoredRemainingSeconds(ownerUsername, w.balance, w.hourlyRate);
+  const next = Math.max(0, current + Math.floor(addedSeconds));
+  saveStoredRemainingSeconds(next, ownerUsername);
+  w.remainingSeconds = next;
+  broadcastWalletUpdate(w);
+  return next;
+}
 
 export function calculateRemainingPlayTime(balance: number, hourlyRate: number = 22000): string {
   if (balance <= 0 || hourlyRate <= 0) return '00:00:00';
@@ -80,7 +145,7 @@ export function getStoredWallet(): UserWallet {
         userName: authUser?.fullName || authUser?.username || INITIAL_WALLET.userName,
         userTier: authUser?.userTier || INITIAL_WALLET.userTier,
         tierExpiresAt: authUser?.tierExpiresAt,
-        balance: typeof authUser?.balance === 'number' ? authUser.balance : 0,
+        balance: typeof authUser?.balance === 'number' ? authUser.balance : INITIAL_WALLET.balance,
       };
       localStorage.setItem(STORAGE_KEY_WALLET, JSON.stringify(init));
       return init;
@@ -216,7 +281,7 @@ export function subscribeMembershipPlan(planId: string): {
 
   const tx: WalletTransaction = {
     id: `tx-plan-${Date.now()}`,
-    type: 'FNB_PAYMENT',
+    type: 'PLAY_TIME',
     amount: plan.price,
     description: `Đăng ký ${plan.name} (Thời hạn ${plan.durationDays} ngày)`,
     pcName: current.pcName || 'WEB-ONLINE',
@@ -224,12 +289,18 @@ export function subscribeMembershipPlan(planId: string): {
     dateIso: new Date().toISOString(),
   };
 
+  const bonusHours = plan.code === 'DIAMOND' ? 20 : plan.code === 'GOLD' ? 8 : 3;
+  const prevSecs = getStoredRemainingSeconds(authUser.username, currentBalance, current.hourlyRate || 22000);
+  const nextSecs = prevSecs + bonusHours * 3600;
+  saveStoredRemainingSeconds(nextSecs, authUser.username);
+
   const updated: UserWallet = {
     ...current,
     userName: authUser.fullName || authUser.username,
     userTier: plan.badgeName,
     tierExpiresAt: expiresAt,
     balance: newBalance,
+    remainingSeconds: nextSecs,
     transactions: [tx, ...(current.transactions || [])],
     lastTransaction: tx,
   };
@@ -320,7 +391,8 @@ export function topupWallet(amount: number, method: string = 'QR'): UserWallet {
 
 export function deductWallet(
   amount: number,
-  description: string = 'Thanh toán đồ ăn F&B'
+  description: string = 'Thanh toán đồ ăn F&B',
+  txType?: 'FNB_PAYMENT' | 'PLAY_TIME'
 ): { success: boolean; wallet: UserWallet; error?: string } {
   const current = getStoredWallet();
   if (current.balance < amount) {
@@ -331,9 +403,16 @@ export function deductWallet(
     };
   }
   const newBalance = current.balance - amount;
+  const descLower = description.toLowerCase();
+  const resolvedType: 'FNB_PAYMENT' | 'PLAY_TIME' =
+    txType ||
+    (descLower.includes('giờ') || descLower.includes('combo') || descLower.includes('nạp máy')
+      ? 'PLAY_TIME'
+      : 'FNB_PAYMENT');
+
   const tx: WalletTransaction = {
     id: `tx-${Date.now()}`,
-    type: 'FNB_PAYMENT',
+    type: resolvedType,
     amount,
     description,
     pcName: current.pcName || 'VIP-08',
@@ -449,8 +528,44 @@ export function calculateTotalTopupRevenue(): { totalTopup: number; recentTopups
 }
 
 export function resetWalletToDefault(): UserWallet {
-  broadcastWalletUpdate(INITIAL_WALLET);
-  return INITIAL_WALLET;
+  const defaultSecs = Math.floor((INITIAL_WALLET.balance / INITIAL_WALLET.hourlyRate) * 3600);
+  const resetState: UserWallet = {
+    ...INITIAL_WALLET,
+    balance: 200000,
+    userTier: 'HỘI VIÊN BẠC 🥈',
+    remainingSeconds: defaultSecs,
+    transactions: [],
+  };
+  if (typeof window !== 'undefined') {
+    try {
+      saveStoredRemainingSeconds(defaultSecs, 'admin1');
+      const authRaw = localStorage.getItem('cyber_auth_current_user');
+      if (authRaw) {
+        const authUser = JSON.parse(authRaw);
+        if (authUser) {
+          authUser.balance = 200000;
+          authUser.userTier = 'HỘI VIÊN BẠC 🥈';
+          localStorage.setItem('cyber_auth_current_user', JSON.stringify(authUser));
+          localStorage.setItem('cyber_client_pc_session', JSON.stringify(authUser));
+          saveStoredRemainingSeconds(defaultSecs, authUser.username);
+          window.dispatchEvent(new CustomEvent('cyber_auth_updated', { detail: authUser }));
+
+          const rawAccs = localStorage.getItem('cyber_registered_accounts');
+          if (rawAccs) {
+            const accs = JSON.parse(rawAccs);
+            const idx = accs.findIndex((a: any) => a.username.toLowerCase() === authUser.username.toLowerCase());
+            if (idx !== -1) {
+              accs[idx].balance = 200000;
+              accs[idx].userTier = 'HỘI VIÊN BẠC 🥈';
+              localStorage.setItem('cyber_registered_accounts', JSON.stringify(accs));
+            }
+          }
+        }
+      }
+    } catch {}
+  }
+  broadcastWalletUpdate(resetState);
+  return resetState;
 }
 
 export interface ActiveStationInfo {

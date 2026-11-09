@@ -10,6 +10,7 @@ import {
   calculateRemainingPlayTime,
   getCumulativeTopupAmount,
   subscribeMembershipPlan,
+  addRemainingPlaySeconds,
   WALLET_EVENT_NAME,
   UserWallet,
   INITIAL_WALLET,
@@ -129,14 +130,17 @@ export default function AuthAndWallet() {
       setIsProcessing(true);
 
       setTimeout(() => {
-        const deductRes = deductWallet(numAmount, `Nạp giờ chơi máy ${wallet.pcName}`);
+        const deductRes = deductWallet(numAmount, `Nạp giờ chơi máy ${wallet.pcName}`, 'PLAY_TIME');
         if (!deductRes.success) {
           setIsProcessing(false);
           setAuthTopupError(deductRes.error || 'Số dư ví không đủ!');
           return;
         }
 
-        setWallet(deductRes.wallet);
+        const addedSecs = Math.floor((numAmount / (wallet.hourlyRate || 22000)) * 3600);
+        addRemainingPlaySeconds(addedSecs, currentUser?.username);
+        const updatedW = getStoredWallet();
+        setWallet(updatedW);
         setIsProcessing(false);
 
         if (currentUser) {
@@ -285,14 +289,14 @@ export default function AuthAndWallet() {
     }
     const user = { ...res.user! };
     if (uname === 'admin1') {
-      user.balance = 200000;
-      user.userTier = 'HỘI VIÊN BẠC 🥈';
+      if (typeof user.balance !== 'number' || user.balance <= 0 || user.balance > 200000) user.balance = 200000;
+      if (!user.userTier) user.userTier = 'HỘI VIÊN BẠC 🥈';
     } else if (uname === 'admin2') {
-      user.balance = 500000;
-      user.userTier = 'HỘI VIÊN KIM CƯƠNG 💎';
+      if (typeof user.balance !== 'number' || user.balance <= 0 || user.balance > 500000) user.balance = 500000;
+      if (!user.userTier) user.userTier = 'HỘI VIÊN KIM CƯƠNG 💎';
     } else if (uname === 'gamer01') {
-      user.balance = 50000;
-      user.userTier = 'TÂN THỦ (ROOKIE)';
+      if (typeof user.balance !== 'number' || user.balance <= 0 || user.balance > 50000) user.balance = 50000;
+      if (!user.userTier) user.userTier = 'TÂN THỦ (ROOKIE)';
     }
     loginUser(user);
     setCurrentUser(user);
@@ -946,6 +950,113 @@ export default function AuthAndWallet() {
                   </div>
                 );
               })}
+            </div>
+
+            <div className="pt-4 border-t border-slate-800 space-y-3">
+              <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-1">
+                <h4 className="text-white font-black text-sm flex items-center gap-1.5">
+                  <span className="material-symbols-outlined text-emerald-400 text-lg">workspace_premium</span>
+                  <span>Đăng Ký Gói Hội Viên 30 Ngày (Kích Hoạt Trực Tiếp Bằng Số Dư Ví)</span>
+                </h4>
+                <span className="text-[11px] text-emerald-400 font-mono">Tặng ngay giờ chơi miễn phí + đặc quyền VIP</span>
+              </div>
+
+              <div className="grid grid-cols-1 md:grid-cols-3 gap-3 font-mono text-xs">
+                {MEMBERSHIP_PLANS.map((plan) => {
+                  const isGold = plan.code === 'GOLD';
+                  const isDiamond = plan.code === 'DIAMOND';
+                  const cardStyle = isDiamond
+                    ? 'from-purple-950/60 to-slate-900 border-purple-500/50'
+                    : isGold
+                    ? 'from-amber-950/60 to-slate-900 border-amber-500/50'
+                    : 'from-slate-800/80 to-slate-900 border-slate-600/60';
+                  const btnStyle = isDiamond
+                    ? 'bg-gradient-to-r from-purple-500 to-cyan-400 text-black hover:brightness-110'
+                    : isGold
+                    ? 'bg-gradient-to-r from-amber-400 to-yellow-500 text-black hover:brightness-110'
+                    : 'bg-gradient-to-r from-emerald-400 to-teal-400 text-black hover:brightness-110';
+                  const freeHoursLabel = isDiamond ? 'Tặng +20h VIP Free' : isGold ? 'Tặng +8h VIP Free' : 'Tặng +3h VIP Free';
+                  return (
+                    <div
+                      key={plan.id}
+                      className={`p-4 rounded-xl bg-gradient-to-b ${cardStyle} border flex flex-col justify-between space-y-3 shadow-lg`}
+                    >
+                      <div className="space-y-1.5">
+                        <div className="flex justify-between items-center">
+                          <span className="px-2 py-0.5 rounded bg-black/40 text-amber-300 font-bold text-[10px] border border-white/10">
+                            {plan.badgeName}
+                          </span>
+                          <span className="text-[10px] text-slate-300">{plan.durationDays} ngày</span>
+                        </div>
+                        <div className="text-white font-black text-sm font-sans">{plan.name}</div>
+                        <div className="text-xl font-black text-emerald-400">{plan.price.toLocaleString('vi-VN')}đ</div>
+                        <div className="text-[11px] text-cyan-300 font-bold">🎁 {freeHoursLabel}</div>
+                        <div className="space-y-1 pt-1 text-[10px] text-slate-300 font-sans">
+                          {plan.perks.slice(0, 3).map((perk, idx) => (
+                            <div key={idx} className="flex items-start gap-1">
+                              <span className="text-emerald-400">✓</span>
+                              <span>{perk}</span>
+                            </div>
+                          ))}
+                        </div>
+                      </div>
+
+                      <button
+                        type="button"
+                        onClick={() => {
+                          const res = subscribeMembershipPlan(plan.id);
+                          setWallet(res.wallet);
+                          setPlanToast({
+                            success: res.success,
+                            message: res.success
+                              ? `Đã đăng ký thành công gói ${plan.name} (Thời hạn 30 ngày) và cộng giờ chơi khuyến mãi!`
+                              : (res.error || 'Đăng ký gói không thành công!'),
+                            neededAmount: res.neededAmount,
+                          });
+                        }}
+                        className={`w-full py-2 rounded-lg font-extrabold text-xs transition cursor-pointer ${btnStyle}`}
+                      >
+                        Đăng Ký {plan.code} ({plan.price.toLocaleString('vi-VN')}đ)
+                      </button>
+                    </div>
+                  );
+                })}
+              </div>
+            </div>
+
+            <div className="pt-4 border-t border-slate-800 space-y-2.5 font-mono text-xs">
+              <div className="flex justify-between items-center">
+                <h4 className="text-white font-bold text-xs uppercase tracking-wider">Lịch Sử Giao Dịch Ví &amp; Giờ Chơi Gần Đây</h4>
+                <span className="text-[10px] text-slate-400">{(wallet.transactions || []).length} giao dịch</span>
+              </div>
+              <div className="space-y-2 max-h-56 overflow-y-auto pr-1">
+                {(wallet.transactions || []).slice(0, 8).map((tx) => {
+                  const isTopup = tx.type === 'TOPUP';
+                  const isPlayTime = tx.type === 'PLAY_TIME';
+                  return (
+                    <div key={tx.id} className="p-2.5 rounded-xl bg-slate-950/70 border border-slate-800 flex items-center justify-between gap-2">
+                      <div className="space-y-0.5">
+                        <div className="flex items-center gap-2">
+                          <span className={`px-2 py-0.5 rounded text-[9px] font-bold ${
+                            isTopup
+                              ? 'bg-emerald-500/20 text-emerald-400 border border-emerald-500/30'
+                              : isPlayTime
+                              ? 'bg-cyan-500/20 text-cyan-300 border border-cyan-500/30'
+                              : 'bg-amber-500/20 text-amber-300 border border-amber-500/30'
+                          }`}>
+                            {isTopup ? '💰 Nạp Ví' : isPlayTime ? '⏱️ Giờ Chơi' : '🍜 Đồ Ăn F&B'}
+                          </span>
+                          <span className="text-white font-bold text-[11px]">{tx.description}</span>
+                        </div>
+                        <div className="text-[10px] text-slate-500">Máy: {tx.pcName} • {tx.timestamp}</div>
+                      </div>
+                      <span className={`font-bold text-xs shrink-0 ${isTopup ? 'text-emerald-400' : 'text-rose-400'}`}>
+                        {isTopup ? '+' : '-'}{tx.amount.toLocaleString('vi-VN')}đ
+                      </span>
+                    </div>
+                  );
+                })}
+              </div>
             </div>
           </div>
         )}

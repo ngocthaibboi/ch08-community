@@ -267,7 +267,14 @@ export default function MainServerPage() {
       }
 
       const bCast = localStorage.getItem('CYBER_ACTIVE_BROADCAST');
-      if (bCast) setActiveBroadcast(bCast);
+      if (bCast) {
+        try {
+          const parsed = JSON.parse(bCast);
+          setActiveBroadcast(typeof parsed === 'object' && parsed !== null ? (parsed.message || '') : String(bCast));
+        } catch {
+          setActiveBroadcast(bCast);
+        }
+      }
     }
 
     try {

@@ -67,7 +67,7 @@ export default function BookingSeatMap() {
   const baseSeats = activeFloor === 'floor2' ? FLOOR2_SEATS_CONFIG : FLOOR1_SEATS_CONFIG;
 
   const computedSeats = baseSeats.map((seat) => {
-    const booking = bookings.find((b) => b.seatId === seat.id && b.status === 'RESERVED');
+    const booking = bookings.find((b) => b.seatId === seat.id && (b.status === 'RESERVED' || b.status === 'CONFIRMED'));
     if (booking) {
       return {
         ...seat,
@@ -260,7 +260,7 @@ export default function BookingSeatMap() {
 
                       {isReserved ? (
                         <span className="bg-amber-500 text-black text-[9px] font-mono px-1.5 py-0.5 rounded font-black uppercase flex items-center gap-1 shadow-sm animate-pulse">
-                          <span className="w-1.5 h-1.5 rounded-full bg-black"></span> ĐÃ ĐẶT
+                          <span className="w-1.5 h-1.5 rounded-full bg-black"></span> {seat.booking?.status === 'CONFIRMED' ? 'ĐÃ XÁC NHẬN' : 'ĐÃ ĐẶT'}
                         </span>
                       ) : isCurrent ? (
                         <span className="bg-cyan-400 text-black text-[9px] font-mono px-1.5 py-0.5 rounded uppercase font-black">

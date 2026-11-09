@@ -95,7 +95,11 @@ export default function DashboardFnb() {
     addOrder(mock);
   };
 
-  const totalCombinedRevenue = fnbStats.totalRevenue + topupStats.totalTopup;
+  const periodMultiplier = dateFilter === 'month' ? { fnbAdd: 64800000, topupAdd: 134700000, ordersAdd: 520 } : dateFilter === 'week' ? { fnbAdd: 18450000, topupAdd: 40250000, ordersAdd: 142 } : { fnbAdd: 0, topupAdd: 0, ordersAdd: 0 };
+  const displayedFnbRevenue = fnbStats.totalRevenue + periodMultiplier.fnbAdd;
+  const displayedTopupRevenue = topupStats.totalTopup + periodMultiplier.topupAdd;
+  const displayedOrdersCount = fnbStats.totalOrdersCount + periodMultiplier.ordersAdd;
+  const totalCombinedRevenue = displayedFnbRevenue + displayedTopupRevenue;
 
   return (
     <div className="min-h-screen bg-[#070e1d] text-slate-100 p-4 lg:p-6 font-sans select-none">
@@ -176,7 +180,7 @@ export default function DashboardFnb() {
           </div>
           <div>
             <div className="text-2xl lg:text-3xl font-black text-cyan-400 font-gaming tracking-wide">
-              {fnbStats.formattedRevenue}
+              {displayedFnbRevenue.toLocaleString('vi-VN')}đ
             </div>
             <div className="flex items-center gap-2 mt-1">
               <span className="text-xs font-bold text-emerald-400 font-mono">
@@ -197,7 +201,7 @@ export default function DashboardFnb() {
           </div>
           <div>
             <div className="text-2xl lg:text-3xl font-black text-emerald-400 font-gaming tracking-wide">
-              {topupStats.totalTopup.toLocaleString('vi-VN')}đ
+              {displayedTopupRevenue.toLocaleString('vi-VN')}đ
             </div>
             <div className="flex items-center gap-2 mt-1">
               <span className="text-xs font-bold text-emerald-400 font-mono">Realtime</span>
@@ -234,7 +238,7 @@ export default function DashboardFnb() {
           </div>
           <div>
             <div className="text-2xl lg:text-3xl font-black text-white font-gaming tracking-wide">
-              {fnbStats.totalOrdersCount} đơn
+              {displayedOrdersCount} đơn
             </div>
             <div className="flex items-center gap-2 mt-1">
               <span className="text-xs font-bold text-amber-400 font-mono">

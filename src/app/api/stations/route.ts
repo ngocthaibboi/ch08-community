@@ -6,7 +6,9 @@ export async function GET() {
     { id: 'PRO-01', name: 'Cyber Pro 540Hz', zone: 'Pro', rate: 18000, status: 'AVAILABLE' },
     { id: 'VIP-08', name: 'Ultra VIP Tầng 2', zone: 'VIP', rate: 22000, status: 'OCCUPIED' },
     { id: 'ARENA-A1', name: 'Đấu Trường 5v5 IESF', zone: 'Arena', rate: 25000, status: 'AVAILABLE' },
-    { id: 'STREAM-01', name: 'Phòng Stream 4K', zone: 'Stream', rate: 45000, status: 'AVAILABLE' },
+    { id: 'STREAM-01', name: 'Phòng Stream 4K', zone: 'Stream', rate: 35000, status: 'AVAILABLE' },
+    { id: 'COUPLE-01', name: 'Couple Sanctuary', zone: 'Couple', rate: 45000, status: 'AVAILABLE' },
+    { id: 'CONSOLE-01', name: 'Console Lounge PS5 Pro', zone: 'Console', rate: 79000, status: 'AVAILABLE' },
     { id: 'BIDA-01', name: 'Bàn Bida Aileex King', zone: 'Bida', rate: 79000, status: 'AVAILABLE' },
   ];
 

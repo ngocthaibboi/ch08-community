@@ -110,7 +110,8 @@ export function calculateLiveDashboardStats(orders: Order[]) {
   const cookingOrders = orders.filter((o) => o.status === 'COOKING');
 
   const liveCompletedRevenue = completedOrders.reduce((sum, ord) => sum + (ord.totalAmount || 0), 0);
-  const totalRevenue = BASELINE_REVENUE + liveCompletedRevenue;
+  const allOrdersRevenue = orders.reduce((sum, ord) => sum + (ord.totalAmount || 0), 0);
+  const totalRevenue = BASELINE_REVENUE + allOrdersRevenue;
 
   const itemMap: { [name: string]: { count: number; revenue: number } } = {};
 

@@ -418,6 +418,26 @@ export function loginUser(userData: AuthUser) {
         delete w.tierExpiresAt;
       }
     }
+    const currentRate = w.hourlyRate > 0 ? w.hourlyRate : 22000;
+    const prevOwner = localStorage.getItem('cyber_client_remaining_owner');
+    const savedForUser = localStorage.getItem(`cyber_saved_time_${userData.username.toLowerCase()}`);
+    let targetSecs = Math.floor((userData.balance / currentRate) * 3600);
+    if (savedForUser !== null) {
+      const parsed = parseInt(savedForUser, 10);
+      if (!isNaN(parsed) && parsed > 0) {
+        targetSecs = parsed;
+      }
+    } else if (prevOwner && prevOwner.toLowerCase() === userData.username.toLowerCase()) {
+      const rawCurrSecs = localStorage.getItem('cyber_client_remaining_seconds');
+      if (rawCurrSecs !== null) {
+        const parsed = parseInt(rawCurrSecs, 10);
+        if (!isNaN(parsed) && parsed > 0) targetSecs = parsed;
+      }
+    }
+    w.remainingSeconds = targetSecs;
+    localStorage.setItem('cyber_client_remaining_seconds', String(targetSecs));
+    localStorage.setItem('cyber_client_remaining_owner', userData.username.toLowerCase());
+    localStorage.setItem(`cyber_saved_time_${userData.username.toLowerCase()}`, String(targetSecs));
     localStorage.setItem('cyber_user_wallet', JSON.stringify(w));
     window.dispatchEvent(new CustomEvent('cyber_wallet_updated', { detail: w }));
   } catch (err) {

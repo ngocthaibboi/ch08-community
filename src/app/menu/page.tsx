@@ -6,7 +6,7 @@ import ClientHeader from '@/components/fnb/ClientHeader';
 import FoodCard from '@/components/fnb/FoodCard';
 import CartSidebar from '@/components/fnb/CartSidebar';
 import { MenuItem, CartItem, PaymentMethod, Order } from '@/types/fnb';
-import { addOrder } from '@/lib/orderStore';
+import { addOrder, getStoredOrders, STORAGE_EVENT_NAME } from '@/lib/orderStore';
 import { getLoggedInUser, getClientPcSession, AUTH_EVENT_NAME, CLIENT_PC_EVENT_NAME } from '@/lib/authStore';
 import {
   getStoredWallet,
@@ -449,12 +449,32 @@ function CyberMenuClientContent() {
     description: string;
     eta: string;
     progressPercent: number;
-  } | null>({
-    orderCode: '#KDS-8821',
-    description: '1x Mì Trộn Indomie Double Trứng + 1x Sting Dâu Lạnh',
-    eta: '04:30',
-    progressPercent: 65,
-  });
+  } | null>(null);
+
+  useEffect(() => {
+    const syncActiveOrderTicker = () => {
+      const orders = getStoredOrders();
+      const activeOrd = orders.find((o) => o.status === 'PENDING' || o.status === 'COOKING');
+      if (activeOrd) {
+        const desc = activeOrd.items.map((i) => (typeof i === 'string' ? i : i.name)).join(' + ');
+        setCurrentTicker({
+          orderCode: `#KDS-${activeOrd.orderNumber}`,
+          description: desc,
+          eta: activeOrd.status === 'COOKING' ? '03:00' : '05:00',
+          progressPercent: activeOrd.status === 'COOKING' ? 70 : 35,
+        });
+      } else {
+        setCurrentTicker(null);
+      }
+    };
+    syncActiveOrderTicker();
+    window.addEventListener(STORAGE_EVENT_NAME, syncActiveOrderTicker);
+    window.addEventListener('storage', syncActiveOrderTicker);
+    return () => {
+      window.removeEventListener(STORAGE_EVENT_NAME, syncActiveOrderTicker);
+      window.removeEventListener('storage', syncActiveOrderTicker);
+    };
+  }, []);
 
   const [cart, setCart] = useState<CartItem[]>([]);
 

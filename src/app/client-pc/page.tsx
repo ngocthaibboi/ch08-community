@@ -19,6 +19,8 @@ import {
   saveActiveClientStation,
   getActiveClientStation,
   ACTIVE_STATION_EVENT,
+  getStoredRemainingSeconds,
+  saveStoredRemainingSeconds,
 } from '@/lib/walletStore';
 import {
   getClientPcSession,
@@ -588,11 +590,25 @@ export default function ClientPcPage() {
     }
     setWallet(storedWallet);
 
-    const secs = Math.max(1800, Math.floor((activeUser.balance / initialRate) * 3600));
+    const secs = getStoredRemainingSeconds(activeUser.username, activeUser.balance, initialRate);
     setRemainingSeconds(secs);
+    saveStoredRemainingSeconds(secs, activeUser.username);
     setIsLocked(false);
     if (typeof window !== 'undefined') {
       localStorage.setItem('CYBER_CLIENT_PC_UNLOCKED', 'true');
+      const rawBcast = localStorage.getItem('CYBER_ACTIVE_BROADCAST');
+      if (rawBcast) {
+        try {
+          const parsedBcast = JSON.parse(rawBcast);
+          if (parsedBcast && typeof parsedBcast === 'object' && parsedBcast.message) {
+            setActiveBroadcast(parsedBcast.message);
+          } else if (typeof rawBcast === 'string' && !rawBcast.startsWith('{')) {
+            setActiveBroadcast(rawBcast);
+          }
+        } catch {
+          setActiveBroadcast(rawBcast);
+        }
+      }
     }
 
     saveActiveClientStation({
@@ -624,8 +640,9 @@ export default function ClientPcPage() {
         if (isLocked) {
           setIsLocked(false);
           const activeRate = customRate > 0 ? customRate : currentStation.hourlyRate;
-          const calcSeconds = activeRate > 0 ? Math.floor((sUser.balance / activeRate) * 3600) : 0;
+          const calcSeconds = getStoredRemainingSeconds(sUser.username, sUser.balance, activeRate);
           setRemainingSeconds(calcSeconds);
+          saveStoredRemainingSeconds(calcSeconds, sUser.username);
         }
       }
     };
@@ -666,8 +683,10 @@ export default function ClientPcPage() {
     const handleLocalWalletUpdate = () => {
       const updatedWallet = getStoredWallet();
       setWallet(updatedWallet);
+      if (!isLocked && typeof updatedWallet.remainingSeconds === 'number' && updatedWallet.remainingSeconds > 0) {
+        setRemainingSeconds((prev) => Math.max(prev, updatedWallet.remainingSeconds!));
+      }
       // Chỉ tự động mở khóa và nạp giờ nếu máy đang ở trạng thái khóa (Lễ tân nạp mở máy)
-      // Khi khách đang chơi, tuyệt đối KHÔNG ghi đè remainingSeconds để bảo toàn gói combo/giờ đã mua
       if (isLocked) {
         const activeRate = customRate > 0 ? customRate : currentStation.hourlyRate;
         const calcSeconds = activeRate > 0 ? Math.floor((updatedWallet.balance / activeRate) * 3600) : 0;
@@ -734,6 +753,9 @@ export default function ClientPcPage() {
         try {
           const updatedWallet = getStoredWallet();
           setWallet(updatedWallet);
+          if (!isLocked && typeof updatedWallet.remainingSeconds === 'number' && updatedWallet.remainingSeconds > 0) {
+            setRemainingSeconds((prev) => Math.max(prev, updatedWallet.remainingSeconds!));
+          }
           if (isLocked) {
             const activeRate = customRate > 0 ? customRate : currentStation.hourlyRate;
             const calcSeconds = activeRate > 0 ? Math.floor((updatedWallet.balance / activeRate) * 3600) : 0;
@@ -788,10 +810,13 @@ export default function ClientPcPage() {
       setRemainingSeconds((prev) => {
         if (prev <= 1) {
           setIsLocked(true);
+          saveStoredRemainingSeconds(0, currentUser?.username);
           setAlertSuccess('⚠️ HẾT THỜI GIAN CHƠI! Máy ' + currentStation.id + ' đã tự động khóa. Vui lòng nạp thêm tiền tại quầy hoặc qua cổng nạp.');
           return 0;
         }
-        return prev - 1;
+        const next = prev - 1;
+        saveStoredRemainingSeconds(next, currentUser?.username);
+        return next;
       });
 
       elapsedSeconds += 1;
@@ -838,8 +863,9 @@ export default function ClientPcPage() {
     const effectiveRate = customRate > 0 ? customRate : currentStation.hourlyRate;
     updateStationAndRate(currentStation.id, currentStation.zone, effectiveRate);
 
-    const secs = Math.floor((userObj.balance / effectiveRate) * 3600);
+    const secs = getStoredRemainingSeconds(userObj.username, userObj.balance, effectiveRate);
     setRemainingSeconds(secs);
+    saveStoredRemainingSeconds(secs, userObj.username);
     setIsLocked(false);
     setLoginError(null);
     setAlertSuccess(`Chào mừng ${userObj.fullName}! Máy ${currentStation.id} đã mở khóa thành công. Thời gian: ${formatSecondsToHMS(secs)}`);
@@ -856,16 +882,22 @@ export default function ClientPcPage() {
 
     const userObj = { ...authRes.user! };
 
-    // Đảm bảo số dư chính xác tuyệt đối như cam kết trên nút giao diện
+    // Bảo toàn số dư thực tế nếu tài khoản đã tiêu tiền (Mục #6b), chỉ khởi tạo lại nếu <= 0 hoặc bị nhiễu > mức trần
     if (uname === 'admin1') {
-      userObj.balance = 200000;
-      userObj.userTier = 'HỘI VIÊN BẠC 🥈';
+      if (typeof userObj.balance !== 'number' || userObj.balance <= 0 || userObj.balance > 200000) {
+        userObj.balance = 200000;
+      }
+      if (!userObj.userTier) userObj.userTier = 'HỘI VIÊN BẠC 🥈';
     } else if (uname === 'admin2') {
-      userObj.balance = 500000;
-      userObj.userTier = 'HỘI VIÊN KIM CƯƠNG 💎';
+      if (typeof userObj.balance !== 'number' || userObj.balance <= 0 || userObj.balance > 500000) {
+        userObj.balance = 500000;
+      }
+      if (!userObj.userTier) userObj.userTier = 'HỘI VIÊN KIM CƯƠNG 💎';
     } else if (uname === 'gamer01') {
-      userObj.balance = 50000;
-      userObj.userTier = 'TÂN THỦ (ROOKIE)';
+      if (typeof userObj.balance !== 'number' || userObj.balance <= 0 || userObj.balance > 50000) {
+        userObj.balance = 50000;
+      }
+      if (!userObj.userTier) userObj.userTier = 'TÂN THỦ (ROOKIE)';
     }
 
     loginUser(userObj);
@@ -874,15 +906,18 @@ export default function ClientPcPage() {
     const effectiveRate = customRate > 0 ? customRate : currentStation.hourlyRate;
     updateStationAndRate(currentStation.id, currentStation.zone, effectiveRate);
 
+    const secs = getStoredRemainingSeconds(userObj.username, userObj.balance, effectiveRate);
+    setRemainingSeconds(secs);
+    saveStoredRemainingSeconds(secs, userObj.username);
+
     const updatedWallet = getStoredWallet();
     updatedWallet.balance = userObj.balance;
     updatedWallet.userName = userObj.fullName;
     updatedWallet.userTier = userObj.userTier;
+    updatedWallet.remainingSeconds = secs;
     setWallet(updatedWallet);
     broadcastWalletUpdate(updatedWallet);
 
-    const secs = Math.floor((userObj.balance / effectiveRate) * 3600);
-    setRemainingSeconds(secs);
     setIsLocked(false);
     saveActiveClientStation({
       stationId: currentStation.id,
@@ -900,6 +935,9 @@ export default function ClientPcPage() {
 
   const handleLockClient = () => {
     if (confirm(`Bạn có chắc muốn đăng xuất và khóa máy trạm ${currentStation.id}?`)) {
+      if (currentUser && remainingSeconds > 0) {
+        saveStoredRemainingSeconds(remainingSeconds, currentUser.username);
+      }
       clearClientPcSession();
       setCurrentUser(null);
       setIsLocked(true);
@@ -960,18 +998,20 @@ export default function ClientPcPage() {
         ? `Mua ${selectedCombo.name} nạp máy ${currentStation.id}`
         : `Nạp giờ chơi tại máy ${currentStation.id}`;
 
-      const deductRes = deductWallet(amountToPay, desc);
+      const deductRes = deductWallet(amountToPay, desc, 'PLAY_TIME');
       if (!deductRes.success) {
         setTopupErrorMsg(deductRes.error || 'Số dư không đủ!');
         return;
       }
 
-      setWallet(deductRes.wallet);
-      const newBal = deductRes.wallet.balance;
-
-      // Cộng giờ chơi trực tiếp vào máy
-      setRemainingSeconds((prev) => prev + addedSeconds);
+      const nextSecs = remainingSeconds + addedSeconds;
+      saveStoredRemainingSeconds(nextSecs, currentUser?.username);
+      setRemainingSeconds(nextSecs);
       setIsLocked(false);
+
+      const updatedWWithSecs = { ...deductRes.wallet, remainingSeconds: nextSecs };
+      setWallet(updatedWWithSecs);
+      const newBal = deductRes.wallet.balance;
 
       if (currentUser) {
         const updatedUser: AuthUser = {
@@ -1028,9 +1068,13 @@ export default function ClientPcPage() {
         dateIso: new Date().toISOString(),
       };
 
+      const nextSecs = remainingSeconds + addedSeconds;
+      saveStoredRemainingSeconds(nextSecs, currentUser?.username);
+
       const updatedW: UserWallet = {
         ...currentW,
         userTier: newTierInfo.name,
+        remainingSeconds: nextSecs,
         transactions: [tx, ...(currentW.transactions || [])],
         lastTransaction: tx,
       };
@@ -1047,7 +1091,7 @@ export default function ClientPcPage() {
       }
 
       // Kích hoạt giờ chơi trực tiếp vào máy trạm
-      setRemainingSeconds((prev) => prev + addedSeconds);
+      setRemainingSeconds(nextSecs);
       setIsLocked(false);
 
       saveActiveClientStation({
@@ -1095,6 +1139,7 @@ export default function ClientPcPage() {
     setCustomRate(newRate);
     setNewRateInput(String(newRate));
     setRemainingSeconds(newSeconds);
+    saveStoredRemainingSeconds(newSeconds, currentUser?.username);
 
     // Cập nhật cấu hình trạm máy, TUYỆT ĐỐI KHÔNG can thiệp thay đổi số dư ví
     const updatedWallet = updateStationAndRate(preset.id, preset.zone, newRate);
@@ -1134,6 +1179,7 @@ export default function ClientPcPage() {
 
     setCustomRate(rateNum);
     setRemainingSeconds(newSeconds);
+    saveStoredRemainingSeconds(newSeconds, currentUser?.username);
     updateStationAndRate(currentStation.id, currentStation.zone, rateNum);
     setShowRateModal(false);
 
@@ -1163,6 +1209,7 @@ export default function ClientPcPage() {
 
     const newSecs = Math.max(0, remainingSeconds - deductSeconds);
     setRemainingSeconds(newSecs);
+    saveStoredRemainingSeconds(newSecs, currentUser?.username);
 
     if (res.success) {
       setWallet(res.wallet);
